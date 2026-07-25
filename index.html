@@ -62,6 +62,29 @@
   .pill.active{background:var(--nav);color:#fff;border-color:var(--nav)}
   .tablewrap{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:auto}
   .tablewrap.scroll{max-height:calc(100vh - 320px)}
+  .tablewrap.sbox{max-height:340px;overflow:auto}
+  .tablewrap.sbox5{max-height:206px;overflow:auto}
+  tr.aheadrow{background:#fbf3da}
+  tr.nowrow{background:#e6f3ec}
+  .cardhead{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+  .cardhead h2{margin:0;flex:1}
+  .btn.mini{padding:5px 11px;font-size:13px}
+  .roundsum{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+  .rchip{font-size:12.5px;background:#f3f6f9;border:1px solid var(--line);border-radius:20px;padding:5px 12px;color:var(--muted)}
+  .rchip b{font-size:15px;color:var(--ink);margin:0 2px}
+  .rchip.ok{background:var(--present-bg);border-color:#b8e0c6;color:var(--present)}
+  .rchip.ok b{color:var(--present)}
+  .rchip.warn{background:var(--m-bg);border-color:#e6cf94;color:var(--off)}
+  .rchip.warn b{color:var(--off)}
+  .rchip.bad{background:var(--absent-bg);border-color:#f0c2bd;color:var(--absent)}
+  .rchip.bad b{color:var(--absent)}
+  .rsep{width:1px;height:20px;background:var(--line)}
+  th.th-sort{cursor:pointer;user-select:none;white-space:nowrap}
+  th.th-sort:hover{background:#eef2f7;color:var(--ink)}
+  th.th-sort.on{color:var(--ink)}
+  .sortcaret{font-size:9px;margin-left:4px;opacity:.45}
+  th.th-sort.on .sortcaret{opacity:1;color:var(--accent)}
+  .tablewrap.sbox thead th{box-shadow:0 1px 0 var(--line)}
   .grouphdr td{position:sticky;background:var(--n-bg);color:var(--n);font-weight:600;font-size:12.5px;padding:6px 12px;border-bottom:1px solid var(--line);top:39px;z-index:1}
   .otbtn{border:1px solid var(--ot);background:var(--ot-bg);color:var(--ot);border-radius:7px;padding:3px 9px;font-size:12px;cursor:pointer;font-family:inherit;margin-top:5px}
   .otyes{font-size:11px;color:var(--ot);background:var(--ot-bg);border:1px solid #e6cf94;border-radius:6px;padding:2px 7px;display:inline-block;margin-right:5px}
@@ -82,6 +105,10 @@
   .noteinp:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
   .departin{border:1px solid var(--accent2);border-radius:7px;padding:4px 6px;font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:12px;background:#fffdf3}
   .departin:focus{outline:2px solid var(--accent2)}
+  .planin{width:74px;text-align:center;border:1px solid var(--accent2);border-radius:7px;padding:5px 6px;font-family:inherit;font-size:13px;background:#fffdf3;font-variant-numeric:tabular-nums}
+  .planin:focus{outline:2px solid var(--accent2)}
+  .hmin{width:66px;text-align:center;letter-spacing:.5px;font-variant-numeric:tabular-nums}
+  .hmin::placeholder{color:#b9c1cd;letter-spacing:0}
   .actualin:focus{outline:2px solid var(--accent2)}
   .modal-overlay{position:fixed;inset:0;background:rgba(15,33,56,.55);display:flex;align-items:flex-start;justify-content:center;z-index:100;padding:5vh 16px;overflow:auto}
   .modal-card{background:#fff;border-radius:14px;max-width:760px;width:100%;padding:20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -120,6 +147,41 @@
   .st.present.sel{background:var(--present-bg);color:var(--present);border-color:var(--present)}
   .st.absent.sel{background:var(--absent-bg);color:var(--absent);border-color:var(--absent)}
   .st.leave.sel{background:var(--leave-bg);color:var(--leave);border-color:var(--leave)}
+  .st.late.sel{background:#fdf0d5;color:#b57608;border-color:#e0a417}
+  /* ---- ปุ่มไอคอนแจ้งเตือนบนหัวเว็บ ---- */
+  .hicon{position:relative;border:0;border-radius:10px;padding:7px 11px;font-size:17px;cursor:pointer;line-height:1;font-family:inherit}
+  .hicon.alarm{background:var(--accent2);color:#20130a}
+  .hicon.alert{background:var(--absent);color:#fff}
+  .hicon:disabled{opacity:.35;cursor:default}
+  .hbadge{position:absolute;top:-5px;right:-5px;background:var(--nav);color:#fff;border-radius:20px;font-size:10.5px;font-weight:600;padding:1px 5px;min-width:16px}
+  .hicon.alarm .hbadge{background:#20130a}
+  @keyframes hpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+  .hicon.ring{animation:hpulse 1s ease-in-out infinite}
+  /* ---- วิดเจท Alarm (กลางจอ) ---- */
+  #alarmBox{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;width:min(94vw,470px);
+    background:#fff;border:3px solid var(--m);border-radius:14px;box-shadow:0 18px 50px rgba(15,33,56,.32);display:none;overflow:hidden}
+  #alarmBox .wtop{background:var(--m-bg);border-bottom:1px solid #e6cf94;padding:12px 16px;display:flex;align-items:center;gap:10px}
+  #alarmBox .wtop .ttl{font-size:17px;font-weight:600;color:#8a5d05;flex:1}
+  /* ---- วิดเจท Alert (มุมขวาบน) ---- */
+  #alertBox{position:fixed;top:112px;right:16px;z-index:201;width:min(94vw,400px);
+    background:rgba(214,72,63,.93);border:3px solid #8f2b24;border-radius:14px;box-shadow:0 14px 40px rgba(120,20,15,.4);display:none;overflow:hidden;color:#fff}
+  #alertBox .wtop{background:rgba(0,0,0,.18);padding:11px 15px;display:flex;align-items:center;gap:9px}
+  #alertBox .wtop .ttl{font-size:16px;font-weight:600;flex:1}
+  #alertBox .wrow{border-bottom:1px solid rgba(255,255,255,.22)}
+  #alertBox .wrow .nm{color:#fff}
+  #alertBox .wsub,#alertBox .wfoot{color:rgba(255,255,255,.85)}
+  #alertBox a.tel{color:#fff;text-decoration:underline}
+  .wlist{max-height:46vh;overflow:auto}
+  .wrow{padding:9px 15px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
+  .wrow:last-child{border-bottom:0}
+  .wrow .nm{font-size:14px;font-weight:600;flex:1;min-width:0}
+  .wrow .wsub{font-size:11.5px;color:var(--muted);display:block;font-weight:400;margin-top:2px}
+  .wrow .tm{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+  a.tel{color:var(--n);text-decoration:none;font-variant-numeric:tabular-nums}
+  a.tel:hover{text-decoration:underline}
+  .wfoot{padding:10px 15px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+  .wclose{margin-left:auto;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:9px;padding:7px 16px;font-family:inherit;font-size:13.5px;cursor:pointer;font-weight:500}
+  #alertBox .wclose{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.45);color:#fff}
   .offbadge{font-size:11px;color:var(--off);background:var(--off-bg);border:1px solid #e6cdb4;border-radius:6px;padding:2px 7px;display:inline-block;margin-top:5px}
   .switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
   .track{width:46px;height:26px;border-radius:20px;background:var(--stop);position:relative;transition:background .15s}
@@ -169,6 +231,8 @@
     <div><h1>ศูนย์กำกับงานขนส่ง EV</h1><small>BU4 · เชื้อเพลิงชีวมวล · กองรถ <span id="fleetcount"></span> คัน</small></div>
   </div>
   <div class="topspace"></div>
+  <button class="hicon alarm" id="alarmBtn" title="ติดตาม พจส. (Alarm)" style="display:none">⏰<span class="hbadge" id="alarmCount">0</span></button>
+  <button class="hicon alert" id="alertBtn" title="พจส. ยังไม่รายงานตัว (Alert)" style="display:none">🔔<span class="hbadge" id="alertCount">0</span></button>
   <div class="datebox"><label>วันที่</label><input type="date" id="dateInput"></div>
   <button class="btn" id="refreshBtn" style="background:var(--nav2);color:#dfe7f1;border-color:var(--nav2)">⟳ ดึงข้อมูลล่าสุด</button>
   <button class="btn" id="settingsBtn" style="background:var(--nav2);color:#dfe7f1;border-color:var(--nav2)">⚙ ตั้งค่าระบบกลาง</button>
@@ -178,12 +242,14 @@
 <nav class="tabs" id="tabs">
   <button class="active" data-tab="roster"><span class="num">1</span> เช็กคนขับ &amp; จ่ายงาน</button>
   <button data-tab="dispatch"><span class="num">2</span> รายละเอียดงาน</button>
-  <button data-tab="board"><span class="num">3</span> ภาพรวมสด</button>
-  <button data-tab="plan"><span class="num">4</span> วางแผนเส้นทาง/ชาร์จ</button>
-  <button data-tab="summary"><span class="num">5</span> สรุปประจำวัน</button>
+  <button data-tab="board"><span class="num">3</span> สถานะการวิ่งงาน</button>
+  <button data-tab="summary"><span class="num">4</span> สรุปประจำวัน</button>
+  <button data-tab="plan"><span class="num">5</span> วางแผนเส้นทาง/ชาร์จ</button>
 </nav>
 <main id="view"></main>
 <div id="modal" class="modal-overlay" style="display:none"></div>
+<div id="alarmBox"></div>
+<div id="alertBox"></div>
 <div id="gate">
   <div class="gate-card">
     <div class="gate-logo">🔒</div>
@@ -317,7 +383,7 @@ function validConfig(c){
 function isPlain(o){return o&&typeof o==='object'&&!Array.isArray(o);}
 function normDay(d){
   if(!isPlain(d))d={};
-  ['attend','running','arrive','attendBy'].forEach(k=>{if(!isPlain(d[k]))d[k]={};});
+  ['attend','running','arrive','attendBy','plan'].forEach(k=>{if(!isPlain(d[k]))d[k]={};});
   if(!Array.isArray(d.jobs))d.jobs=[];
   if(!Array.isArray(d.deleted))d.deleted=[];
   d.jobs=d.jobs.filter(j=>j&&typeof j==='object'&&j.id!==undefined);
@@ -327,12 +393,48 @@ function normDay(d){
 
 let config=null,curDate=todayStr(),day=null,tab='roster';
 let filter='all',search='',editMode=false,pendingDispatch=null,adminName='',editBuf=null,boardFilter='all';
+let sumProdOpen=true;   /* ตารางที่ 2: แสดง/ยุบรายสินค้า */
+let roundSort={key:'truck',dir:1};   /* ตารางที่ 4: คอลัมน์ที่ใช้เรียง */
 
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function nowHM(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 function dayName(ds){return DAYS[new Date(ds+'T00:00:00').getDay()];}
+/* ---- เวลาแบบ 24 ชม. ไม่ขึ้นกับภาษาของเบราว์เซอร์ ----
+   รับได้ทั้ง 630 / 0630 / 6:30 / 18:5  ->  คืน "06:30" / "18:05"
+   คืน ''   = ช่องว่าง        คืน null = รูปแบบไม่ถูกต้อง            */
+const LATE_GRACE=10;   /* มาช้ากว่าเวลาเข้ากะเกินกี่นาที ถือว่า "สาย" (ตรงกับเกณฑ์ Alert) */
+function isLateArrival(d,arriveHM){
+  const sm=parseStart(d&&d.shift), am=hm2min(arriveHM);
+  if(sm===null||am===null)return false;
+  let diff=am-sm;
+  if(diff>720)diff-=1440;          /* กะข้ามเที่ยงคืน */
+  if(diff<-720)diff+=1440;
+  return diff>LATE_GRACE;
+}
+function normHM(v){
+  v=String(v==null?'':v).trim();
+  if(!v)return '';
+  let d=v.replace(/[^0-9]/g,'');
+  if(v.indexOf(':')>0){
+    const p=v.split(':');
+    d=String(p[0]).replace(/\D/g,'').padStart(2,'0')+String(p[1]||'0').replace(/\D/g,'').padStart(2,'0');
+  }else if(d.length===1)d='0'+d+'00';
+  else if(d.length===2)d=d+'00';
+  else if(d.length===3)d='0'+d;
+  if(d.length!==4)return null;
+  const h=+d.slice(0,2),m=+d.slice(2);
+  if(isNaN(h)||isNaN(m)||h>23||m>59)return null;
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+}
+function hmField(val,attrs,cls){
+  return '<input type="text" inputmode="numeric" maxlength="5" placeholder="--:--" class="hmin mono '+(cls||'')+'" value="'+esc(val||'')+'" '+(attrs||'')+'>';
+}
+function badHM(el,fallback){
+  el.value=fallback||'';
+  alert('เวลาไม่ถูกต้อง — ใส่แบบ 24 ชั่วโมง เช่น 06:30 หรือ 1830');
+}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
-function blankDay(){return {attend:{},running:{},jobs:[],seq:0,arrive:{},attendBy:{},deleted:[],_rev:0};}
+function blankDay(){return {attend:{},running:{},jobs:[],seq:0,arrive:{},attendBy:{},plan:{},deleted:[],_rev:0};}
 function truckByNo(no){return config.find(t=>t.truckNo===no);}
 function driverAt(t,pos){return (t.drivers||[]).find(d=>d.pos===String(pos));}
 
@@ -384,7 +486,7 @@ function isRunning(no){return !!day.running[no];}
 
 /* ---------- KPIs ---------- */
 function kpis(){
-  let running=0,present=0,absent=0,leave=0,off=0,ot=0,unchecked=0,total=0;
+  let running=0,present=0,absent=0,leave=0,off=0,ot=0,late=0,unchecked=0,total=0;
   for(const t of config){
     if(isRunning(t.truckNo))running++;
     const a=attOf(t.truckNo);
@@ -392,23 +494,26 @@ function kpis(){
       total++;
       const v=a[d.pos];
       if(isOff(t,d,curDate)){ off++; if(v==='ot')ot++; continue; }   // วันหยุด fix ตามตารางกะ ไม่หัก OT
-      if(v==='present')present++;else if(v==='absent')absent++;else if(v==='leave')leave++;else if(v==='ot')ot++;else unchecked++;
+      if(v==='present')present++;else if(v==='late')late++;else if(v==='absent')absent++;else if(v==='leave')leave++;else if(v==='ot')ot++;else unchecked++;
     }
   }
   const scheduled=total-off;      // ต้องมาทำงานวันนี้ (ตามตารางกะ)
-  const actual=present+ot;        // มาทำงานจริงทั้งหมด (รวม OT)
-  return {running,present,absent,leave,off,ot,unchecked,total,scheduled,actual};
+  const actual=present+late+ot;   // มาทำงานจริงทั้งหมด (รวมสาย + OT)
+  return {running,present,absent,leave,off,ot,late,unchecked,total,scheduled,actual};
 }
+const STATUS_FILTERS={present:1,late:1,absent:1,leave:1,ot:1};
 function summaryBar(){
   const k=kpis();
+  const bx=(f,cls,lab,val)=>`<div class="stat boardbox ${cls} ${filter===f?'sel':''}" data-f="${f}" title="กดเพื่อกรองเฉพาะ ${lab}"><div class="lab">${lab}</div><div class="val mono">${val}</div></div>`;
   return `<section class="summary">
-    <div class="stat hero"><div class="lab">สรุปการมาทำงาน</div><div class="val mono">${k.actual}/${k.scheduled}</div><div class="bar" style="width:${k.scheduled?Math.min(100,k.actual/k.scheduled*100):0}%"></div></div>
-    <div class="stat go"><div class="lab">มา (ปกติ)</div><div class="val mono">${k.present}</div></div>
-    <div class="stat ot"><div class="lab">มา OT (วันหยุด)</div><div class="val mono">${k.ot}</div></div>
-    <div class="stat miss"><div class="lab">ขาด</div><div class="val mono">${k.absent}</div></div>
-    <div class="stat lv"><div class="lab">ลา</div><div class="val mono">${k.leave}</div></div>
-    <div class="stat"><div class="lab">วันหยุดวันนี้ (ตามตารางกะ)</div><div class="val mono">${k.off}</div></div>
-    <div class="stat gap"><div class="lab">ยังไม่เช็ก</div><div class="val mono">${k.unchecked}</div></div>
+    <div class="stat hero boardbox ${filter==='all'?'sel':''}" data-f="all" title="กดเพื่อดูทั้งหมด"><div class="lab">สรุปการมาทำงาน</div><div class="val mono">${k.actual}/${k.scheduled}</div><div class="bar" style="width:${k.scheduled?Math.min(100,k.actual/k.scheduled*100):0}%"></div></div>
+    ${bx('present','go','มา (ปกติ)',k.present)}
+    ${bx('late','ot','มาสาย',k.late)}
+    ${bx('ot','ot','มา OT (วันหยุด)',k.ot)}
+    ${bx('absent','miss','ขาด',k.absent)}
+    ${bx('leave','lv','ลา',k.leave)}
+    ${bx('off','','วันหยุดวันนี้ (ตามตารางกะ)',k.off)}
+    ${bx('incomplete','gap','ยังไม่เช็ก',k.unchecked)}
   </section>`;
 }
 
@@ -427,6 +532,7 @@ function renderRoster(){
       <button class="pill ${filter==='work'?'active':''}" data-f="work">ต้องมาทำงาน</button>
       <button class="pill ${filter==='off'?'active':''}" data-f="off">วันหยุด</button>
       <button class="pill ${filter==='incomplete'?'active':''}" data-f="incomplete">ยังไม่เช็ก</button>
+      ${STATUS_FILTERS[filter]?'<button class="btn" data-f="all">✕ ล้างตัวกรอง</button>':''}
       <button class="btn" id="editBtn">✎ แก้ไขรายชื่อ/เบอร์รถ</button>
       <button class="btn" id="importBtn">⬆ อัปโหลดตารางกะใหม่</button>
       <button class="btn" id="csvBtn">⬇ ส่งออก Excel</button>
@@ -456,6 +562,7 @@ function rollCallTable(){
     if(filter==='work'&&off)return false;
     if(filter==='off'&&!off)return false;
     if(filter==='incomplete'){const cur=attOf(r.t.truckNo)[r.d.pos]||'';if(off||cur)return false;}
+    if(STATUS_FILTERS[filter]){const cur=attOf(r.t.truckNo)[r.d.pos]||'';if(cur!==filter)return false;}
     if(search){const q=search.toLowerCase();if(!((r.t.truckNo+' '+r.t.routeGroup+' '+r.d.name).toLowerCase().includes(q)))return false;}
     return true;
   });
@@ -481,7 +588,7 @@ function rollRow(r){
   let statusCell;
   if(off&&cur!=='ot')statusCell=`<span class="offbadge">วันหยุด (${esc(d.dayOff)})</span> <button class="otbtn" data-ot="${esc(t.truckNo)}" data-pos="${d.pos}">＋ มาทำ OT</button>`;
   else if(off&&cur==='ot')statusCell=`<span class="otyes">✓ มา OT</span><button class="otbtn" data-ot="${esc(t.truckNo)}" data-pos="${d.pos}">ยกเลิก</button>`;
-  else statusCell=`<div class="stbtns">${[['present','มา'],['absent','ขาด'],['leave','ลา']].map(([v,l])=>`<button class="st ${v}${cur===v?' sel':''}" data-att="${esc(t.truckNo)}" data-pos="${d.pos}" data-val="${v}">${l}</button>`).join('')}</div>`;
+  else statusCell=`<div class="stbtns">${[['present','มา'],['late','สาย'],['absent','ขาด'],['leave','ลา']].map(([v,l])=>`<button class="st ${v}${cur===v?' sel':''}" data-att="${esc(t.truckNo)}" data-pos="${d.pos}" data-val="${v}">${l}</button>`).join('')}</div>`;
   return `<tr>
     <td class="mono" style="font-weight:600">${startLabel(d.shift)}</td>
     <td class="truck"><span class="plate">${esc(t.truckNo)}</span><div class="cno">${esc(t.routeGroup)}</div></td>
@@ -489,7 +596,9 @@ function rollRow(r){
     <td><div class="drv">${esc(d.name)}</div><div class="cno">${d.code?('รหัส '+esc(d.code)):''}${(d.code&&d.phone)?' · ':''}${d.phone?esc(d.phone):''}</div></td>
     <td>${statusCell}</td>
     <td><span class="hhmm"><select class="arrsel" data-arrive="${esc(t.truckNo)}" data-pos="${d.pos}" data-part="h">${hOpts}</select><b>:</b><select class="arrsel" data-arrive="${esc(t.truckNo)}" data-pos="${d.pos}" data-part="m">${mOpts}</select><span class="cno">น.</span></span></td>
-    <td><button class="planlink" data-plan="${esc(t.truckNo)}" data-pos="${d.pos}">จ่ายแผน →</button></td>
+    <td>${(cur==='absent'||cur==='leave')
+      ? '<span class="cno">— จ่ายแผนไม่ได้ ('+(cur==='absent'?'ขาด':'ลา')+')</span>'
+      : '<button class="planlink" data-plan="'+esc(t.truckNo)+'" data-pos="'+d.pos+'">จ่ายแผน →</button>'}</td>
   </tr>`;
 }
 
@@ -523,6 +632,18 @@ function editorTable(){
 }
 
 /* ---------- TAB 2: dispatch summary table + popup form ---------- */
+/* เวลามาจริง = ค่าที่ CC คีย์ไว้ในหน้า 1 (day.arrive[เบอร์รถ][กะ]) */
+function jobArrive(j){
+  const no=j.mainTruck||j.truck||'';
+  const a=(day.arrive&&day.arrive[no])||{};
+  return a[j.shift]||'';
+}
+function arriveCell(j){
+  const v=jobArrive(j);
+  return v
+    ? '<td class="mono" style="white-space:nowrap">'+esc(v)+' <span class="cno">\u0e19.</span></td>'
+    : '<td style="text-align:center"><span class="cno" title="\u0e22\u0e31\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e04\u0e35\u0e22\u0e4c\u0e40\u0e27\u0e25\u0e32\u0e21\u0e32\u0e08\u0e23\u0e34\u0e07\u0e17\u0e35\u0e48\u0e2b\u0e19\u0e49\u0e32 1">\u2014</span></td>';
+}
 function renderDispatch(){
   const rows=day.jobs.map((j,i)=>`<tr>
     <td class="mono">${esc(j.date||curDate)}</td>
@@ -536,7 +657,8 @@ function renderDispatch(){
     <td><input class="actualin" data-actual="${j.id}" value="${esc(j.actualTruck||j.mainTruck||j.truck||'')}"></td>
     <td class="mono" style="text-align:center">${esc(j.trip||'')}</td>
     <td><span class="jtype ${j.type}">${j.type==='main'?'สายหลัก':'VT'}</span></td>
-    <td><input type="time" class="departin" data-depart="${j.id}" value="${esc(j.depart||'')}" step="60"></td>
+    ${arriveCell(j)}
+    <td>${hmField(j.depart,'data-depart="'+j.id+'"','departin')}</td>
     <td><input class="noteinp" data-note="${j.id}" value="${esc(j.note||'')}" placeholder="หมายเหตุ…"></td>
     <td class="cno">${esc(j.by||'')}</td>
     <td><button class="del" data-deljob="${j.id}">✕</button></td>
@@ -548,11 +670,11 @@ function renderDispatch(){
       <div style="flex:1"></div>
       <button class="btn" id="csvBtn">⬇ ส่งออก Excel</button>
     </div>
-    <div class="tablewrap scroll"><table style="min-width:1260px">
+    <div class="tablewrap scroll"><table style="min-width:1360px">
       <thead><tr>
-        <th>วันที่</th><th>ลำดับ</th><th>ชื่อสินค้า</th><th>ต้นทาง</th><th>ปลายทาง</th><th>รหัส พนง.</th><th>ชื่อ พนง.</th><th>เบอร์รถหลัก</th><th>เบอร์รถที่วิ่งจริง</th><th>เที่ยว</th><th>ประเภทงาน</th><th>เวลาออก</th><th>หมายเหตุ</th><th>ผู้บันทึก (CC)</th><th></th>
+        <th>วันที่</th><th>ลำดับ</th><th>ชื่อสินค้า</th><th>ต้นทาง</th><th>ปลายทาง</th><th>รหัส พจส.</th><th>ชื่อ พจส.</th><th>เบอร์รถหลัก</th><th>เบอร์รถที่วิ่งจริง</th><th>เที่ยว</th><th>ประเภทงาน</th><th>เวลามาจริง</th><th>เวลาออก</th><th>หมายเหตุ</th><th>ผู้บันทึก (CC)</th><th></th>
       </tr></thead>
-      <tbody>${rows||'<tr><td colspan="15" class="empty-note">ยังไม่มีงานที่จ่าย — กด “จ่ายแผน” จากแท็บ 1 หรือปุ่ม “จ่ายงานใหม่”</td></tr>'}</tbody>
+      <tbody>${rows||'<tr><td colspan="16" class="empty-note">ยังไม่มีงานที่จ่าย — กด “จ่ายแผน” จากแท็บ 1 หรือปุ่ม “จ่ายงานใหม่”</td></tr>'}</tbody>
     </table></div>`;
 }
 function dispatchFormHTML(){
@@ -566,7 +688,7 @@ function dispatchFormHTML(){
       <div class="field"><label>วันที่</label><input id="j_date" value="${curDate}" readonly></div>
       <div class="field"><label>เบอร์รถหลัก (ตามตารางกะ)</label><select id="j_truck">${truckOpts}</select></div>
       <div class="field"><label>กะ / คนขับ</label><select id="j_shift"></select></div>
-      <div class="field"><label>รหัส / ชื่อ พนักงาน</label><input id="j_drvinfo" readonly></div>
+      <div class="field"><label>รหัส / ชื่อ พจส.</label><input id="j_drvinfo" readonly></div>
       <div class="field"><label>สินค้า / เส้นทาง</label><select id="j_route">${routeOpts}</select></div>
       <div class="field" id="j_route_custom_wrap" style="display:none"><label>ระบุสินค้าเอง</label><input id="j_route_custom"></div>
       <div class="field"><label>ต้นทาง</label><select id="j_origin">${oOpts}</select></div>
@@ -616,7 +738,7 @@ async function doLogin(){
   adminName=v;lsSet('fleet:admin',adminName);
   backendURL=url;lsSet('fleet:backend',backendURL);
   updateAdminChip();closeModal();
-  flag('saving');await loadConfig();await loadDay();flag('ok');render();startPoll();if(tab==='roster')scrollToCurrentHour();
+  flag('saving');await loadConfig();await loadDay();flag('ok');render();startPoll();startAlarms();if(tab==='roster')scrollToCurrentHour();
 }
 function stampBy(){day.by=adminName;}
 function syncActual(){const a=document.getElementById('j_actual');if(a&&!a.dataset.touched)a.value=document.getElementById('j_truck').value;}
@@ -680,29 +802,136 @@ function jobStatus(j){
   if(j.depart)return['run','b-run','ออกวิ่ง'];
   return['wait','b-wait','รอออก'];
 }
+/* --- กฎเวลาเดินทาง: สายหลัก 3 ชม. / สายรอง หรือ <=100 กม. 1 ชม. --- */
+const CHARGER_COUNT = 3;                 /* จำนวนตู้ชาร์จต่อต้นทาง */
+function travelMin(j){
+  const km = parseFloat(j.distance);
+  if(!isNaN(km) && km <= 100) return 60;
+  if(j.type === 'vt') return 60;
+  return 180;
+}
+function addMin(hm, mins){
+  if(!hm) return null;
+  const p = String(hm).split(':'), h = Number(p[0]), m = Number(p[1]);
+  if(isNaN(h) || isNaN(m)) return null;
+  const t = h*60 + m + mins;
+  return { hm: String(Math.floor((t%1440)/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'),
+           nextDay: t >= 1440 };
+}
+function hm2min(hm){
+  if(!hm) return null;
+  const p = String(hm).split(':'), h = Number(p[0]), m = Number(p[1]);
+  return (isNaN(h)||isNaN(m)) ? null : h*60+m;
+}
+/* สถานะจากเวลาคาดการณ์เทียบเวลาปัจจุบัน */
+function runStatus(j){
+  if(j.closed) return ['closed','b-done','ปิดงานแล้ว'];
+  if(j.ret)    return ['back','b-charged','กลับถึงแล้ว'];
+  const dm = hm2min(j.depart);
+  if(dm === null) return ['wait','b-wait','รอออก'];
+  const now = hm2min(nowHM());
+  const elapsed = (now >= dm) ? (now - dm) : (now + 1440 - dm);
+  return elapsed < travelMin(j) ? ['run','b-run','กำลังเดินทาง'] : ['done','b-run','ถึงต้นทางแล้ว'];
+}
+/* รวมเวลาทำงาน: เวลาออก -> เวลาปิดงาน (ข้ามเที่ยงคืนได้) */
+function workHours(j){
+  const m = minutesBetween(j.depart, j.closed);
+  return (m === null) ? '' : Math.round(m/60*10)/10;
+}
+/* รวมเวลาทำงานแบบสะสมทีละขั้นตอน: ออก -> ชาร์จ -> กลับ -> ปิดงาน
+   บวกช่วงเวลาของแต่ละขั้นที่คีย์ไว้แล้วต่อกันไป (ข้ามเที่ยงคืนได้) */
+const STEP_POINTS=[['ออก','depart'],['ชาร์จ','chargeStart'],['กลับ','ret'],['ปิดงาน','closed']];
+function workBreakdown(j){
+  const out={total:0,parts:[],closed:!!j.closed,started:!!j.depart,upto:''};
+  if(!j.depart)return out;
+  const pts=STEP_POINTS.filter(p=>j[p[1]]);
+  let mins=0;
+  for(let i=1;i<pts.length;i++){
+    const m=minutesBetween(j[pts[i-1][1]],j[pts[i][1]]);
+    if(m===null)continue;
+    mins+=m;
+    out.parts.push({label:pts[i-1][0]+'→'+pts[i][0],h:Math.round(m/60*10)/10});
+  }
+  out.total=Math.round(mins/60*10)/10;
+  out.upto=pts.length?pts[pts.length-1][0]:'';
+  return out;
+}
+/* ค่าที่ใช้ในไฟล์ Excel: ให้ตรงกับที่แสดงบนหน้าจอ */
+function workHoursText(j){
+  const b=workBreakdown(j);
+  if(!b.started)return 'รอออก';
+  if(!b.parts.length)return 'กำลังเดินทาง';
+  return b.closed ? b.total : (b.total+' (กำลังเดินทาง)');
+}
+/* คิวชาร์จ: นับต่อเนื่องภายในต้นทางเดียวกัน วนกลับที่ตู้ 1 เมื่อครบ 3 ตู้ */
+function chargerPlan(jobs){
+  const used = {}, out = {};
+  jobs.forEach(j=>{
+    const key = (j.origin||'(ไม่ระบุต้นทาง)').trim();
+    used[key] = (used[key]||0) + 1;
+    out[j.id] = { no: ((used[key]-1) % CHARGER_COUNT) + 1, seq: used[key], origin: key };
+  });
+  return out;
+}
+
 function renderBoard(){
-  const jobs=day.jobs;
-  const cnt={run:0,charge:0,charged:0,done:0};
-  jobs.forEach(j=>{const k=jobStatus(j)[0];if(cnt[k]!==undefined)cnt[k]++;});
-  const box=(bf,lab,n,cls)=>`<div class="stat boardbox ${cls} ${boardFilter===bf?'sel':''}" data-bf="${bf}"><div class="lab">${lab}</div><div class="val mono">${n}</div></div>`;
-  const stamp=(j,f)=>`<div class="stampcell"><input type="time" step="60" value="${esc(j[f]||'')}" data-job="${j.id}" data-field="${f}"><button data-stampnow="${j.id}" data-field="${f}">จับเวลา</button></div>`;
-  const shown=jobs.filter(j=>boardFilter==='all'||jobStatus(j)[0]===boardFilter);
-  const rows=shown.map(j=>{const[k,c,l]=jobStatus(j);return `<tr>
-    <td class="truck"><div class="plate">${esc(j.actualTruck||j.truck)} <span class="jtype ${j.type}">${j.type==='main'?'สายหลัก':'VT'}</span></div><div class="cno">${esc(j.product||'')} · ${esc(j.driver||'')}${j.trip?(' · เที่ยว '+esc(j.trip)):''}</div></td>
-    <td>${stamp(j,'depart')}</td><td>${stamp(j,'chargeStart')}</td><td>${stamp(j,'chargeEnd')}</td><td>${stamp(j,'ret')}</td>
-    <td><span class="badge ${c}">${l}</span></td></tr>`;}).join('');
+  const jobs = day.jobs;
+  const plan = chargerPlan(jobs);
+  const cnt = { wait:0, run:0, done:0, back:0, closed:0 };
+  jobs.forEach(j=>{ cnt[runStatus(j)[0]]++; });
+
+  const box = (bf,lab,n,cls)=>`<div class="stat boardbox ${cls} ${boardFilter===bf?'sel':''}" data-bf="${bf}"><div class="lab">${lab}</div><div class="val mono">${n}</div></div>`;
+  /* ช่องเวลาที่ CC กดเองได้ + ปุ่มจับเวลาปัจจุบัน */
+  const stamp = (j,f)=>`<div class="stampcell">${hmField(j[f],'data-job="'+j.id+'" data-field="'+f+'"')}<button data-stampnow="${j.id}" data-field="${f}">จับเวลา</button></div>`;
+  const shown = jobs.filter(j=>boardFilter==='all'||runStatus(j)[0]===boardFilter);
+
+  const rows = shown.map(j=>{
+    const idx = jobs.indexOf(j)+1;
+    const [k,c,l] = runStatus(j);
+    const tm = travelMin(j);
+    const eta = addMin(j.depart, tm);
+    const p = plan[j.id] || {};
+    const wb = workBreakdown(j);
+    const etaCell = eta
+      ? `<div class="mono" style="font-weight:600">${esc(eta.hm)} <span class="cno">น.</span>${eta.nextDay?' <span class="tag">+1 วัน</span>':''}</div>
+         <div class="cno">${esc(j.origin||'-')} · ใช้เวลา ${tm/60} ชม.</div>`
+      : `<div style="text-align:center"><span class="cno">— ยังไม่ใส่เวลาออก</span></div>`;
+    return `<tr>
+      <td class="mono" style="text-align:center">${idx}</td>
+      <td class="mono">${esc(j.date||curDate)}</td>
+      <td><div>${esc(j.driver||'-')}</div><div class="cno">${esc(j.product||'')}${j.trip?(' · เที่ยว '+esc(j.trip)):''}</div></td>
+      <td class="truck"><span class="plate">${esc(j.actualTruck||j.mainTruck||j.truck||'')}</span> <span class="jtype ${j.type}">${j.type==='main'?'สายหลัก':'VT'}</span></td>
+      <td class="mono">${j.depart?esc(j.depart)+' <span class="cno">น.</span>':'<span class="cno">—</span>'}</td>
+      <td>${etaCell}</td>
+      <td><span class="badge ${c}">${l}</span></td>
+      <td><span class="otyes" style="background:var(--n-bg);color:var(--n);border-color:#c3cbe4">ตู้ ${p.no||'-'}</span>${p.seq>CHARGER_COUNT?`<div class="cno">คิวที่ ${p.seq} · รอบ ${Math.ceil(p.seq/CHARGER_COUNT)}</div>`:''}</td>
+      <td>${stamp(j,'chargeStart')}</td>
+      <td>${stamp(j,'ret')}</td>
+      <td>${stamp(j,'closed')}</td>
+      <td style="text-align:center">${
+        !wb.started ? '<span class="badge b-wait">รอออก</span>'
+        : !wb.parts.length ? '<span class="badge b-run">กำลังเดินทาง</span>'
+        : '<span class="mono"><b style="font-size:15px">'+wb.total+'</b> <span class="cno">ชม.</span></span>'
+          +(wb.closed?'':' <span class="tag">ถึง'+esc(wb.upto)+'</span>')
+          +'<div class="cno" style="margin-top:3px;line-height:1.4">'+wb.parts.map(p=>esc(p.label)+' '+p.h).join(' · ')+'</div>'
+      }</td>
+    </tr>`;
+  }).join('');
+
   document.getElementById('view').innerHTML=`
-    <section class="summary" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
-      ${box('run','รถออกวิ่ง',cnt.run,'go')}
-      ${box('charge','กำลังชาร์จ',cnt.charge,'chg')}
-      ${box('charged','ชาร์จเสร็จ',cnt.charged,'chd')}
-      ${box('done','กลับถึงแล้ว',cnt.done,'dn')}
+    <section class="summary" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      <div class="stat hero"><div class="lab">งานที่จ่ายวันนี้</div><div class="val mono">${jobs.length}</div></div>
+      ${box('wait','รอออก',cnt.wait,'')}
+      ${box('run','กำลังเดินทาง',cnt.run+cnt.done,'go')}
+      ${box('back','กลับถึงแล้ว',cnt.back,'chd')}
+      ${box('closed','ปิดงานแล้ว',cnt.closed,'dn')}
     </section>
-    <div class="toolbar"><span class="cno">กดกล่องด้านบนเพื่อกรองดูเฉพาะสถานะนั้น (กดซ้ำเพื่อดูทั้งหมด) · กด “จับเวลา” เพื่อบันทึกเวลาปัจจุบัน หรือแก้เวลาเองได้</span>
+    <div class="hint">เวลาถึงต้นทางเป็น <b>ค่าคาดการณ์</b> จากเวลาออกในหน้า 2 (สายหลัก +3 ชม. · สายรอง/ไม่เกิน 100 กม. +1 ชม.) · <b>เวลาชาร์จ / เวลากลับ / เวลาปิดงาน</b> ให้ CC กดปุ่ม “จับเวลา” หรือแก้เวลาเอง · รวมเวลาทำงาน = เวลาออก → เวลาปิดงาน</div>
+    <div class="toolbar"><span class="cno">กดกล่องด้านบนเพื่อกรองเฉพาะสถานะนั้น (กดซ้ำเพื่อดูทั้งหมด) · แก้เวลาออกได้ที่หน้า 2</span>
       ${boardFilter!=='all'?'<button class="btn" id="clearBf">✕ ล้างตัวกรอง</button>':''}</div>
-    <div class="tablewrap scroll"><table style="min-width:900px">
-      <thead><tr><th>รถ / งาน</th><th>ออกวิ่ง</th><th>เริ่มชาร์จ</th><th>ชาร์จเสร็จ</th><th>กลับถึง</th><th>สถานะ</th></tr></thead>
-      <tbody>${shown.length?rows:'<tr><td colspan="6" class="empty-note">'+(jobs.length?'ไม่มีงานในสถานะนี้':'ยังไม่มีงานที่จ่าย — ไปที่แท็บ 2 เพื่อจ่ายงาน')+'</td></tr>'}</tbody>
+    <div class="tablewrap scroll"><table style="min-width:1420px">
+      <thead><tr><th>ลำดับ</th><th>วันที่</th><th>ชื่อ พจส.</th><th>เบอร์รถ</th><th>เวลาออก</th><th>เวลาถึงต้นทาง (คาดการณ์)</th><th>สถานะ</th><th>แผนชาร์จ</th><th>เวลาชาร์จ</th><th>เวลากลับ</th><th>เวลาปิดงาน</th><th>รวมเวลาทำงาน</th></tr></thead>
+      <tbody>${shown.length?rows:'<tr><td colspan="12" class="empty-note">'+(jobs.length?'ไม่มีงานในสถานะนี้':'ยังไม่มีงานที่จ่าย — ไปที่หน้า 2 เพื่อจ่ายงาน')+'</td></tr>'}</tbody>
     </table></div>`;
 }
 
@@ -732,7 +961,7 @@ function renderPlan(){
         <div class="field"><label>HUB</label><select id="s_hub">${hubOpts}</select></div>
         <div class="field"><label>จำนวนรถที่ต้องชาร์จ</label><input id="s_n" class="mono" inputmode="numeric" value="6"></div>
         <div class="field"><label>ชาร์จถึง % </label><input id="s_pct" class="mono" inputmode="numeric" value="100"></div>
-        <div class="field"><label>เวลาเริ่มชาร์จ</label><input type="time" id="s_start" value="${nowHM()}"></div>
+        <div class="field"><label>เวลาเริ่มชาร์จ (24 ชม.)</label>${hmField(nowHM(),'id="s_start"')}</div>
       </div>
       <div class="formactions"><button class="btn primary" id="simBtn">คำนวณคิว →</button><span class="cno">ชาร์จเต็ม 100% ≈ วิ่งได้ ${RANGE_KM} กม.</span></div>
       <div id="simResult"></div>
@@ -747,7 +976,7 @@ function runSim(){
   const h=HUBDATA[+g('s_hub').value];const n=Math.max(1,parseInt(g('s_n').value)||1);
   const pct=Math.min(100,Math.max(1,parseInt(g('s_pct').value)||100));
   const chargeMin=Math.round(h.fullMin*pct/100);
-  const start=g('s_start').value||nowHM();
+  const sv=normHM(g('s_start').value);const start=(sv===null||sv==='')?nowHM():sv;
   const [sh,sm]=start.split(':').map(Number);const startMin=sh*60+sm;
   const waves=Math.ceil(n/h.chargers);let rows='';let rem=n;
   const fmt=m=>{m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
@@ -759,37 +988,379 @@ function runSim(){
 
 /* ---------- TAB 5: summary ---------- */
 function minutesBetween(a,b){if(!a||!b)return null;const[ah,am]=a.split(':').map(Number);let[bh,bm]=b.split(':').map(Number);let x=ah*60+am,y=bh*60+bm;if(y<x)y+=1440;return y-x;}
-function renderSummary(){
-  const k=kpis();
-  const perTruck={},perDriver={};
-  for(const j of day.jobs){
-    perTruck[j.truck]=perTruck[j.truck]||{main:0,vt:0,mins:[]};
-    if(j.type==='vt')perTruck[j.truck].vt++;else perTruck[j.truck].main++;
-    const mm=minutesBetween(j.depart,j.ret);if(mm!=null)perTruck[j.truck].mins.push(mm);
-    const dn=j.driver||'(ไม่ระบุ)';perDriver[dn]=perDriver[dn]||{trips:0,jobs:[],mins:0};
-    perDriver[dn].trips++;perDriver[dn].jobs.push((j.jobName||j.route));if(mm!=null)perDriver[dn].mins+=mm;
+/* ===== ตารางที่ 1: คนมาทำงานเทียบแผน รายชั่วโมง (00:00 -> ชั่วโมงปัจจุบัน +1) ===== */
+function hourlyAttend(){
+  const b = {};
+  const mk = h => (b[h] = b[h] || {plan:0,present:0,ot:0,late:0,absent:0,leave:0,unchecked:0,off:0});
+  for(const t of config){
+    for(const d of (t.drivers||[])){
+      const sm = parseStart(d.shift);
+      if(sm === null) continue;
+      const row = mk(Math.floor(sm/60));
+      const v = attOf(t.truckNo)[d.pos] || '';
+      if(isOff(t,d,curDate)){ row.off++; if(v==='ot') row.ot++; continue; }
+      row.plan++;
+      if(v==='present') row.present++;
+      else if(v==='late') { row.present++; row.late++; }
+      else if(v==='ot') { row.present++; row.ot++; }
+      else if(v==='absent') row.absent++;
+      else if(v==='leave') row.leave++;
+      else row.unchecked++;
+    }
   }
-  const truckRows=config.filter(t=>perTruck[t.truckNo]).map(t=>{const p=perTruck[t.truckNo];const avg=p.mins.length?Math.round(p.mins.reduce((a,b)=>a+b,0)/p.mins.length):null;const hit=p.main>=3;return `<tr><td class="plate">${esc(t.truckNo)}</td><td>${esc(t.routeGroup)}</td><td class="mono">${p.main} <span class="cno">/3</span> ${hit?'✅':''}</td><td class="mono">${p.vt}</td><td class="mono">${avg!=null?avg+' นาที':'-'}</td></tr>`;}).join('');
-  const drvRows=Object.entries(perDriver).sort((a,b)=>b[1].trips-a[1].trips).map(([n,p])=>`<tr><td>${esc(n)}</td><td class="mono">${p.trips}</td><td class="cno">${esc(p.jobs.join(', '))}</td><td class="mono">${p.mins?Math.round(p.mins/60*10)/10+' ชม.':'-'}</td></tr>`).join('');
-  const mainTotal=Object.values(perTruck).reduce((a,b)=>a+b.main,0);
-  const vtTotal=Object.values(perTruck).reduce((a,b)=>a+b.vt,0);
+  return b;
+}
+function tableAttend(){
+  const b = hourlyAttend();
+  const nowH = new Date().getHours();
+  const lastH = Math.min(23, nowH + 1);          /* แสดงแผนล่วงหน้า 1 ชม. */
+  let cp = 0, ca = 0, rows = '';
+  for(let h = 0; h <= lastH; h++){
+    const r = b[h] || {plan:0,present:0,ot:0,late:0,absent:0,leave:0,unchecked:0,off:0};
+    const ahead = h > nowH;
+    const actual = r.present;
+    if(!ahead){ cp += r.plan; ca += actual; }
+    const diff = ca - cp;
+    const hl = String(h).padStart(2,'0') + ':00';
+    const cls = ahead ? 'aheadrow' : (h===nowH ? 'nowrow' : '');
+    rows += `<tr class="${cls}">
+      <td class="mono" style="font-weight:600">${hl}${h===nowH?' <span class="tag">ชม.นี้</span>':''}${ahead?' <span class="tag" style="background:var(--m-bg);color:var(--off)">ล่วงหน้า</span>':''}</td>
+      <td class="mono" style="text-align:center">${r.plan||'-'}</td>
+      <td class="mono" style="text-align:center">${ahead?'<span class="cno">—</span>':(actual||'-')}${(!ahead&&r.ot)?` <span class="otyes">+${r.ot} OT</span>`:''}</td>
+      <td class="mono" style="text-align:center;color:#b57608">${ahead?'':(r.late||'-')}</td>
+      <td class="mono" style="text-align:center;color:var(--absent)">${ahead?'':(r.absent||'-')}</td>
+      <td class="mono" style="text-align:center;color:var(--leave)">${ahead?'':(r.leave||'-')}</td>
+      <td class="mono" style="text-align:center">${ahead?'':(r.unchecked?('<b style="color:var(--accent)">'+r.unchecked+'</b>'):'-')}</td>
+      <td class="mono" style="text-align:center">${r.off||'-'}</td>
+      <td class="mono" style="text-align:center">${ahead?'':cp}</td>
+      <td class="mono" style="text-align:center">${ahead?'':ca}</td>
+      <td class="mono" style="text-align:center;font-weight:600;color:${diff<0?'var(--absent)':'var(--present)'}">${ahead?'':(diff>0?'+':'')+diff}</td>
+    </tr>`;
+  }
+  return `<div class="card"><h2>1 · พจส. มาทำงานเทียบแผน รายชั่วโมง</h2>
+    <div class="hint">แผนมาจากเวลาเข้ากะในตารางกะ (ไม่นับวันหยุด) · มาจริงมาจากการเช็กในหน้า 1 · แถวเหลืองคือแผนล่วงหน้า 1 ชม. ยังไม่ถึงเวลา · <b>ตารางแสดง 5 บรรทัด เลื่อนขึ้นดูชั่วโมงก่อนหน้าได้</b> (ระบบเลื่อนมาที่ชั่วโมงปัจจุบันให้แล้ว)</div>
+    <div class="tablewrap sbox5" id="t1box"><table style="min-width:820px"><thead><tr>
+      <th>เวลาเข้ากะ</th><th style="text-align:center">แผน (คน)</th><th style="text-align:center">มาจริง</th>
+      <th style="text-align:center">สาย</th><th style="text-align:center">ขาด</th><th style="text-align:center">ลา</th><th style="text-align:center">ยังไม่เช็ก</th>
+      <th style="text-align:center">วันหยุด</th><th style="text-align:center">แผนสะสม</th><th style="text-align:center">มาจริงสะสม</th><th style="text-align:center">ผลต่าง</th>
+    </tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+
+/* ===== ตารางที่ 2: งานหลักรายสินค้า / งานรอง เทียบแผนที่ CC กรอก ===== */
+function tablePlanVsActual(){
+  const actMain = {}, prods = [];
+  ROUTEDATA.forEach(r=>{ if(r.type==='main' && r.product && prods.indexOf(r.product)<0) prods.push(r.product); });
+  let vtAct = 0;
+  for(const j of day.jobs){
+    if(j.type === 'vt'){ vtAct++; continue; }
+    const p = j.product || '(ไม่ระบุสินค้า)';
+    if(prods.indexOf(p) < 0) prods.push(p);
+    actMain[p] = (actMain[p]||0) + 1;
+  }
+  const pv = k => { const v = day.plan[k]; return (v===undefined||v===null||v==='') ? '' : v; };
+  let sumPlan = 0, sumAct = 0, rows = '';
+  prods.forEach(p=>{
+    const plan = Number(pv(p)) || 0, act = actMain[p] || 0;
+    sumPlan += plan; sumAct += act;
+    if(!sumProdOpen) return;                       /* ยุบอยู่: ยังรวมยอด แต่ไม่วาดแถว */
+    const diff = act - plan;
+    const pct = plan ? Math.round(act/plan*100) : null;
+    rows += `<tr>
+      <td>${esc(p)}</td>
+      <td style="text-align:center"><input class="planin mono" inputmode="numeric" data-planprod="${esc(p)}" value="${esc(pv(p))}" placeholder="-"></td>
+      <td class="mono" style="text-align:center;font-weight:600">${act}</td>
+      <td class="mono" style="text-align:center;color:${diff<0?'var(--absent)':'var(--present)'}">${plan||act?((diff>0?'+':'')+diff):'-'}</td>
+      <td class="mono" style="text-align:center">${pct!==null?(pct+'%'):'<span class="cno">-</span>'}</td>
+    </tr>`;
+  });
+  const vtPlan = Number(pv('__vt')) || 0, vtDiff = vtAct - vtPlan;
+  return `<div class="card">
+    <div class="cardhead"><h2>2 · ปริมาณงานเทียบแผน (แยกรายสินค้า เฉพาะงานหลัก)</h2>
+      <button class="btn mini" id="toggleProd">${sumProdOpen?('▲ ยุบรายสินค้า ('+prods.length+')'):('▼ แสดงรายสินค้า ('+prods.length+' รายการ)')}</button></div>
+    <div class="hint">${sumProdOpen?'กรอกแผนงานประจำวันในช่องสีเหลือง ระบบบันทึกให้อัตโนมัติและแชร์ให้ CC ทุกเครื่องเห็น · วิ่งจริงนับจากงานที่จ่ายในหน้า 2':'<b>ยุบรายสินค้าอยู่</b> — กด “แสดงรายสินค้า” เพื่อกรอกหรือแก้แผนแต่ละสินค้า (ยอดรวมด้านล่างยังคิดจากแผนที่กรอกไว้ครบทุกสินค้า)'}</div>
+    <div class="tablewrap sbox"><table style="min-width:640px"><thead><tr>
+      <th>สินค้า (งานหลัก)</th><th style="text-align:center">แผน (เที่ยว)</th><th style="text-align:center">วิ่งจริง</th><th style="text-align:center">ผลต่าง</th><th style="text-align:center">% ของแผน</th>
+    </tr></thead><tbody>${rows}
+      <tr style="background:#f7f9fc"><td style="font-weight:600">รวมงานหลัก</td>
+        <td class="mono" style="text-align:center;font-weight:600">${sumPlan||'-'}</td>
+        <td class="mono" style="text-align:center;font-weight:600">${sumAct}</td>
+        <td class="mono" style="text-align:center;font-weight:600;color:${sumAct-sumPlan<0?'var(--absent)':'var(--present)'}">${(sumAct-sumPlan>0?'+':'')+(sumAct-sumPlan)}</td>
+        <td class="mono" style="text-align:center;font-weight:600">${sumPlan?Math.round(sumAct/sumPlan*100)+'%':'-'}</td></tr>
+      <tr><td><span class="jtype vt">งานรอง (VT)</span> รวมทุกสินค้า</td>
+        <td style="text-align:center"><input class="planin mono" inputmode="numeric" data-planprod="__vt" value="${esc(pv('__vt'))}" placeholder="-"></td>
+        <td class="mono" style="text-align:center;font-weight:600">${vtAct}</td>
+        <td class="mono" style="text-align:center;color:${vtDiff<0?'var(--absent)':'var(--present)'}">${vtPlan||vtAct?((vtDiff>0?'+':'')+vtDiff):'-'}</td>
+        <td class="mono" style="text-align:center">${vtPlan?Math.round(vtAct/vtPlan*100)+'%':'<span class="cno">-</span>'}</td></tr>
+      <tr style="background:var(--nav);color:#fff">
+        <td style="font-weight:600;color:#fff">รวมทั้งหมด (งานหลัก + งานรอง)</td>
+        <td class="mono" style="text-align:center;font-weight:600">${(sumPlan+vtPlan)||'-'}</td>
+        <td class="mono" style="text-align:center;font-weight:600;font-size:15px">${sumAct+vtAct}</td>
+        <td class="mono" style="text-align:center;font-weight:600;color:${(sumAct+vtAct)-(sumPlan+vtPlan)<0?'#ffb3aa':'#7fd6a8'}">${((sumAct+vtAct)-(sumPlan+vtPlan)>0?'+':'')+((sumAct+vtAct)-(sumPlan+vtPlan))}</td>
+        <td class="mono" style="text-align:center;font-weight:600">${(sumPlan+vtPlan)?Math.round((sumAct+vtAct)/(sumPlan+vtPlan)*100)+'%':'-'}</td></tr>
+    </tbody></table></div></div>`;
+}
+
+/* ===== ตารางที่ 3: เวลาการทำงานต่อเที่ยว (เกณฑ์ 8 ชม.) ===== */
+function tableWorkTime(){
+  let le = 0, gt = 0, run = 0, sum = 0, cnt = 0;
+  const over = [];
+  for(const j of day.jobs){
+    const b = workBreakdown(j);
+    if(!b.started) continue;
+    if(!b.closed){ run++; continue; }
+    cnt++; sum += b.total;
+    if(b.total > 8){ gt++; over.push(j); } else le++;
+  }
+  const avg = cnt ? Math.round(sum/cnt*10)/10 : null;
+  const bar = (n,total,c)=>`<div style="background:#eef1f5;border-radius:20px;height:8px;overflow:hidden"><div style="width:${total?Math.round(n/total*100):0}%;height:100%;background:${c}"></div></div>`;
+  const overList = over.length
+    ? '<div class="cno" style="margin-top:10px">เที่ยวที่เกิน 8 ชม.: '
+      + over.map(j=>esc((j.actualTruck||j.mainTruck||j.truck)+' '+(j.driver||'')+' ('+workBreakdown(j).total+' ชม.)')).join(' · ') + '</div>'
+    : '';
+  return `<div class="card"><h2>3 · เวลาการทำงานต่อเที่ยว (เกณฑ์ 8 ชม./กะ)</h2>
+    <div class="hint">นับจากเที่ยวที่ปิดงานแล้วเท่านั้น · เวลาต่อเที่ยว = เวลาออก → เวลาปิดงาน (จากหน้า 3)</div>
+    <div class="tablewrap sbox"><table style="min-width:560px"><thead><tr>
+      <th>เกณฑ์</th><th style="text-align:center">จำนวนเที่ยว</th><th style="text-align:center">สัดส่วน</th><th style="width:180px">กราฟ</th>
+    </tr></thead><tbody>
+      <tr><td><b style="color:var(--present)">ไม่เกิน 8 ชม.</b> <span class="cno">(อยู่ในกะ)</span></td>
+        <td class="mono" style="text-align:center;font-size:15px;font-weight:600">${le}</td>
+        <td class="mono" style="text-align:center">${cnt?Math.round(le/cnt*100)+'%':'-'}</td>
+        <td>${bar(le,cnt,'var(--present)')}</td></tr>
+      <tr><td><b style="color:var(--absent)">เกิน 8 ชม.</b> <span class="cno">(ล้นกะ / ต้องตรวจสอบ)</span></td>
+        <td class="mono" style="text-align:center;font-size:15px;font-weight:600">${gt}</td>
+        <td class="mono" style="text-align:center">${cnt?Math.round(gt/cnt*100)+'%':'-'}</td>
+        <td>${bar(gt,cnt,'var(--absent)')}</td></tr>
+      <tr style="background:#f7f9fc"><td style="font-weight:600">รวมเที่ยวที่ปิดงานแล้ว</td>
+        <td class="mono" style="text-align:center;font-weight:600">${cnt}</td>
+        <td class="cno" style="text-align:center" colspan="2">เฉลี่ย ${avg!==null?avg+' ชม./เที่ยว':'-'} · ยังวิ่งอยู่ ${run} เที่ยว</td></tr>
+    </tbody></table></div>${overList}</div>`;
+}
+
+/* ===== ตารางที่ 4: จำนวนรอบต่อคัน (1 คัน = 3 กะ = เป้า 3 รอบ/วัน) ===== */
+const TARGET_ROUNDS = 3;
+function tableRounds(){
+  const per = {};
+  for(const j of day.jobs){
+    const no = j.mainTruck || j.truck || '(ไม่ระบุ)';
+    const p = per[no] = per[no] || {main:0,vt:0,hrs:[],closed:0};
+    if(j.type === 'vt') p.vt++; else p.main++;
+    const b = workBreakdown(j);
+    if(b.closed){ p.closed++; p.hrs.push(b.total); }
+  }
+  /* ---- เตรียมข้อมูลเป็นแถว ๆ ก่อน เพื่อให้เรียงได้ ---- */
+  const data = config
+    .filter(t => per[t.truckNo] || (t.drivers||[]).length >= TARGET_ROUNDS)
+    .map(t=>{
+      const p = per[t.truckNo] || {main:0,vt:0,hrs:[],closed:0};
+      const crew = (t.drivers||[]).length;
+      let came = 0;
+      for(const d of (t.drivers||[])){ const v = attOf(t.truckNo)[d.pos]||''; if(v==='present'||v==='ot') came++; }
+      const rounds = p.main + p.vt;
+      const target = Math.min(TARGET_ROUNDS, crew || TARGET_ROUNDS);
+      return { truck:t.truckNo, route:t.routeGroup||'', came:came, crew:crew,
+               rounds:rounds, main:p.main, vt:p.vt, target:target, ok:rounds>=target,
+               avg: p.hrs.length ? Math.round(p.hrs.reduce((a,b)=>a+b,0)/p.hrs.length*10)/10 : null };
+    });
+
+  /* ---- สรุปจำนวนคันตามรอบที่ทำได้ ---- */
+  const c0 = data.filter(r=>r.rounds===0).length;
+  const c1 = data.filter(r=>r.rounds===1).length;
+  const c2 = data.filter(r=>r.rounds===2).length;
+  const cLess = data.filter(r=>r.rounds<TARGET_ROUNDS).length;
+  const cHit  = data.filter(r=>r.rounds>=TARGET_ROUNDS).length;
+
+  /* ---- เรียงข้อมูลตามคอลัมน์ที่เลือก ---- */
+  const dir = roundSort.dir;
+  data.sort((a,b)=>{
+    const k = roundSort.key;
+    let x = a[k], y = b[k];
+    if(k === 'avg'){ if(x===null) return 1; if(y===null) return -1; }
+    if(k === 'ok'){ x = x?1:0; y = y?1:0; }
+    if(typeof x === 'string') return x.localeCompare(y,'th') * dir || a.truck.localeCompare(b.truck,'th');
+    return ((x||0) - (y||0)) * dir || a.truck.localeCompare(b.truck,'th');
+  });
+
+  const rows = data.map(r=>`<tr${r.ok?'':' style="background:#fdf6f5"'}>
+      <td class="plate">${esc(r.truck)}</td>
+      <td class="cno">${esc(r.route||'-')}</td>
+      <td class="mono" style="text-align:center">${r.came}/${r.crew||'-'}</td>
+      <td class="mono" style="text-align:center;font-size:15px;font-weight:600">${r.rounds}</td>
+      <td class="mono" style="text-align:center">${r.main}</td>
+      <td class="mono" style="text-align:center">${r.vt||'-'}</td>
+      <td class="mono" style="text-align:center">${r.target}</td>
+      <td class="mono" style="text-align:center">${r.avg!==null?r.avg+' ชม.':'<span class="cno">-</span>'}</td>
+      <td style="text-align:center">${r.ok?'<span class="badge b-done">ครบ</span>':`<span class="badge b-wait">ขาด ${r.target-r.rounds} รอบ</span>`}</td>
+    </tr>`).join('');
+
+  /* ---- หัวตารางกดเรียงได้ ---- */
+  const TH = [['truck','เบอร์รถ','left'],['route','ต้นทาง','left'],['came','คนขับมา','center'],
+              ['rounds','รอบที่วิ่งได้','center'],['main','งานหลัก','center'],['vt','VT','center'],
+              ['target','เป้า','center'],['avg','เฉลี่ย/รอบ','center'],['ok','สถานะ','center']];
+  const head = TH.map(([k,lab,al])=>{
+    const on = roundSort.key===k;
+    return `<th class="th-sort${on?' on':''}" data-rsort="${k}" style="text-align:${al}" title="กดเพื่อเรียงข้อมูล">${lab}<span class="sortcaret">${on?(dir>0?'▲':'▼'):'⇅'}</span></th>`;
+  }).join('');
+
+  const chip=(lab,val,cls)=>`<span class="rchip ${cls||''}">${lab} <b>${val}</b> คัน</span>`;
+  return `<div class="card">
+    <div class="cardhead"><h2>4 · จำนวนรอบต่อคัน (1 คัน = 3 กะ = เป้า ${TARGET_ROUNDS} รอบ/วัน)</h2></div>
+    <div class="hint">นับตามเบอร์รถหลักที่รับงาน (ถ้าสับไปวิ่งรถสำรอง รอบยังนับให้คันที่รับงาน) · กดหัวตารางเพื่อเรียงข้อมูล</div>
+    <div class="roundsum">
+      ${chip('ครบ '+TARGET_ROUNDS+' รอบขึ้นไป',cHit,'ok')}
+      ${chip('น้อยกว่า '+TARGET_ROUNDS+' รอบ',cLess,'warn')}
+      <span class="rsep"></span>
+      ${chip('ได้ 2 รอบ',c2)}
+      ${chip('ได้ 1 รอบ',c1)}
+      ${chip('ยังไม่ได้วิ่ง (0 รอบ)',c0,'bad')}
+      <span class="cno" style="margin-left:auto">รวม ${data.length} คัน</span>
+    </div>
+    <div class="tablewrap sbox5"><table style="min-width:800px"><thead><tr>${head}</tr></thead>
+    <tbody>${rows||'<tr><td colspan="9" class="empty-note">ยังไม่มีข้อมูล</td></tr>'}</tbody></table></div></div>`;
+}
+
+function scrollSumToNow(){
+  const box=document.getElementById('t1box');if(!box)return;
+  const row=box.querySelector('tr.nowrow')||box.querySelector('tr.aheadrow');if(!row)return;
+  const th=box.querySelector('thead');
+  const hh=th?th.getBoundingClientRect().height:32;
+  box.scrollTop += row.getBoundingClientRect().top - box.getBoundingClientRect().top - hh - 4;
+}
+function renderSummary(){
+  const k = kpis();
+  let mainTotal = 0, vtTotal = 0, closedTotal = 0;
+  day.jobs.forEach(j=>{ if(j.type==='vt') vtTotal++; else mainTotal++; if(j.closed) closedTotal++; });
+  const per = {};
+  day.jobs.forEach(j=>{ const no=j.mainTruck||j.truck; per[no]=(per[no]||0)+1; });
+  const hitTrucks = Object.keys(per).filter(no=>per[no]>=TARGET_ROUNDS).length;
   document.getElementById('view').innerHTML=`
     <section class="summary">
-      <div class="stat hero"><div class="lab">รถวิ่งงานวันนี้</div><div class="val mono">${k.running}<small> / ${config.length}</small></div></div>
-      <div class="stat"><div class="lab">เที่ยวสายหลักรวม</div><div class="val mono">${mainTotal}</div></div>
-      <div class="stat"><div class="lab">เที่ยว VT รวม</div><div class="val mono">${vtTotal}</div></div>
-      <div class="stat go"><div class="lab">คนขับมา</div><div class="val mono">${k.present}</div></div>
-      <div class="stat miss"><div class="lab">ขาด</div><div class="val mono">${k.absent}</div></div>
-      <div class="stat lv"><div class="lab">ลา</div><div class="val mono">${k.leave}</div></div>
+      <div class="stat hero"><div class="lab">พจส. มาทำงาน</div><div class="val mono">${k.actual}<small> / ${k.scheduled}</small></div><div class="bar" style="width:${k.scheduled?Math.min(100,k.actual/k.scheduled*100):0}%"></div></div>
+      <div class="stat"><div class="lab">เที่ยวงานหลัก</div><div class="val mono">${mainTotal}</div></div>
+      <div class="stat"><div class="lab">เที่ยว VT</div><div class="val mono">${vtTotal}</div></div>
+      <div class="stat go"><div class="lab">ปิดงานแล้ว</div><div class="val mono">${closedTotal}</div></div>
+      <div class="stat miss"><div class="lab">ขาด / ลา</div><div class="val mono">${k.absent} / ${k.leave}</div></div>
+      <div class="stat gap"><div class="lab">รถครบ ${TARGET_ROUNDS} รอบ</div><div class="val mono">${hitTrucks}</div></div>
     </section>
-    <div class="card"><h2>สรุปรายคัน — ครบ 3 เที่ยวสายหลักไหม</h2>
-      <div class="tablewrap"><table style="min-width:600px"><thead><tr><th>เบอร์รถ</th><th>ต้นทาง</th><th>เที่ยวสายหลัก</th><th>VT</th><th>เวลาเฉลี่ย/เที่ยว</th></tr></thead>
-      <tbody>${truckRows||'<tr><td colspan="5" class="empty-note">ยังไม่มีงานวันนี้</td></tr>'}</tbody></table></div></div>
-    <div class="card"><h2>สรุปรายคนขับ</h2>
-      <div class="tablewrap"><table style="min-width:600px"><thead><tr><th>คนขับ</th><th>เที่ยว</th><th>งาน</th><th>เวลารวม</th></tr></thead>
-      <tbody>${drvRows||'<tr><td colspan="4" class="empty-note">ยังไม่มีข้อมูล</td></tr>'}</tbody></table></div></div>
-    <div class="card"><h2>สรุปการมาทำงาน</h2><p style="font-size:14px;color:#3a4759">มา ${k.present} · ขาด <b style="color:var(--absent)">${k.absent}</b> · ลา <b style="color:var(--leave)">${k.leave}</b> · วันหยุด ${k.off} · ยังไม่เช็ก ${k.unchecked}</p></div>`;
+    <div class="toolbar"><span class="cno">สรุปของวันที่ ${curDate} · ข้อมูลดึงจากหน้า 1 (เช็กคนขับ) หน้า 2 (จ่ายงาน) และหน้า 3 (เวลาทำงาน)</span>
+      <div style="flex:1"></div><button class="btn" id="csvBtn">⬇ ส่งออก Excel</button><button class="btn" id="printBtn">🖨 พิมพ์</button></div>
+    ${tableAttend()}
+    ${tablePlanVsActual()}
+    ${tableWorkTime()}
+    ${tableRounds()}`;
+  scrollSumToNow();
 }
+
+/* ================= ระบบแจ้งเตือน Alarm / Alert =================
+   Alarm : เตือน CC ให้โทรติดตาม พจส. ล่วงหน้าก่อนเข้ากะ 30 นาที
+   Alert : ถึงเวลาเข้ากะแล้วเกิน 10 นาที ยังไม่รายงานตัว -> ขึ้น "ขาด" ให้อัตโนมัติ
+   ทั้งสองระบบไม่นับวันหยุดของ พจส.                                     */
+const ALARM_LEAD   = 30;      /* แจ้งเตือนล่วงหน้า (นาที) */
+const ALERT_GRACE  = 10;      /* ถึงเวลาแล้วเกินกี่นาทีถือว่าไม่รายงานตัว */
+const ALERT_WINDOW = 180;     /* ไม่ย้อนแจ้งเตือน/ตีขาด ย้อนหลังเกินกี่นาที */
+const WIDGET_MS    = 60000;   /* วิดเจทเด้งค้างไว้ 1 นาที */
+
+let alarmList=[], alertList=[], alarmSeen={}, alertSeen={};
+let alarmTimer=null, alertTimer=null, tickTimer=null;
+
+function nowMin(){const d=new Date();return d.getHours()*60+d.getMinutes();}
+function nKey(kind,what){return 'fleet:'+kind+what+':'+curDate;}
+function loadNotify(){
+  const rd=(k,dflt)=>{try{return JSON.parse(lsGet(k)||'null')||dflt;}catch(e){return dflt;}};
+  alarmSeen=rd(nKey('alarm','seen'),{}); alertSeen=rd(nKey('alert','seen'),{});
+  alarmList=rd(nKey('alarm','list'),[]); alertList=rd(nKey('alert','list'),[]);
+  updateBells();
+}
+function saveNotify(){
+  lsSet(nKey('alarm','seen'),JSON.stringify(alarmSeen)); lsSet(nKey('alert','seen'),JSON.stringify(alertSeen));
+  lsSet(nKey('alarm','list'),JSON.stringify(alarmList)); lsSet(nKey('alert','list'),JSON.stringify(alertList));
+}
+function driverItem(t,d){
+  return {key:t.truckNo+':'+d.pos,truck:t.truckNo,pos:d.pos,name:d.name||'(ไม่ระบุชื่อ)',
+          code:d.code||'',phone:d.phone||'',start:startLabel(d.shift),route:t.routeGroup||''};
+}
+function tickAlarms(){
+  if(!config||!day)return;
+  if(curDate!==todayStr()){updateBells();return;}     /* ดูวันย้อนหลัง ไม่ต้องเตือน */
+  const now=nowMin();
+  let na=0, nl=0, marked=false;
+  for(const t of config){
+    for(const d of (t.drivers||[])){
+      if(isOff(t,d,curDate))continue;                 /* วันหยุดของ พจส. ไม่นับ */
+      const sm=parseStart(d.shift); if(sm===null)continue;
+      const k=t.truckNo+':'+d.pos;
+      if(((day.attend[t.truckNo]||{})[d.pos]||'')!=='')continue;   /* เช็กแล้ว ไม่ต้องเตือน */
+      const lead=sm-now, over=now-sm;
+      if(lead>0 && lead<=ALARM_LEAD && !alarmSeen[k]){
+        alarmSeen[k]=1; alarmList.push(driverItem(t,d)); na++;
+      }
+      if(over>=ALERT_GRACE && over<=ALERT_WINDOW && !alertSeen[k]){
+        alertSeen[k]=1; alertList.push(driverItem(t,d)); nl++;
+        day.attend[t.truckNo]=day.attend[t.truckNo]||{};
+        day.attend[t.truckNo][d.pos]='absent';
+        day.attendBy[t.truckNo]=day.attendBy[t.truckNo]||{};
+        day.attendBy[t.truckNo][d.pos]='ระบบแจ้งเตือน (อัตโนมัติ)';
+        marked=true;
+      }
+    }
+  }
+  if(marked){saveDay(); if(tab==='roster')renderRoster();}
+  if(na||nl)saveNotify();
+  if(na)showAlarm();
+  if(nl)showAlert();
+  updateBells();
+}
+function widgetRows(list){
+  const show=list.slice(-8).reverse();
+  let h=show.map(x=>`<div class="wrow">
+    <div class="nm">${esc(x.name)}<span class="wsub">รหัส ${esc(x.code||'-')} · รถ ${esc(x.truck)} กะ${esc(x.pos)}${x.route?(' · '+esc(x.route)):''}</span></div>
+    <div><a class="tel" href="tel:${esc((x.phone||'').replace(/[^0-9+]/g,''))}">${esc(x.phone||'-')}</a></div>
+    <div class="tm">${esc(x.start)}</div></div>`).join('');
+  if(list.length>show.length)h+=`<div class="wrow"><span class="wsub">และอีก ${list.length-show.length} คน (ดูทั้งหมดในหน้า 1)</span></div>`;
+  return h;
+}
+function showAlarm(){
+  if(!alarmList.length)return;
+  const b=document.getElementById('alarmBox');
+  b.innerHTML=`<div class="wtop"><span style="font-size:21px">⏰</span><span class="ttl">ติดตาม พจส.</span><span class="cno">${alarmList.length} คน</span></div>
+    <div class="wlist">${widgetRows(alarmList)}</div>
+    <div class="wfoot"><span>เตือนล่วงหน้า ${ALARM_LEAD} นาที ก่อนเวลาเข้ากะ · กดเบอร์เพื่อโทร</span><button class="wclose" data-wclose="alarm">ปิด</button></div>`;
+  b.style.display='block';
+  clearTimeout(alarmTimer); alarmTimer=setTimeout(()=>closeWidget('alarm'),WIDGET_MS);
+}
+function showAlert(){
+  if(!alertList.length)return;
+  const b=document.getElementById('alertBox');
+  b.innerHTML=`<div class="wtop"><span style="font-size:20px">🔔</span><span class="ttl">พจส. ยังไม่รายงานตัว</span><span style="font-size:12px">${alertList.length} คน</span></div>
+    <div class="wlist">${widgetRows(alertList)}</div>
+    <div class="wfoot"><span>เกินเวลาเข้ากะ ${ALERT_GRACE} นาที · ระบบตั้งสถานะ “ขาด” ให้แล้ว แก้เป็น “สาย” ได้ที่หน้า 1</span><button class="wclose" data-wclose="alert">ปิด</button></div>`;
+  b.style.display='block';
+  clearTimeout(alertTimer); alertTimer=setTimeout(()=>closeWidget('alert'),WIDGET_MS);
+}
+function closeWidget(kind){
+  const b=document.getElementById(kind==='alarm'?'alarmBox':'alertBox');
+  if(b)b.style.display='none';
+  clearTimeout(kind==='alarm'?alarmTimer:alertTimer);
+  updateBells();
+}
+function updateBells(){
+  const set=(btn,cnt,list,box)=>{
+    const b=document.getElementById(btn); if(!b)return;
+    b.style.display=list.length?'inline-block':'none';
+    const c=document.getElementById(cnt); if(c)c.textContent=list.length;
+    const open=document.getElementById(box) && document.getElementById(box).style.display==='block';
+    b.classList.toggle('ring',!open&&list.length>0);
+  };
+  set('alarmBtn','alarmCount',alarmList,'alarmBox');
+  set('alertBtn','alertCount',alertList,'alertBox');
+}
+function startAlarms(){
+  loadNotify(); tickAlarms();
+  clearInterval(tickTimer); tickTimer=setInterval(tickAlarms,30000);
+}
+document.getElementById('alarmBtn').addEventListener('click',()=>showAlarm());
+document.getElementById('alertBtn').addEventListener('click',()=>showAlert());
+document.getElementById('alarmBox').addEventListener('click',e=>{if(e.target.closest('[data-wclose]'))closeWidget('alarm');});
+document.getElementById('alertBox').addEventListener('click',e=>{if(e.target.closest('[data-wclose]'))closeWidget('alert');});
 
 /* ---------- router ---------- */
 function render(){
@@ -803,10 +1374,18 @@ function render(){
 
 /* ---------- events (delegated) ---------- */
 document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(b){tab=b.dataset.tab;render();if(tab==='roster')scrollToCurrentHour();}});
-document.getElementById('dateInput').addEventListener('change',async e=>{curDate=e.target.value||todayStr();await loadDay();render();if(tab==='roster')scrollToCurrentHour();});
+document.getElementById('dateInput').addEventListener('change',async e=>{curDate=e.target.value||todayStr();await loadDay();closeWidget('alarm');closeWidget('alert');loadNotify();tickAlarms();render();if(tab==='roster')scrollToCurrentHour();});
 
 document.getElementById('view').addEventListener('click',e=>{
-  const att=e.target.closest('[data-att]');const run=e.target.closest('[data-run]');const pill=e.target.closest('.pill[data-f]');
+  if(e.target.closest('#toggleProd')){sumProdOpen=!sumProdOpen;lsSet('fleet:sumprod',sumProdOpen?'1':'0');renderSummary();return;}
+  const rs=e.target.closest('[data-rsort]');
+  if(rs){
+    const k=rs.dataset.rsort;
+    if(roundSort.key===k)roundSort.dir=-roundSort.dir;
+    else roundSort={key:k,dir:(k==='truck'||k==='route')?1:-1};   /* ตัวเลขเริ่มจากมากไปน้อย */
+    renderSummary();return;
+  }
+  const att=e.target.closest('[data-att]');const run=e.target.closest('[data-run]');const pill=e.target.closest('[data-f]');
   const add=e.target.closest('#addJob');const del=e.target.closest('[data-deljob]');const now=e.target.closest('[data-stampnow]');
   const imp=e.target.closest('#importBtn');const csv=e.target.closest('#csvBtn');const prn=e.target.closest('#printBtn');
   if(att){const no=att.dataset.att,p=att.dataset.pos,v=att.dataset.val;day.attend[no]=day.attend[no]||{};day.attend[no][p]=day.attend[no][p]===v?'':v;day.attendBy[no]=day.attendBy[no]||{};day.attendBy[no][p]=adminName;saveDay();renderRoster();return;}
@@ -826,7 +1405,7 @@ document.getElementById('view').addEventListener('click',e=>{
   if(dt){const ti=+dt.dataset.deltruck;if(confirm('ลบรถ '+editBuf[ti].truckNo+' และคนขับทั้งหมดของคันนี้?')){editBuf.splice(ti,1);renderRoster();}return;}
   if(e.target.closest('#addTruck')){editBuf.push({truckNo:'ใหม่-'+(editBuf.length+1),routeGroup:'',product:'เชื้อเพลิงชีวมวล',type:'model',drivers:[]});renderRoster();return;}
   if(run){const no=run.dataset.run;day.running[no]=!day.running[no];saveDay();renderRoster();return;}
-  if(pill){filter=pill.dataset.f;renderRoster();return;}
+  if(pill){const f=pill.dataset.f;filter=(filter===f&&f!=='all')?'all':f;renderRoster();return;}
   if(imp){document.getElementById('fileInput').click();return;}
   if(csv){exportExcel();return;}
   if(prn){window.print();return;}
@@ -846,10 +1425,17 @@ document.getElementById('view').addEventListener('input',e=>{
     else{const di=+e.target.dataset.di;const key={pos:'pos',name:'name',phone:'phone',shift:'shift',dayoff:'dayOff'}[f];const dv=(f==='dayoff'&&v==='—')?'':v;buf[ti].drivers[di][key]=dv;}
     return;
   }
+  if(e.target.dataset&&e.target.dataset.planprod!==undefined){
+    const key=e.target.dataset.planprod,raw=String(e.target.value).replace(/[^0-9]/g,'');
+    e.target.value=raw;
+    day.plan=day.plan||{};
+    day.plan[key]=(raw==='')?'':Number(raw);   /* ใช้ '' ไม่ใช่ delete เพื่อให้การล้างค่าส่งถึงเครื่องอื่นด้วย */
+    saveDay();return;
+  }
   if(e.target.id==='planSpeed'){planSpeed=parseInt(e.target.value)||65;return;}
   if(e.target.dataset&&e.target.dataset.actual!==undefined){const j=day.jobs.find(x=>String(x.id)===e.target.dataset.actual);if(j){j.actualTruck=e.target.value;saveDay();}return;}
   if(e.target.dataset&&e.target.dataset.note!==undefined){const j=day.jobs.find(x=>String(x.id)===e.target.dataset.note);if(j){j.note=e.target.value;saveDay();}return;}
-  if(e.target.dataset&&e.target.dataset.depart!==undefined){const j=day.jobs.find(x=>String(x.id)===e.target.dataset.depart);if(j){j.depart=e.target.value;saveDay();}return;}
+  if(e.target.dataset&&e.target.dataset.depart!==undefined)return;   /* รอบันทึกตอนออกจากช่อง (ดู listener change) */
 });
 document.getElementById('modal').addEventListener('click',e=>{
   if(e.target.closest('#loginSave')){doLogin();return;}
@@ -875,6 +1461,14 @@ document.getElementById('modal').addEventListener('change',e=>{
   if(e.target.id==='j_origin'||e.target.id==='j_dest'){odChange(e.target.id);return;}
 });
 document.getElementById('view').addEventListener('change',e=>{
+  if(e.target.dataset&&e.target.dataset.planprod!==undefined){renderSummary();return;}
+  if(e.target.dataset&&e.target.dataset.depart!==undefined){
+    const j=day.jobs.find(x=>String(x.id)===e.target.dataset.depart);
+    const nv=normHM(e.target.value);
+    if(nv===null){badHM(e.target,j?j.depart:'');return;}
+    if(j){j.depart=nv;saveDay();renderDispatch();}
+    return;
+  }
   if(e.target.id==='fileInput'&&e.target.files[0])importFile(e.target.files[0]);
   if(e.target.id==='planSpeed'){planSpeed=parseInt(e.target.value)||65;renderPlan();}
   if(e.target.dataset&&e.target.dataset.arrive!==undefined){
@@ -883,22 +1477,37 @@ document.getElementById('view').addEventListener('change',e=>{
     const v=h!==''?(h+':'+(m||'00')):'';
     day.arrive[no]=day.arrive[no]||{};day.arrive[no][p]=v;
     day.attendBy[no]=day.attendBy[no]||{};day.attendBy[no][p]=adminName;
-    if(v){const t=truckByNo(no),d=driverAt(t,p),off=isOff(t,d,curDate);day.attend[no]=day.attend[no]||{};const cur=day.attend[no][p]||'';if(off){if(cur!=='ot')day.attend[no][p]='ot';}else if(!cur||cur==='absent')day.attend[no][p]='present';}
+    if(v){
+      const t=truckByNo(no),d=driverAt(t,p),off=isOff(t,d,curDate);
+      day.attend[no]=day.attend[no]||{};
+      const cur=day.attend[no][p]||'';
+      if(off){ if(cur!=='ot')day.attend[no][p]='ot'; }
+      else if(cur===''||cur==='absent'||cur==='present'||cur==='late'){
+        /* คีย์เวลามาจริงแล้ว ระบบเลือกให้เองว่า "มา" หรือ "สาย" (ไม่แตะ ลา / OT) */
+        day.attend[no][p]=isLateArrival(d,v)?'late':'present';
+      }
+    }
     saveDay();renderRoster();return;
   }
   if(e.target.dataset&&e.target.dataset.edit==='dayoff'){const ti=+e.target.dataset.ti,di=+e.target.dataset.di;const buf=editBuf||config;buf[ti].drivers[di].dayOff=e.target.value==='—'?'':e.target.value;}
-  if(e.target.dataset&&e.target.dataset.job){const j=day.jobs.find(x=>String(x.id)===e.target.dataset.job);if(j){j[e.target.dataset.field]=e.target.value;saveDay();renderBoard();}return;}
+  if(e.target.dataset&&e.target.dataset.job){
+    const j=day.jobs.find(x=>String(x.id)===e.target.dataset.job),f=e.target.dataset.field;
+    const nv=normHM(e.target.value);
+    if(nv===null){badHM(e.target,j?j[f]:'');return;}
+    if(j){j[f]=nv;saveDay();renderBoard();}
+    return;
+  }
 });
 
 /* ---------- Excel export ---------- */
 function exportExcel(){
   const wb=XLSX.utils.book_new();
   const att=[['เบอร์รถ','ต้นทาง','กะ','คนขับ','สถานะ','เวลามาจริง','ผู้บันทึก','วันหยุด','เวลากะ']];
-  const ST={present:'มา',absent:'ขาด',leave:'ลา',ot:'มา OT (วันหยุด)','':''};
+  const ST={present:'มา',late:'สาย',absent:'ขาด',leave:'ลา',ot:'มา OT (วันหยุด)','':''};
   for(const t of config)for(const d of (t.drivers||[])){const off=isOff(t,d,curDate);const cur=attOf(t.truckNo)[d.pos]||'';const status=cur==='ot'?'มา OT (วันหยุด)':(off?'วันหยุด':ST[cur]);const av=(day.arrive[t.truckNo]||{})[d.pos]||'';const by=(day.attendBy[t.truckNo]||{})[d.pos]||'';att.push([t.truckNo,t.routeGroup,d.pos,d.name,status,av,by,d.dayOff,d.shift]);}
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(att),'เช็กคนขับ');
-  const jb=[['วันที่','ลำดับ','ชื่อสินค้า','ต้นทาง','ปลายทาง','รหัสพนักงาน','ชื่อพนักงาน','เบอร์รถหลัก','เบอร์รถที่วิ่งจริง','เที่ยว','ประเภทงาน','เวลาออก','ผู้จ่ายงาน','เริ่มชาร์จ','ชาร์จเสร็จ','กลับถึง','หมายเหตุ']];
-  day.jobs.forEach((j,i)=>jb.push([j.date||curDate,i+1,j.product,j.origin,j.dest,j.code||'',j.driver,j.mainTruck||j.truck,j.actualTruck||j.mainTruck||j.truck,j.trip||'',j.type==='main'?'สายหลัก':'VT',j.depart,j.by||'',j.chargeStart,j.chargeEnd,j.ret,j.note||'']));
+  const jb=[['วันที่','ลำดับ','ชื่อสินค้า','ต้นทาง','ปลายทาง','รหัส พจส.','ชื่อ พจส.','เบอร์รถหลัก','เบอร์รถที่วิ่งจริง','เที่ยว','ประเภทงาน','เวลามาจริง','เวลาออก','ผู้จ่ายงาน','เวลาชาร์จ','ชาร์จเสร็จ','เวลากลับ','เวลาปิดงาน','รวมเวลาทำงาน (ชม.)','หมายเหตุ']];
+  day.jobs.forEach((j,i)=>jb.push([j.date||curDate,i+1,j.product,j.origin,j.dest,j.code||'',j.driver,j.mainTruck||j.truck,j.actualTruck||j.mainTruck||j.truck,j.trip||'',j.type==='main'?'สายหลัก':'VT',jobArrive(j),j.depart,j.by||'',j.chargeStart,j.chargeEnd,j.ret,j.closed||'',workHoursText(j),j.note||'']));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(jb),'จ่ายงาน');
   XLSX.writeFile(wb,'รายงานงานขนส่ง-'+curDate+'.xlsx');
 }
@@ -979,11 +1588,12 @@ async function boot(){
 async function boot_(){
   document.getElementById('dateInput').value=curDate;
   adminName=lsGet('fleet:admin')||'';
+  sumProdOpen=lsGet('fleet:sumprod')!=='0';
   backendURL=lsGet('fleet:backend')||BACKEND_URL_DEFAULT;
   await loadConfig();await loadDay();
   document.getElementById('fleetcount').textContent=Array.isArray(config)?config.length:'?';
   updateAdminChip();
-  render();flag('ok');startPoll();
+  render();flag('ok');startPoll();startAlarms();
   if(tab==='roster')scrollToCurrentHour();
   if(!adminName)openLogin();
 }
