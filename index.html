@@ -310,7 +310,7 @@ const TYPELABEL={model:'3 กะ',twelve:'12 ชม.',vt:'VT',spare:'สำร�
 
 /* storage: shared backend (Apps Script) when URL set, else window.storage, else memory */
 const mem={};
-const BACKEND_URL_DEFAULT='https://script.google.com/macros/s/AKfycbw1orNXUQtGnIVm6LGyn1r-YYoBx_ITge-vK_nbQzHkdx73mcoAy2_bjdleyoFa97nCoQ/exec';   /* <<< วาง URL Apps Script ที่ลงท้าย /exec ตรงนี้ */
+const BACKEND_URL_DEFAULT='https://script.google.com/macros/s/AKfycbw_yRzpyIL-PxPUrmovGds1BjLt49gwVcwX2SIcJFMrxBxF3OIBzDmLYfEX55yoFgLWjw/exec';   /* <<< วาง URL Apps Script ที่ลงท้าย /exec ตรงนี้ */
 const API_TOKEN='54O7NXcm4720HQb8ZGiqMBoH';            /* <<< ใส่ให้ตรงกับ TOKEN ใน Apps Script (เว้นว่าง = ปิดการตรวจ) */
 let backendURL=BACKEND_URL_DEFAULT;
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
@@ -1589,7 +1589,12 @@ async function boot_(){
   document.getElementById('dateInput').value=curDate;
   adminName=lsGet('fleet:admin')||'';
   sumProdOpen=lsGet('fleet:sumprod')!=='0';
-  backendURL=lsGet('fleet:backend')||BACKEND_URL_DEFAULT;
+  /* URL ในไฟล์เป็นตัวตัดสินเสมอ: กันเครื่องที่เคยจำ URL เก่าไว้แล้วยิงไป deployment เก่า */
+  backendURL=BACKEND_URL_DEFAULT||lsGet('fleet:backend')||'';
+  if(BACKEND_URL_DEFAULT&&lsGet('fleet:backend')&&lsGet('fleet:backend')!==BACKEND_URL_DEFAULT){
+    lsSet('fleet:backend',BACKEND_URL_DEFAULT);
+    console.warn('อัปเดต URL ระบบกลางเป็นค่าล่าสุดในไฟล์แล้ว');
+  }
   await loadConfig();await loadDay();
   document.getElementById('fleetcount').textContent=Array.isArray(config)?config.length:'?';
   updateAdminChip();
