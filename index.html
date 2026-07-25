@@ -287,7 +287,43 @@ async function dayMerge(ds,obj){
   }catch(e){return null;}
 }
 function uid(){return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);}
-function normDay(d){d.attend=d.attend||{};d.running=d.running||{};d.jobs=d.jobs||[];d.seq=d.seq||0;d.arrive=d.arrive||{};d.attendBy=d.attendBy||{};d.deleted=d.deleted||[];return d;}
+function showFatal(where,err){
+  const v=document.getElementById('view');
+  const msg=(err&&(err.message||err))||'ไม่ทราบสาเหตุ';
+  const stk=(err&&err.stack)?String(err.stack).split('\n').slice(0,4).join('\n'):'';
+  if(v)v.innerHTML='<div class="card" style="border-color:#d6483f">'
+    +'<h2 style="color:#d6483f">⚠ ระบบสะดุดที่ขั้นตอน: '+esc(where)+'</h2>'
+    +'<p style="font-size:14px"><b>'+esc(msg)+'</b></p>'
+    +(stk?'<pre style="font-size:11px;color:#65728a;white-space:pre-wrap;background:#f3f6f9;padding:10px;border-radius:8px">'+esc(stk)+'</pre>':'')
+    +'<p class="cno">ลองกดปุ่มด้านล่างเพื่อล้างข้อมูลที่ค้างในเครื่องแล้วโหลดใหม่ · ข้อมูลบนระบบกลางไม่ถูกลบ</p>'
+    +'<button class="btn primary" id="fatalReset">ล้างข้อมูลในเครื่องแล้วโหลดใหม่</button> '
+    +'<button class="btn" id="fatalReload">โหลดหน้าใหม่</button></div>';
+  const r=document.getElementById('fatalReset');
+  if(r)r.onclick=()=>{try{localStorage.removeItem('fleet:roster');localStorage.removeItem('fleet:day:'+curDate);}catch(e){}location.reload();};
+  const l=document.getElementById('fatalReload');
+  if(l)l.onclick=()=>location.reload();
+  try{console.error('['+where+']',err);}catch(e){}
+}
+/* ตรวจว่าตารางกะที่โหลดมาใช้งานได้จริง ถ้าไม่ ให้กลับไปใช้ของในไฟล์ */
+function validConfig(c){
+  if(!Array.isArray(c)||!c.length)return false;
+  for(const t of c){
+    if(!t||typeof t!=='object')return false;
+    if(!t.truckNo)return false;
+    if(t.drivers!==undefined&&!Array.isArray(t.drivers))return false;
+  }
+  return true;
+}
+function isPlain(o){return o&&typeof o==='object'&&!Array.isArray(o);}
+function normDay(d){
+  if(!isPlain(d))d={};
+  ['attend','running','arrive','attendBy'].forEach(k=>{if(!isPlain(d[k]))d[k]={};});
+  if(!Array.isArray(d.jobs))d.jobs=[];
+  if(!Array.isArray(d.deleted))d.deleted=[];
+  d.jobs=d.jobs.filter(j=>j&&typeof j==='object'&&j.id!==undefined);
+  if(typeof d.seq!=='number'||!isFinite(d.seq))d.seq=0;
+  return d;
+}
 
 let config=null,curDate=todayStr(),day=null,tab='roster';
 let filter='all',search='',editMode=false,pendingDispatch=null,adminName='',editBuf=null,boardFilter='all';
@@ -321,14 +357,24 @@ function saveDay(){
 }
 async function saveConfig(){await store.set('fleet:roster',JSON.stringify(config));}
 let cs=null;function scheduleConfigSave(){flag('saving');clearTimeout(cs);cs=setTimeout(async()=>{await saveConfig();flag('ok');},400);}
-async function loadConfig(){const raw=await store.get('fleet:roster');if(raw){try{config=JSON.parse(raw);}catch(e){config=seed();}}else{config=seed();await saveConfig();}}
+async function loadConfig(){
+  let raw=null;
+  try{raw=await store.get('fleet:roster');}catch(e){raw=null;}
+  let c=null;
+  if(raw){try{c=JSON.parse(raw);}catch(e){c=null;}}
+  if(validConfig(c)){config=c;return;}
+  config=seed();                       /* ข้อมูลบน Sheet ใช้ไม่ได้ -> กลับไปใช้ตารางกะในไฟล์ */
+  if(raw)console.warn('ตารางกะบนระบบกลางรูปแบบไม่ถูกต้อง จึงใช้ตารางกะในไฟล์แทน');
+  try{await saveConfig();}catch(e){}
+}
 function seed(){const r=ROSTER.map(t=>({...t,routeGroup:(t.routeGroup||'').trim()}));EXTRA.forEach(x=>{if(!r.find(t=>t.truckNo===x.truckNo))r.push(x);});return r;}
 async function loadDay(){
   let raw=null;
-  if(backendURL){raw=await dayFetch(curDate);if(raw!==null)lastSyncTxt=nowHM();else flag('err');}
-  if(raw===null)raw=await store.get('fleet:day:'+curDate);
+  if(backendURL){try{raw=await dayFetch(curDate);}catch(e){raw=null;}if(raw!==null)lastSyncTxt=nowHM();else flag('err');}
+  if(raw===null){try{raw=await store.get('fleet:day:'+curDate);}catch(e){raw=null;}}
   if(raw){try{day=JSON.parse(raw);}catch(e){day=blankDay();}}else day=blankDay();
-  normDay(day);dirty=false;
+  if(!isPlain(day))day=blankDay();
+  day=normDay(day);dirty=false;
 }
 
 /* attendance helpers */
@@ -747,8 +793,12 @@ function renderSummary(){
 
 /* ---------- router ---------- */
 function render(){
-  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-  ({roster:renderRoster,dispatch:renderDispatch,board:renderBoard,plan:renderPlan,summary:renderSummary}[tab])();
+  try{
+    if(!validConfig(config))config=seed();
+    if(!isPlain(day))day=normDay(blankDay());
+    document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+    ({roster:renderRoster,dispatch:renderDispatch,board:renderBoard,plan:renderPlan,summary:renderSummary}[tab])();
+  }catch(err){showFatal('วาดหน้าจอ ('+tab+')',err);}
 }
 
 /* ---------- events (delegated) ---------- */
@@ -924,11 +974,14 @@ if(lsGet('fleet:unlocked')===GATE_HASH){unlockGate();}
 else{setTimeout(()=>{const i=document.getElementById('gate_code');if(i)i.focus();},80);}
 
 async function boot(){
+  try{ await boot_(); }catch(err){ showFatal('เริ่มระบบ',err); }
+}
+async function boot_(){
   document.getElementById('dateInput').value=curDate;
   adminName=lsGet('fleet:admin')||'';
   backendURL=lsGet('fleet:backend')||BACKEND_URL_DEFAULT;
   await loadConfig();await loadDay();
-  document.getElementById('fleetcount').textContent=config.length;
+  document.getElementById('fleetcount').textContent=Array.isArray(config)?config.length:'?';
   updateAdminChip();
   render();flag('ok');startPoll();
   if(tab==='roster')scrollToCurrentHour();
