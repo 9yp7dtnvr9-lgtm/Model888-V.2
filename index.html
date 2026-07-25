@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<title>ศูนย์กำกับงานขนส่ง EV — BU4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --nav:#0f2138;--nav2:#1a3050;--line:#e2e7ee;--surface:#f3f6f9;--card:#fff;--ink:#152238;--muted:#65728a;
+    --m:#d99a1e;--m-bg:#fbf3da;--a:#2f8f6b;--a-bg:#e6f3ec;--n:#3a4f86;--n-bg:#e8ebf5;
+    --present:#1f9d55;--present-bg:#e5f4ea;--absent:#d6483f;--absent-bg:#fbe9e7;--leave:#8b93a4;--leave-bg:#eef0f4;--off:#a6791f;--off-bg:#f6efdc;--ot:#e0a417;--ot-bg:#fbf1d6;
+    --go:#1f9d55;--stop:#c9ccd4;--accent:#1f9d55;--accent2:#f6c445;--radius:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",system-ui,sans-serif;background:var(--surface);color:var(--ink);-webkit-font-smoothing:antialiased}
+  .mono{font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-variant-numeric:tabular-nums}
+  h1,h2,h3,.display{font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif}
+  header{background:var(--nav);color:#fff;padding:13px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:40}
+  .brand{display:flex;align-items:center;gap:12px;min-width:0}
+  .brand .dot{width:11px;height:11px;border-radius:50%;background:var(--accent2);box-shadow:0 0 0 4px rgba(246,196,69,.25);flex:none}
+  .brand h1{font-size:18px;font-weight:600;margin:0;line-height:1.1}
+  .brand small{display:block;color:#9fb0c6;font-size:12px;margin-top:2px}
+  .topspace{flex:1}
+  .datebox{display:flex;align-items:center;gap:8px;background:var(--nav2);padding:7px 12px;border-radius:10px}
+  .datebox label{font-size:12px;color:#9fb0c6}
+  .datebox input{border:0;background:transparent;color:#fff;font-family:inherit;font-size:14px}
+  .datebox input::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.7;cursor:pointer}
+  .saveflag{font-size:12px;color:#7fd6a8;min-width:92px;text-align:right}
+  .saveflag.saving{color:#f0c66b}
+  .adminchip{display:flex;align-items:center;gap:8px;background:var(--nav2);padding:6px 12px;border-radius:10px;font-size:13px;color:#dfe7f1}
+  .adminchip .linkish{background:none;border:0;color:var(--accent2);cursor:pointer;font-family:inherit;font-size:12px;text-decoration:underline}
+  .adminchip .loginbtn{background:var(--accent2);color:#20130a;border:0;border-radius:8px;padding:5px 12px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
+  nav.tabs{background:var(--nav2);display:flex;gap:2px;padding:0 12px;overflow-x:auto}
+  nav.tabs button{background:transparent;border:0;color:#93a4bc;font-family:inherit;font-size:14px;padding:12px 15px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;display:flex;gap:7px;align-items:center}
+  nav.tabs button .num{font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:12px;background:rgba(255,255,255,.08);padding:1px 7px;border-radius:20px}
+  nav.tabs button.active{color:#fff;border-bottom-color:var(--accent2)}
+  main{padding:18px;max-width:1500px;margin:0 auto}
+  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:11px;margin-bottom:16px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:13px 15px;position:relative;overflow:hidden}
+  .stat .lab{font-size:12px;color:var(--muted);margin-bottom:4px}
+  .stat .val{font-size:25px;font-weight:600;line-height:1}
+  .stat .val small{font-size:14px;color:var(--muted);font-weight:400}
+  .stat.hero{background:var(--nav);color:#fff;border-color:var(--nav)}
+  .stat.hero .lab{color:#9fb0c6}
+  .stat .bar{position:absolute;left:0;bottom:0;height:3px;background:var(--accent2)}
+  .stat.go .val{color:var(--present)}.stat.miss .val{color:var(--absent)}.stat.lv .val{color:var(--leave)}.stat.gap .val{color:var(--accent)}.stat.ot .val{color:var(--ot)}
+  .toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:13px}
+  .toolbar input[type=search]{flex:1;min-width:170px;border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-family:inherit;font-size:14px;background:var(--card)}
+  .btn{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 13px;font-family:inherit;font-size:14px;cursor:pointer;display:inline-flex;gap:6px;align-items:center;color:var(--ink)}
+  .btn:hover{border-color:#bcc4d2}
+  .btn.solid{background:var(--nav);color:#fff;border-color:var(--nav)}
+  .btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn.primary{background:var(--go);color:#fff;border-color:var(--go)}
+  .pill{border:1px solid var(--line);background:var(--card);border-radius:20px;padding:6px 12px;font-size:13px;cursor:pointer;font-family:inherit}
+  .pill.active{background:var(--nav);color:#fff;border-color:var(--nav)}
+  .tablewrap{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:auto}
+  .tablewrap.scroll{max-height:calc(100vh - 320px)}
+  .grouphdr td{position:sticky;background:var(--n-bg);color:var(--n);font-weight:600;font-size:12.5px;padding:6px 12px;border-bottom:1px solid var(--line);top:39px;z-index:1}
+  .otbtn{border:1px solid var(--ot);background:var(--ot-bg);color:var(--ot);border-radius:7px;padding:3px 9px;font-size:12px;cursor:pointer;font-family:inherit;margin-top:5px}
+  .otyes{font-size:11px;color:var(--ot);background:var(--ot-bg);border:1px solid #e6cf94;border-radius:6px;padding:2px 7px;display:inline-block;margin-right:5px}
+  .edrow td{padding:7px 10px}
+  .edrow input,.edrow select{border:1px solid var(--line);border-radius:7px;padding:5px 7px;font-family:inherit;font-size:13px;background:#fff}
+  .edtruck{background:#f7f9fc}
+  .edtruck td{font-weight:600;border-top:2px solid var(--line)}
+  .miniadd{border:1px dashed #b7c0cf;background:#fff;border-radius:7px;padding:4px 10px;font-size:12.5px;cursor:pointer;font-family:inherit;color:var(--accent)}
+  .arrivein{border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:13px;background:#fff}
+  .arrivein:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
+  .hhmm{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+  .hhmm .arrsel{border:1px solid var(--line);border-radius:7px;padding:6px 4px;font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:13px;background:#fff}
+  .hhmm .arrsel:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
+  .planlink{border:1px solid var(--accent);background:var(--present-bg);color:var(--accent);border-radius:8px;padding:6px 11px;font-family:inherit;font-size:13px;cursor:pointer;white-space:nowrap;font-weight:500}
+  .planlink:hover{background:var(--accent);color:#fff}
+  .actualin{border:1px solid var(--accent2);border-radius:7px;padding:4px 7px;font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:12px;background:#fffdf3;width:92px}
+  .noteinp{border:1px solid var(--line);border-radius:7px;padding:4px 7px;font-family:inherit;font-size:12px;background:#fff;width:150px}
+  .noteinp:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
+  .departin{border:1px solid var(--accent2);border-radius:7px;padding:4px 6px;font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:12px;background:#fffdf3}
+  .departin:focus{outline:2px solid var(--accent2)}
+  .actualin:focus{outline:2px solid var(--accent2)}
+  .modal-overlay{position:fixed;inset:0;background:rgba(15,33,56,.55);display:flex;align-items:flex-start;justify-content:center;z-index:100;padding:5vh 16px;overflow:auto}
+  .modal-card{background:#fff;border-radius:14px;max-width:760px;width:100%;padding:20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px}
+  .modal-head h2{margin:0;font-size:17px}
+  .modal-x{border:0;background:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1}
+  .modal-actions{margin-top:18px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--line);padding-top:14px}
+  .field input[readonly]{background:#f4f6f9;color:var(--muted)}
+  #gate{position:fixed;inset:0;z-index:300;background:linear-gradient(135deg,#0f2138,#193353);display:flex;align-items:center;justify-content:center;padding:20px}
+  .gate-card{background:#fff;border-radius:18px;max-width:380px;width:100%;padding:34px 28px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.4)}
+  .gate-logo{font-size:40px;margin-bottom:6px}
+  .gate-card h2{margin:0 0 6px;font-size:18px;color:var(--nav)}
+  .gate-card p{margin:0 0 18px;font-size:13.5px;color:var(--muted)}
+  .gate-card input[type=password]{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-family:inherit;font-size:16px;text-align:center;letter-spacing:2px}
+  .gate-card input[type=password]:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
+  .gate-remember{display:flex;align-items:center;gap:7px;justify-content:center;font-size:12.5px;color:var(--muted);margin:12px 0}
+  .gate-err{color:var(--absent);font-size:13px;min-height:18px;margin-bottom:8px}
+  #gate .btn.primary{width:100%;padding:12px;font-size:15px}
+  table{border-collapse:collapse;width:100%;min-width:900px;font-size:12.5px}
+  thead th{position:sticky;top:0;background:#fbfcfe;z-index:2;text-align:left;font-weight:600;font-size:11.5px;color:var(--muted);padding:9px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
+  thead th.m{color:var(--m)}thead th.a{color:var(--a)}thead th.n{color:var(--n)}
+  tbody td{padding:7px 9px;border-bottom:1px solid #eef1f5;vertical-align:middle;font-size:12.5px}
+  tbody tr:hover{background:#fafbfe}
+  tbody tr.stopped{opacity:.55}
+  td.truck{white-space:nowrap}
+  .plate{font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-weight:600;font-size:13px}
+  .cno{font-size:11px;color:var(--muted)}
+  .tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:20px;background:#eef1f5;color:var(--muted);margin-left:4px}
+  td.m{background:var(--m-bg)}td.a{background:var(--a-bg)}td.n{background:var(--n-bg)}
+  .drv{font-size:12.5px;line-height:1.25}
+  .drv .tm{font-size:11px;color:var(--muted);font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif}
+  .drv.empty{color:var(--accent);font-style:italic}
+  .stbtns{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+  .st{border:1px solid var(--line);background:#fff;border-radius:7px;padding:3px 8px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--muted)}
+  .st:hover{border-color:#aeb7c5}
+  .st.present.sel{background:var(--present-bg);color:var(--present);border-color:var(--present)}
+  .st.absent.sel{background:var(--absent-bg);color:var(--absent);border-color:var(--absent)}
+  .st.leave.sel{background:var(--leave-bg);color:var(--leave);border-color:var(--leave)}
+  .offbadge{font-size:11px;color:var(--off);background:var(--off-bg);border:1px solid #e6cdb4;border-radius:6px;padding:2px 7px;display:inline-block;margin-top:5px}
+  .switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+  .track{width:46px;height:26px;border-radius:20px;background:var(--stop);position:relative;transition:background .15s}
+  .track::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .switch.on .track{background:var(--go)}
+  .switch.on .track::after{left:23px}
+  .switch .txt{font-size:12.5px;font-weight:500;color:var(--muted);width:50px}
+  .switch.on .txt{color:var(--go)}
+  /* forms */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+  .card h2{font-size:16px;margin:0 0 14px}
+  .formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+  .field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:5px}
+  .field input,.field select{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-family:inherit;font-size:14px;background:#fff}
+  .formactions{margin-top:14px;display:flex;gap:9px;align-items:center}
+  /* board */
+  .jobrow{display:grid;grid-template-columns:1.4fr repeat(4,1fr) auto;gap:10px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:9px;background:var(--card)}
+  .jobrow .who{min-width:0}
+  .jobrow .who .t{font-weight:600;font-size:14px}
+  .jobrow .who .s{font-size:12px;color:var(--muted)}
+  .stampcell{text-align:center}
+  .stampcell .lab{font-size:11px;color:var(--muted);margin-bottom:3px}
+  .stampcell input{width:78px;border:1px solid var(--line);border-radius:7px;padding:4px;font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:13px;text-align:center}
+  .stampcell button{margin-top:3px;font-size:10.5px;border:1px solid var(--line);background:#fff;border-radius:6px;padding:2px 6px;cursor:pointer;font-family:inherit;color:var(--muted)}
+  .badge{font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap}
+  .b-wait{background:#eef0f4;color:#69748a}.b-run{background:var(--m-bg);color:var(--off)}.b-charge{background:var(--n-bg);color:var(--n)}.b-done{background:var(--present-bg);color:var(--present)}
+  .b-charged{background:var(--a-bg);color:var(--a)}
+  .boardbox{cursor:pointer;transition:outline .1s,transform .1s}
+  .boardbox:hover{transform:translateY(-1px)}
+  .boardbox.sel{outline:2px solid var(--accent2);outline-offset:1px}
+  .boardbox.go .val{color:var(--off)}.boardbox.chg .val{color:var(--n)}.boardbox.chd .val{color:var(--a)}.boardbox.dn .val{color:var(--present)}
+  .jtype{font-size:10.5px;padding:1px 7px;border-radius:20px;border:1px solid var(--line)}
+  .jtype.main{background:#eaf3fb;color:#2f6f96;border-color:#cfe3f2}
+  .jtype.vt{background:#f4ecfb;color:#7b5599;border-color:#e4d3f2}
+  .empty-note{padding:34px;text-align:center;color:var(--muted)}
+  .del{border:0;background:none;color:var(--absent);cursor:pointer;font-size:16px}
+  .hint{background:#eef4fb;border:1px solid #d4e5f5;border-radius:10px;padding:12px 14px;font-size:13px;color:#33566f;margin-bottom:14px}
+  footer{padding:14px 20px;color:var(--muted);font-size:12px;text-align:center}
+  @media(max-width:720px){.jobrow{grid-template-columns:1fr 1fr;gap:8px}.brand h1{font-size:16px}}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  @media print{header,nav.tabs,.toolbar,footer,.switch .txt,.stampcell button,.del{display:none!important}.st:not(.sel){display:none}.tablewrap{border:0}table{min-width:0;font-size:11px}.track{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="dot"></span>
+    <div><h1>ศูนย์กำกับงานขนส่ง EV</h1><small>BU4 · เชื้อเพลิงชีวมวล · กองรถ <span id="fleetcount"></span> คัน</small></div>
+  </div>
+  <div class="topspace"></div>
+  <div class="datebox"><label>วันที่</label><input type="date" id="dateInput"></div>
+  <button class="btn" id="refreshBtn" style="background:var(--nav2);color:#dfe7f1;border-color:var(--nav2)">⟳ ดึงข้อมูลล่าสุด</button>
+  <button class="btn" id="settingsBtn" style="background:var(--nav2);color:#dfe7f1;border-color:var(--nav2)">⚙ ตั้งค่าระบบกลาง</button>
+  <div class="adminchip" id="adminChip"></div>
+  <div class="saveflag" id="saveFlag">● พร้อม</div>
+</header>
+<nav class="tabs" id="tabs">
+  <button class="active" data-tab="roster"><span class="num">1</span> เช็กคนขับ &amp; จ่ายงาน</button>
+  <button data-tab="dispatch"><span class="num">2</span> รายละเอียดงาน</button>
+  <button data-tab="board"><span class="num">3</span> ภาพรวมสด</button>
+  <button data-tab="plan"><span class="num">4</span> วางแผนเส้นทาง/ชาร์จ</button>
+  <button data-tab="summary"><span class="num">5</span> สรุปประจำวัน</button>
+</nav>
+<main id="view"></main>
+<div id="modal" class="modal-overlay" style="display:none"></div>
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-logo">🔒</div>
+    <h2>เข้าใช้งานระบบกำกับงานขนส่ง EV</h2>
+    <p>กรุณากรอกรหัสเข้าใช้งานของทีม</p>
+    <input type="password" id="gate_code" placeholder="รหัสเข้าใช้งาน" autocomplete="off">
+    <label class="gate-remember"><input type="checkbox" id="gate_remember" checked> จำรหัสในเครื่องนี้</label>
+    <div id="gate_err" class="gate-err"></div>
+    <button class="btn primary" id="gate_go">เข้าใช้งาน →</button>
+  </div>
+</div>
+<footer>ข้อมูลคนขับ/รถ จากไฟล์ตารางกะ (ชีตแรก) · บันทึกอัตโนมัติในเครื่อง แยกตามวันที่ · อัปโหลดไฟล์กะใหม่เพื่ออัปเดตรายเดือน</footer>
+
+<script>
+const ROSTER = [{"truckNo": "EV1-118", "routeGroup": "วังจันทร์", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6700610", "name": "อิทธิพล กันทาท้าว", "phone": "085-835-7288", "dayOff": "เสาร์", "shift": "06:00 - 14:00"}, {"pos": "2", "code": "6700313", "name": "สรวิชญ์ แม้นศรนรา", "phone": "085-835-0067", "dayOff": "เสาร์", "shift": "14:00 - 22:00"}, {"pos": "3", "code": "6700597", "name": "องค์กร สุขไม้", "phone": "085-835-3675", "dayOff": "เสาร์", "shift": "22:00 - 06:00"}]}, {"truckNo": "EV1-110", "routeGroup": "วังจันทร์", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6600214", "name": "พัชรี จานเหนือ", "phone": "085-835-6777", "dayOff": "อังคาร", "shift": "06:00 - 14:00"}, {"pos": "2", "code": "6600641", "name": "อัสนี แย้มยิ้ม", "phone": "085-835-7720", "dayOff": "อังคาร", "shift": "14:00 - 22:00"}, {"pos": "3", "code": "6700605", "name": "วาชิด ปัญญายอง", "phone": "085-835-1193", "dayOff": "อังคาร", "shift": "22:00 - 06:00"}]}, {"truckNo": "EV1-108", "routeGroup": "วังจันทร์", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6600786", "name": "สามารถ สายสุวรรณ", "phone": "085-835-1406", "dayOff": "จันทร์", "shift": "07:00 - 15:00"}, {"pos": "2", "code": "6700350", "name": "ธนเดช ดีเส็ง", "phone": "085-835-1925", "dayOff": "จันทร์", "shift": "15:00 - 23:00"}, {"pos": "3", "code": "6700237", "name": "ขวัญชัย วงษา", "phone": "085-835-2067", "dayOff": "จันทร์", "shift": "23:00 - 07:00"}]}, {"truckNo": "EV1-097", "routeGroup": "วังจันทร์", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6600303", "name": "วิศรุษ จันทร์คุณ", "phone": "085-835-1874", "dayOff": "อาทิตย์", "shift": "07:00 - 15:00"}, {"pos": "2", "code": "610895", "name": "สุนทร เจริญยิ่ง", "phone": "085-835-7133", "dayOff": "อาทิตย์", "shift": "15:00 - 23:00"}, {"pos": "3", "code": "6600833", "name": "จำนันท์ เอี่ยมสอาด", "phone": "085-835-7303", "dayOff": "อาทิตย์", "shift": "23:00 - 07:00"}]}, {"truckNo": "EV1-095", "routeGroup": "วังจันทร์", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6700497", "name": "ดุสิต สมทรัพย์", "phone": "085-835-6336", "dayOff": "พุธ", "shift": "08:00 - 16:00"}, {"pos": "2", "code": "6700480", "name": "อุดม ปะทุมชู", "phone": "085-835-7880", "dayOff": "พุธ", "shift": "16:00 - 24:00"}, {"pos": "3", "code": "6600657", "name": "สิทธิวุฒิ ขันทอง", "phone": "085-835-3918", "dayOff": "พุธ", "shift": "24:00 - 08:00"}]}, {"truckNo": "EV1-111", "routeGroup": "วังจันทร์", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6900050", "name": "ออมสิน ศรีเจริญ", "phone": "064-010-2638", "dayOff": "พฤหัสบดี", "shift": "01:00 - 09:00"}, {"pos": "2", "code": "6900054", "name": "อนุวัต เที่ยวกลาง", "phone": "091-879-8765", "dayOff": "พฤหัสบดี", "shift": "17:00 - 01:00"}, {"pos": "3", "code": "6900055", "name": "อดิเรก อิ่มกลาง", "phone": "098-165-1583", "dayOff": "พฤหัสบดี", "shift": "09:00 - 17:00"}]}, {"truckNo": "EV1-099", "routeGroup": "วังจันทร์", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6600744", "name": "นพกาญจ์ คำเลิศ", "phone": "085-835-6151", "dayOff": "ศุกร์", "shift": "07:00 - 15:00"}, {"pos": "2", "code": "6800077", "name": "นิภาภรณ์ นันตื้อ", "phone": "085-835-0489", "dayOff": "ศุกร์", "shift": "15:00 - 23:00"}, {"pos": "3", "code": "6600206", "name": "ปรีชญา วงษ์พิมพ์ศรี", "phone": "085-835-6568", "dayOff": "ศุกร์", "shift": "23:00 - 07:00"}]}, {"truckNo": "EV1-116", "routeGroup": "ปักธงชัย", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "560620", "name": "กฤษฎา ตรีเมฆ", "phone": "085-835-7122", "dayOff": "ศุกร์", "shift": "08:00 - 16:00"}, {"pos": "2", "code": "591603", "name": "ประสิทธิ์ สายไทย", "phone": "085-835-7320", "dayOff": "ศุกร์", "shift": "16:00 - 24:00"}, {"pos": "3", "code": "610068", "name": "นิพน เพิ่มทรัพย์", "phone": "085-835-6468", "dayOff": "ศุกร์", "shift": "24:00 - 08:00"}]}, {"truckNo": "EV1-102", "routeGroup": "ปักธงชัย", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "630398", "name": "ธวัช มูลราช", "phone": "085-835-6265", "dayOff": "อาทิตย์", "shift": "09:00 - 17:00"}, {"pos": "2", "code": "620492", "name": "ศัลยวิทย์ ดำงาม", "phone": "085-835-7058", "dayOff": "อาทิตย์", "shift": "17:00 - 01:00"}, {"pos": "3", "code": "6600644", "name": "สาคร มลาเหลือง", "phone": "085-835-5454", "dayOff": "อาทิตย์", "shift": "01:00 - 09:00"}]}, {"truckNo": "EV1-113", "routeGroup": "ปักธงชัย", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "630393", "name": "วิรัตน์ ปริวันตา", "phone": "085-835-7316", "dayOff": "จันทร์", "shift": "09:00 - 17:00"}, {"pos": "2", "code": "6600716", "name": "อาคม ทองประเสริฐ", "phone": "085-835-1288", "dayOff": "จันทร์", "shift": "17:00 - 01:00"}, {"pos": "3", "code": "592262", "name": "พูนสิน สีหามาตย์", "phone": "085-835-7052", "dayOff": "จันทร์", "shift": "01:00 - 09:00"}]}, {"truckNo": "EV1-117", "routeGroup": "ปักธงชัย", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "592309", "name": "อรรถพน  ทัศดอน", "phone": "085-835-7108", "dayOff": "อาทิตย์", "shift": "06:00 - 14:00"}, {"pos": "2", "code": "6900115", "name": "ประจักษ์ อ่อนศรี", "phone": "083-443-7674", "dayOff": "อาทิตย์", "shift": "14:00 - 22:00"}, {"pos": "3", "code": "6900112", "name": "อำนาจ จอหมวด", "phone": "080-276-2742", "dayOff": "อาทิตย์", "shift": "22:00 - 06:00"}]}, {"truckNo": "EV1-090", "routeGroup": "นครหลวง", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6700283", "name": "เจริญโชค กิมสาตร์", "phone": "085-835-2195", "dayOff": "ศุกร์", "shift": "10:00 - 18:00"}, {"pos": "2", "code": "6800139", "name": "ประกายศักดิ์ ศรีภูมิ", "phone": "085-835-6243", "dayOff": "ศุกร์", "shift": "18:00 - 02:00"}, {"pos": "3", "code": "6700495", "name": "วรโชติ จันทร์สว่าง", "phone": "085-835-2225", "dayOff": "ศุกร์", "shift": "02:00 - 10:00"}]}, {"truckNo": "EV1-107", "routeGroup": "นครหลวง", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6800429", "name": "ดาว ดวงเด่นฉาย", "phone": "085-835-6912", "dayOff": "เสาร์", "shift": "10:00 - 18:00"}, {"pos": "2", "code": "6800427", "name": "ตะวัน แผลงเดช", "phone": "085-835-6067", "dayOff": "เสาร์", "shift": "18:00 - 02:00"}, {"pos": "3", "code": "6800212", "name": "พงษ์ศักดิ์ โสดาวิชิต", "phone": "085-835-4252", "dayOff": "เสาร์", "shift": "02:00 - 10:00"}]}, {"truckNo": "EV1-115", "routeGroup": "นครหลวง", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6600805", "name": "สุรเดช แสงอิ่ม", "phone": "085-835-1733", "dayOff": "อาทิตย์", "shift": "11:00 - 19:00"}, {"pos": "2", "code": "6600856", "name": "ณัฐยากุล ขุนหาญ", "phone": "085-835-1481", "dayOff": "อาทิตย์", "shift": "19:00 - 03:00"}, {"pos": "3", "code": "6700228", "name": "สุวัฒน์ ยีรัมย์", "phone": "085-835-2063", "dayOff": "อาทิตย์", "shift": "03:00 - 11:00"}]}, {"truckNo": "EV1-091", "routeGroup": "นครหลวง", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6900124", "name": "สุทธิการ โพธิอรุณกร", "phone": "083-324-6674", "dayOff": "จันทร์", "shift": "06:00 - 14:00"}, {"pos": "2", "code": "6900103", "name": "วราวุธ นาคสวัสดิ์", "phone": "080-767-3575", "dayOff": "จันทร์", "shift": "14:00 - 22:00"}, {"pos": "3", "code": "6900088", "name": "เฌอณัฎจิกา ครุจินหวิ่น", "phone": "095-317-3817", "dayOff": "จันทร์", "shift": "22:00 - 06:00"}]}, {"truckNo": "EV1-100", "routeGroup": "นครหลวง", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6900092", "name": "วิลัยทอง คำภิภาค", "phone": "096-976-6384", "dayOff": "อาทิตย์", "shift": "08:00 - 16:00"}, {"pos": "2", "code": "620526", "name": "ศศิธร อ้วนสา", "phone": "085-835-6412", "dayOff": "อาทิตย์", "shift": "16:00 - 24:00"}, {"pos": "3", "code": "6600264", "name": "สุนิสา นิรารมย์", "phone": "085-835-3072", "dayOff": "อาทิตย์", "shift": "24:00 - 08:00"}]}, {"truckNo": "EV1-093", "routeGroup": "IP5", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6700383", "name": "สมร เขียวพรมมา", "phone": "085-835-8604", "dayOff": "ศุกร์", "shift": "09:00 - 17:00"}, {"pos": "2", "code": "6600633", "name": "ทองลี บุญหลาย", "phone": "085-835-0096", "dayOff": "ศุกร์", "shift": "17:00 - 01:00"}, {"pos": "3", "code": "6700476", "name": "อัฏฎาง นาวาพนม", "phone": "085-835-4325", "dayOff": "ศุกร์", "shift": "01:00 - 09:00"}]}, {"truckNo": "EV1-109", "routeGroup": "IP5", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6700256", "name": "ธุวานนท์ มะปะโพธิ์", "phone": "085-835-2936", "dayOff": "อาทิตย์", "shift": "04:00 - 12:00"}, {"pos": "2", "code": "6600600", "name": "สุภาพ คำมงคุณ", "phone": "085-835-6504", "dayOff": "อาทิตย์", "shift": "12:00 - 20:00"}, {"pos": "3", "code": "6700305", "name": "วรวุฒิ สุขประเสริฐ", "phone": "085-835-1744", "dayOff": "อาทิตย์", "shift": "20:00 - 04:00"}]}, {"truckNo": "EV1-105", "routeGroup": "IP5", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6800125", "name": "พัทธพล ไชยราช", "phone": "085-835-8268", "dayOff": "อาทิตย์", "shift": "13:00 - 21:00"}, {"pos": "2", "code": "6800066", "name": "วิรัตน์ เขื่อนสุวรรณ์", "phone": "085-835-6727", "dayOff": "อาทิตย์", "shift": "21:00 - 05:00"}, {"pos": "3", "code": "6800135", "name": "วรชิต แซ่ลี้", "phone": "085-835-5946", "dayOff": "อาทิตย์", "shift": "05:00 - 13:00"}]}, {"truckNo": "EV1-094", "routeGroup": "IP5", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6700502", "name": "ชัยทัต เวชประสิทธิ์สุข", "phone": "085-835-7796", "dayOff": "จันทร์", "shift": "04:00 - 12:00"}, {"pos": "2", "code": "6800138", "name": "พิทยา สีมาต", "phone": "085-835-6137", "dayOff": "จันทร์", "shift": "12:00 - 20:00"}, {"pos": "3", "code": "6800438", "name": "สุพรรณ มานะกรูด", "phone": "085-835-1354", "dayOff": "จันทร์", "shift": "20:00 - 04:00"}]}, {"truckNo": "EV1-114", "routeGroup": "IP5", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6700358", "name": "มานนต์ แก้วใส", "phone": "085-835-3623", "dayOff": "อังคาร", "shift": "13:00 - 21:00"}, {"pos": "2", "code": "6600638", "name": "สุรศักดิ์ แสนเขื่อน", "phone": "085-835-3634", "dayOff": "อังคาร", "shift": "21:00 - 05:00"}, {"pos": "3", "code": "6800060", "name": "วัศพล ต้นพิมพ์", "phone": "085-835-3524", "dayOff": "อังคาร", "shift": "05:00 - 13:00"}]}, {"truckNo": "EV1-098", "routeGroup": "IP5", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6600597", "name": "นพดล จรทะผา", "phone": "085-835-1459", "dayOff": "เสาร์", "shift": "06:00 - 14:00"}, {"pos": "2", "code": "6600618", "name": "สมบัติ ทองวรรณ", "phone": "085-835-5846", "dayOff": "เสาร์", "shift": "14:00 - 22:00"}, {"pos": "3", "code": "6700545", "name": "อาทิตย์ วงศิลป", "phone": "085-835-6558", "dayOff": "เสาร์", "shift": "22:00 - 06:00"}]}, {"truckNo": "EV1-103", "routeGroup": "Model-888", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6900154", "name": "ประกอบ สืบสวน", "phone": "098-034-1773", "dayOff": "เสาร์", "shift": "06:00 - 14:00"}, {"pos": "2", "code": "6900141", "name": "นาย สุรศักดิ์ วงษ์ภูร", "phone": "082-247-5838", "dayOff": "เสาร์", "shift": "14:00 - 22:00"}, {"pos": "3", "code": "6900159", "name": "เอกราช บุญสะอาด", "phone": "098-861-8177", "dayOff": "เสาร์", "shift": "22:00 - 06:00"}]}, {"truckNo": "EV1-119", "routeGroup": "Model-888", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6900195", "name": "นายกิตติศักดิ์ ด่านวิหาร", "phone": "093-489-9310", "dayOff": "เสาร์", "shift": "10:00 - 18:00"}, {"pos": "2", "code": "6900167", "name": "นายธนวัฒน์ หมั่นพล", "phone": "093-674-4995", "dayOff": "เสาร์", "shift": "18:00 - 02:00"}, {"pos": "3", "code": "6900178", "name": "นายพัชระ ภาหวิน", "phone": "081-178-9230", "dayOff": "เสาร์", "shift": "02:00 - 10:00"}]}, {"truckNo": "EV1-104", "routeGroup": "Model-888", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6900168", "name": "นายกิตติศักดิ์ ริยะเทน", "phone": "099-493-6562", "dayOff": "อังคาร", "shift": "06:00 - 14:00"}, {"pos": "2", "code": "6700587", "name": "ธนพล มาคุ้ม", "phone": "085-835-3844", "dayOff": "อังคาร", "shift": "14:00 - 22:00"}, {"pos": "3", "code": "6900194", "name": "นายทับเที่ยง รอดพ้น", "phone": "096-172-1134", "dayOff": "อังคาร", "shift": "22:00 - 06:00"}]}, {"truckNo": "EV1-092", "routeGroup": "Model-888", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6900196", "name": "นายธีระพล โพธิ์ศรี", "phone": "093-513-8215", "dayOff": "พุธ", "shift": "11:00 - 19:00"}, {"pos": "2", "code": "6900188", "name": "นายชัยวัฒน์ พัฒนโพธิ์", "phone": "097-939-6320", "dayOff": "พุธ", "shift": "19:00 - 03:00"}, {"pos": "3", "code": "6900198", "name": "นายสกล กองสุข", "phone": "081-176-5017", "dayOff": "พุธ", "shift": "03:00 - 11:00"}]}, {"truckNo": "EV1-106", "routeGroup": "Model-888", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6900199", "name": "นส.วรรณเพ็ญ บุตรเจริญ", "phone": "061-965-7087", "dayOff": "พฤหัสบดี", "shift": "11:00 - 19:00"}, {"pos": "2", "code": "6900200", "name": "นส.เสาวคนธ์ ชมวิลาศ", "phone": "063-240-9866", "dayOff": "พฤหัสบดี", "shift": "19:00 - 03:00"}, {"pos": "3", "code": "6600325", "name": "สุภาพร ดีสิงห์", "phone": "085-835-4618", "dayOff": "พฤหัสบดี", "shift": "03:00 - 11:00"}]}, {"truckNo": "EV2-001", "routeGroup": "เปลือกไม้หยาบ", "product": "เชื้อเพลิงชีวมวล", "type": "twelve", "drivers": [{"pos": "1", "code": "630386", "name": "มารุต อินเคน", "phone": "085-835-6492", "dayOff": "อาทิตย์", "shift": "07:00 - 19:00"}]}, {"truckNo": "EV2-002", "routeGroup": "เปลือกไม้หยาบ", "product": "เชื้อเพลิงชีวมวล", "type": "twelve", "drivers": [{"pos": "1", "code": "6700544", "name": "สุนทร เยาวนารถ", "phone": "085-835-6455", "dayOff": "อาทิตย์", "shift": "07:00 - 19:00"}]}, {"truckNo": "EV1-033", "routeGroup": "รถทำ VT", "product": "เชื้อเพลิงชีวมวล", "type": "vt", "drivers": []}, {"truckNo": "EV1-039", "routeGroup": "รถทำ VT", "product": "เชื้อเพลิงชีวมวล", "type": "vt", "drivers": []}, {"truckNo": "EV1-096", "routeGroup": "สำรอง", "product": "เชื้อเพลิงชีวมวล", "type": "spare", "drivers": []}, {"truckNo": "EV1-101", "routeGroup": "สำรอง", "product": "เชื้อเพลิงชีวมวล", "type": "spare", "drivers": []}, {"truckNo": "EV1-120", "routeGroup": "WJ", "product": "เชื้อเพลิงชีวมวล", "type": "twelve", "drivers": []}];
+const ROUTE_SEED = ["วังจันทร์", "ปักธงชัย", "นครหลวง", "IP5", "Model-888", "เปลือกไม้หยาบ", "WJ"];
+const ROUTEDATA = [{"product": "สลับหาง-วังจันทร์", "origin": "HUB วังจันทร์", "dest": "โรงไฟฟ้าPP9(NPS)", "distance": 140, "type": "main"}, {"product": "สลับหาง-ปักธงชัย", "origin": "HUB ปักธงชัย", "dest": "ลานสลับหางศรีราชา (13ไร่)", "distance": 135, "type": "main"}, {"product": "สลับหาง-นครหลวง", "origin": "HUB นครหลวง", "dest": "Coal Yard", "distance": 135, "type": "main"}, {"product": "Wood chip", "origin": "โกดังบางปะกง ( ขึ้นเอง )", "dest": "ลานสลับหาง EV", "distance": 110, "type": "main"}, {"product": "ยอดไม้สับ", "origin": "โรงชิพปางสีดา", "dest": "NPP4", "distance": 60, "type": "vt"}, {"product": "ตู้กระดาษ", "origin": "ลานสลับหาง EV", "dest": "โรงไฟฟ้าNPP10(5A)", "distance": 135, "type": "main"}, {"product": "ตู้เยื่อ", "origin": "บริษัท ซิงเฮงเส็งจำกัด MCV 26-418 (ขึ้นท่าเรือ JC รับปั๊ม NGV)", "dest": "", "distance": 135, "type": "main"}, {"product": "ถ่านหิน", "origin": "โรงชิพวัฒนานคร(แซร์ออ)", "dest": "", "distance": 135, "type": "main"}, {"product": "ไม้สับ", "origin": "โรงชิพปางสีดา", "dest": "", "distance": 135, "type": "main"}, {"product": "เปลือกไม้หยาบ", "origin": "โรงงานศาลาลำดวน", "dest": "", "distance": 60, "type": "vt"}, {"product": "รากไม้ยูคาสับ", "origin": "", "dest": "", "distance": 60, "type": "vt"}];  /* [{product,origin,dest,distance,type}] จากไฟล์เส้นทาง */
+const HUBDATA = [{"name": "วังจันทร์", "chargers": 3, "fullMin": 45}, {"name": "นครหลวง", "chargers": 3, "fullMin": 45}, {"name": "ปักธงชัย", "chargers": 3, "fullMin": 45}, {"name": "IP5", "chargers": 3, "fullMin": 35}];      /* [{name,chargers,fullMin}] จุดชาร์จ */
+const RANGE_KM = 150;             /* พิสัยวิ่งต่อการชาร์จเต็ม */
+let planSpeed=65;                 /* กม./ชม. ความเร็วเฉลี่ย (แก้ได้ในแท็บ 4) */
+const ORIGIN_OPTIONS=['HUB วังจันทร์','HUB นครหลวง','HUB ปักธงชัย','โชคชัย','บางปะกง','ลานสลับหาง EV','วัฒนานคร','ศาลาลำดวน','ปางสีดา'];
+const DEST_OPTIONS=['โรงไฟฟ้า NPS (304)','JC (ศรีราชา)','ลานสลับหาง EV'];
+const PROD_DEFAULT={
+  'สลับหาง-วังจันทร์':['HUB วังจันทร์','โรงไฟฟ้า NPS (304)'],
+  'สลับหาง-ปักธงชัย':['HUB ปักธงชัย','โรงไฟฟ้า NPS (304)'],
+  'สลับหาง-นครหลวง':['HUB นครหลวง','โรงไฟฟ้า NPS (304)'],
+  'Wood chip':['บางปะกง','โรงไฟฟ้า NPS (304)'],
+  'ตู้กระดาษ':['ลานสลับหาง EV','JC (ศรีราชา)'],
+  'ตู้เยื่อ':['ลานสลับหาง EV','JC (ศรีราชา)'],
+  'ถ่านหิน':['โชคชัย','โรงไฟฟ้า NPS (304)'],
+  'ไม้สับ':['ปางสีดา','โรงไฟฟ้า NPS (304)'],
+  'ยอดไม้สับ':['ปางสีดา','โรงไฟฟ้า NPS (304)'],
+  'เปลือกไม้หยาบ':['ศาลาลำดวน','โรงไฟฟ้า NPS (304)'],
+  'รากไม้ยูคาสับ':['ปางสีดา','โรงไฟฟ้า NPS (304)']
+};
+/* จับคู่ระยะทางจาก ต้นทาง→ปลายทาง ตามกฎ 8 ข้อ */
+function matchDistance(o,d){
+  o=o||'';d=d||'';const H=(s,k)=>s.indexOf(k)>=0;
+  const plant=H(d,'โรงไฟฟ้า'),jc=H(d,'JC'),ev=H(d,'EV');
+  if(H(o,'วังจันทร์')&&plant)return 140;
+  if((H(o,'นครหลวง')||H(o,'โชคชัย'))&&plant)return 135;
+  if(H(o,'ปักธงชัย')&&plant)return 135;
+  if(H(o,'บางปะกง')&&plant)return 110;
+  if(jc)return 135;
+  if(H(o,'วัฒนานคร')&&ev)return 135;
+  if(H(o,'ศาลาลำดวน'))return 60;
+  if(H(o,'ปางสีดา'))return 70;
+  return '';
+}
+const EXTRA = [
+  {truckNo:'EV1-096',routeGroup:'สำรอง',product:'เชื้อเพลิงชีวมวล',type:'spare',drivers:[]},
+  {truckNo:'EV1-101',routeGroup:'สำรอง',product:'เชื้อเพลิงชีวมวล',type:'spare',drivers:[]},
+  {truckNo:'EV1-120',routeGroup:'WJ',product:'เชื้อเพลิงชีวมวล',type:'twelve',drivers:[]}
+];
+const DEST_DEFAULT='โรงไฟฟ้า NPS (304)';
+const DAYS=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+const TYPELABEL={model:'3 กะ',twelve:'12 ชม.',vt:'VT',spare:'สำรอง'};
+
+/* storage: shared backend (Apps Script) when URL set, else window.storage, else memory */
+const mem={};
+const BACKEND_URL_DEFAULT='https://script.google.com/macros/s/AKfycbw1orNXUQtGnIVm6LGyn1r-YYoBx_ITge-vK_nbQzHkdx73mcoAy2_bjdleyoFa97nCoQ/exec';   /* <<< วาง URL Apps Script ที่ลงท้าย /exec ตรงนี้ */
+const API_TOKEN='54O7NXcm4720HQb8ZGiqMBoH';            /* <<< ใส่ให้ตรงกับ TOKEN ใน Apps Script (เว้นว่าง = ปิดการตรวจ) */
+let backendURL=BACKEND_URL_DEFAULT;
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+const store={
+  async get(k){
+    if(backendURL){try{const r=await fetch(backendURL+'?key='+encodeURIComponent(k));const d=await r.json();return d?d.value:null;}catch(e){return mem[k]??null;}}
+    if(window.storage){try{const r=await window.storage.get(k,false);return r?r.value:null;}catch(e){return mem[k]??null;}}
+    return mem[k]??null;
+  },
+  async set(k,v){
+    mem[k]=v;
+    if(backendURL){try{await fetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({key:k,value:v})});return;}catch(e){return;}}
+    if(window.storage){try{await window.storage.set(k,v,false);return;}catch(e){mem[k]=v;return;}}
+  }
+};
+
+/* ---- ซิงก์ข้อมูลรายวันร่วมกันหลายเครื่อง ----
+   ส่งข้อมูลไปให้ Apps Script "ผสาน" กับของที่อยู่บน Sheet
+   จึง CC หลายคนคีย์พร้อมกันแล้วงานไม่หาย */
+let lastSyncTxt='',dirty=false;
+function tk(){return API_TOKEN?('&tk='+encodeURIComponent(API_TOKEN)):'';}
+async function dayFetch(ds){
+  if(!backendURL)return null;
+  try{
+    const r=await fetch(backendURL+'?day='+encodeURIComponent(ds)+'&t='+Date.now()+tk());
+    const d=await r.json();
+    if(d&&d.error)return null;
+    return (d&&d.value)?d.value:'';
+  }catch(e){return null;}
+}
+async function dayMerge(ds,obj){
+  if(!backendURL)return null;
+  try{
+    const r=await fetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({mergeday:ds,value:JSON.stringify(obj),tk:API_TOKEN})});
+    const d=await r.json();
+    if(d&&d.error)return null;
+    return (d&&d.value)?d.value:null;
+  }catch(e){return null;}
+}
+function uid(){return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);}
+function normDay(d){d.attend=d.attend||{};d.running=d.running||{};d.jobs=d.jobs||[];d.seq=d.seq||0;d.arrive=d.arrive||{};d.attendBy=d.attendBy||{};d.deleted=d.deleted||[];return d;}
+
+let config=null,curDate=todayStr(),day=null,tab='roster';
+let filter='all',search='',editMode=false,pendingDispatch=null,adminName='',editBuf=null,boardFilter='all';
+
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function nowHM(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function dayName(ds){return DAYS[new Date(ds+'T00:00:00').getDay()];}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+function blankDay(){return {attend:{},running:{},jobs:[],seq:0,arrive:{},attendBy:{},deleted:[],_rev:0};}
+function truckByNo(no){return config.find(t=>t.truckNo===no);}
+function driverAt(t,pos){return (t.drivers||[]).find(d=>d.pos===String(pos));}
+
+/* save */
+let st=null;
+function flag(s){const e=document.getElementById('saveFlag');if(!e)return;if(s==='saving'){e.textContent='● กำลังบันทึก…';e.className='saveflag saving';}else if(s==='err'){e.textContent='● ต่อระบบกลางไม่ได้';e.className='saveflag saving';}else{e.textContent=(backendURL&&lastSyncTxt)?('● ซิงก์ '+lastSyncTxt):'● บันทึกแล้ว';e.className='saveflag';}}
+function saveDay(){
+  flag('saving');dirty=true;clearTimeout(st);
+  st=setTimeout(async()=>{
+    const ds=curDate;
+    mem['fleet:day:'+ds]=JSON.stringify(day);
+    if(backendURL){
+      const merged=await dayMerge(ds,day);
+      if(merged&&ds===curDate){
+        try{const o=JSON.parse(merged);if(o&&typeof o==='object'){normDay(o);day=o;}}catch(e){}
+        lastSyncTxt=nowHM();dirty=false;flag('ok');
+      }else{flag('err');}
+    }else{
+      await store.set('fleet:day:'+ds,JSON.stringify(day));dirty=false;flag('ok');
+    }
+  },250);
+}
+async function saveConfig(){await store.set('fleet:roster',JSON.stringify(config));}
+let cs=null;function scheduleConfigSave(){flag('saving');clearTimeout(cs);cs=setTimeout(async()=>{await saveConfig();flag('ok');},400);}
+async function loadConfig(){const raw=await store.get('fleet:roster');if(raw){try{config=JSON.parse(raw);}catch(e){config=seed();}}else{config=seed();await saveConfig();}}
+function seed(){const r=ROSTER.map(t=>({...t,routeGroup:(t.routeGroup||'').trim()}));EXTRA.forEach(x=>{if(!r.find(t=>t.truckNo===x.truckNo))r.push(x);});return r;}
+async function loadDay(){
+  let raw=null;
+  if(backendURL){raw=await dayFetch(curDate);if(raw!==null)lastSyncTxt=nowHM();else flag('err');}
+  if(raw===null)raw=await store.get('fleet:day:'+curDate);
+  if(raw){try{day=JSON.parse(raw);}catch(e){day=blankDay();}}else day=blankDay();
+  normDay(day);dirty=false;
+}
+
+/* attendance helpers */
+function isOff(t,d,ds){return d&&d.dayOff&&d.dayOff===dayName(ds);}
+function attOf(no){return day.attend[no]||{};}
+function isRunning(no){return !!day.running[no];}
+
+/* ---------- KPIs ---------- */
+function kpis(){
+  let running=0,present=0,absent=0,leave=0,off=0,ot=0,unchecked=0,total=0;
+  for(const t of config){
+    if(isRunning(t.truckNo))running++;
+    const a=attOf(t.truckNo);
+    for(const d of (t.drivers||[])){
+      total++;
+      const v=a[d.pos];
+      if(isOff(t,d,curDate)){ off++; if(v==='ot')ot++; continue; }   // วันหยุด fix ตามตารางกะ ไม่หัก OT
+      if(v==='present')present++;else if(v==='absent')absent++;else if(v==='leave')leave++;else if(v==='ot')ot++;else unchecked++;
+    }
+  }
+  const scheduled=total-off;      // ต้องมาทำงานวันนี้ (ตามตารางกะ)
+  const actual=present+ot;        // มาทำงานจริงทั้งหมด (รวม OT)
+  return {running,present,absent,leave,off,ot,unchecked,total,scheduled,actual};
+}
+function summaryBar(){
+  const k=kpis();
+  return `<section class="summary">
+    <div class="stat hero"><div class="lab">สรุปการมาทำงาน</div><div class="val mono">${k.actual}/${k.scheduled}</div><div class="bar" style="width:${k.scheduled?Math.min(100,k.actual/k.scheduled*100):0}%"></div></div>
+    <div class="stat go"><div class="lab">มา (ปกติ)</div><div class="val mono">${k.present}</div></div>
+    <div class="stat ot"><div class="lab">มา OT (วันหยุด)</div><div class="val mono">${k.ot}</div></div>
+    <div class="stat miss"><div class="lab">ขาด</div><div class="val mono">${k.absent}</div></div>
+    <div class="stat lv"><div class="lab">ลา</div><div class="val mono">${k.leave}</div></div>
+    <div class="stat"><div class="lab">วันหยุดวันนี้ (ตามตารางกะ)</div><div class="val mono">${k.off}</div></div>
+    <div class="stat gap"><div class="lab">ยังไม่เช็ก</div><div class="val mono">${k.unchecked}</div></div>
+  </section>`;
+}
+
+/* ---------- TAB 1: roster (roll-call by report time + editor) ---------- */
+function parseStart(shift){if(!shift)return null;const m=String(shift).match(/(\d{1,2}):(\d{2})/);if(!m)return null;return ((+m[1])%24)*60+(+m[2]);}
+function startLabel(shift){if(!shift)return '-';const m=String(shift).match(/(\d{1,2}:\d{2})/);return m?m[1]:'-';}
+function shiftCls(pos){return pos==='1'?'m':pos==='2'?'a':'n';}
+
+function renderRoster(){
+  const prev=document.querySelector('.tablewrap.scroll');const prevTop=prev?prev.scrollTop:null;
+  const toolbar=editMode
+    ? `<div class="toolbar"><span class="cno">✎ โหมดแก้ไขรายชื่อ/เบอร์รถ — แก้เสร็จแล้วกด “บันทึกการเปลี่ยนแปลง” เพื่อยืนยัน</span><div style="flex:1"></div><button class="btn" id="cancelEdit">ยกเลิก</button><button class="btn primary" id="saveEdit">✓ บันทึกการเปลี่ยนแปลง</button></div>`
+    : `<div class="toolbar">
+      <input type="search" id="search" placeholder="ค้นหา เบอร์รถ / ต้นทาง / ชื่อคนขับ…" value="${esc(search)}">
+      <button class="pill ${filter==='all'?'active':''}" data-f="all">ทั้งหมด</button>
+      <button class="pill ${filter==='work'?'active':''}" data-f="work">ต้องมาทำงาน</button>
+      <button class="pill ${filter==='off'?'active':''}" data-f="off">วันหยุด</button>
+      <button class="pill ${filter==='incomplete'?'active':''}" data-f="incomplete">ยังไม่เช็ก</button>
+      <button class="btn" id="editBtn">✎ แก้ไขรายชื่อ/เบอร์รถ</button>
+      <button class="btn" id="importBtn">⬆ อัปโหลดตารางกะใหม่</button>
+      <button class="btn" id="csvBtn">⬇ ส่งออก Excel</button>
+      <button class="btn" id="printBtn">🖨 พิมพ์</button>
+      <input type="file" id="fileInput" accept=".xlsx" style="display:none">
+    </div>`;
+  document.getElementById('view').innerHTML=summaryBar()+toolbar+`<div id="rosterArea">${editMode?editorTable():rollCallTable()}</div>`;
+  if(prevTop!=null){const sc=document.querySelector('.tablewrap.scroll');if(sc)sc.scrollTop=prevTop;}
+}
+function scrollToCurrentHour(){
+  const sc=document.querySelector('.tablewrap.scroll');if(!sc)return;
+  const hr=new Date().getHours();
+  const heads=[...sc.querySelectorAll('tr.grouphdr')];if(!heads.length)return;
+  let target=null;
+  for(const h of heads){const m=(h.textContent||'').match(/(\d{2}):00/);if(m&&(+m[1])<=hr)target=h;}
+  target=target||heads[0];
+  const scR=sc.getBoundingClientRect(),tR=target.getBoundingClientRect();
+  sc.scrollTop+=(tR.top-scR.top)-4;
+}
+function updateRosterArea(){const ra=document.getElementById('rosterArea');if(ra)ra.innerHTML=editMode?editorTable():rollCallTable();}
+
+function rollCallTable(){
+  let list=[];
+  for(const t of config)for(const d of (t.drivers||[]))list.push({t,d,startMin:parseStart(d.shift)});
+  list=list.filter(r=>{
+    const off=isOff(r.t,r.d,curDate);
+    if(filter==='work'&&off)return false;
+    if(filter==='off'&&!off)return false;
+    if(filter==='incomplete'){const cur=attOf(r.t.truckNo)[r.d.pos]||'';if(off||cur)return false;}
+    if(search){const q=search.toLowerCase();if(!((r.t.truckNo+' '+r.t.routeGroup+' '+r.d.name).toLowerCase().includes(q)))return false;}
+    return true;
+  });
+  list.sort((a,b)=>{const x=a.startMin==null?99999:a.startMin,y=b.startMin==null?99999:b.startMin;return x-y||a.t.truckNo.localeCompare(b.t.truckNo);});
+  const groups={};for(const r of list){const h=r.startMin==null?-1:Math.floor(r.startMin/60);(groups[h]=groups[h]||[]).push(r);}
+  const hours=Object.keys(groups).map(Number).sort((a,b)=>a-b);
+  let body='';
+  for(const h of hours){
+    const label=h<0?'ไม่ระบุเวลา':(String(h).padStart(2,'0')+':00 น.');
+    body+=`<tr class="grouphdr"><td colspan="7">🕐 ${label} — ${groups[h].length} คนรายงานตัว</td></tr>`;
+    for(const r of groups[h])body+=rollRow(r);
+  }
+  return `<div class="tablewrap scroll"><table>
+    <thead><tr><th>เข้ากะ</th><th>เบอร์รถ / ต้นทาง</th><th>กะ</th><th>คนขับ</th><th>สถานะ</th><th>เวลามาจริง</th><th>จ่ายแผน</th></tr></thead>
+    <tbody>${body||'<tr><td colspan="7" class="empty-note">ไม่พบรายการ</td></tr>'}</tbody></table></div>`;
+}
+function rollRow(r){
+  const t=r.t,d=r.d,off=isOff(t,d,curDate),cur=attOf(t.truckNo)[d.pos]||'',sc=shiftCls(d.pos);
+  const av=(day.arrive[t.truckNo]||{})[d.pos]||'';
+  const ah=av?av.split(':')[0]:'',am=av?av.split(':')[1]:'';
+  const hOpts='<option value=""></option>'+Array.from({length:24},(_,i)=>{const v=String(i).padStart(2,'0');return `<option value="${v}"${v===ah?' selected':''}>${v}</option>`}).join('');
+  const mOpts=Array.from({length:60},(_,i)=>{const v=String(i).padStart(2,'0');return `<option value="${v}"${v===am?' selected':''}>${v}</option>`}).join('');
+  let statusCell;
+  if(off&&cur!=='ot')statusCell=`<span class="offbadge">วันหยุด (${esc(d.dayOff)})</span> <button class="otbtn" data-ot="${esc(t.truckNo)}" data-pos="${d.pos}">＋ มาทำ OT</button>`;
+  else if(off&&cur==='ot')statusCell=`<span class="otyes">✓ มา OT</span><button class="otbtn" data-ot="${esc(t.truckNo)}" data-pos="${d.pos}">ยกเลิก</button>`;
+  else statusCell=`<div class="stbtns">${[['present','มา'],['absent','ขาด'],['leave','ลา']].map(([v,l])=>`<button class="st ${v}${cur===v?' sel':''}" data-att="${esc(t.truckNo)}" data-pos="${d.pos}" data-val="${v}">${l}</button>`).join('')}</div>`;
+  return `<tr>
+    <td class="mono" style="font-weight:600">${startLabel(d.shift)}</td>
+    <td class="truck"><span class="plate">${esc(t.truckNo)}</span><div class="cno">${esc(t.routeGroup)}</div></td>
+    <td><span class="tag" style="color:var(--${sc});background:var(--${sc}-bg)">กะ${esc(d.pos)}</span></td>
+    <td><div class="drv">${esc(d.name)}</div><div class="cno">${d.code?('รหัส '+esc(d.code)):''}${(d.code&&d.phone)?' · ':''}${d.phone?esc(d.phone):''}</div></td>
+    <td>${statusCell}</td>
+    <td><span class="hhmm"><select class="arrsel" data-arrive="${esc(t.truckNo)}" data-pos="${d.pos}" data-part="h">${hOpts}</select><b>:</b><select class="arrsel" data-arrive="${esc(t.truckNo)}" data-pos="${d.pos}" data-part="m">${mOpts}</select><span class="cno">น.</span></span></td>
+    <td><button class="planlink" data-plan="${esc(t.truckNo)}" data-pos="${d.pos}">จ่ายแผน →</button></td>
+  </tr>`;
+}
+
+function editorTable(){
+  const days=['','อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  const data=editBuf||config;
+  let body='';
+  data.forEach((t,ti)=>{
+    body+=`<tr class="edtruck"><td colspan="6">
+      เบอร์รถ <input data-edit="truckno" data-ti="${ti}" value="${esc(t.truckNo)}" class="mono" style="width:96px">
+      &nbsp;ต้นทาง <input data-edit="route" data-ti="${ti}" value="${esc(t.routeGroup)}" style="width:120px">
+      <span class="tag">${TYPELABEL[t.type]||''}</span>
+      <button class="miniadd" data-adddrv="${ti}">＋ เพิ่มคนขับ</button>
+      <button class="del" data-deltruck="${ti}" title="ลบรถทั้งคัน" style="float:right;font-size:13px">🗑 ลบรถคันนี้</button>
+    </td></tr>`;
+    (t.drivers||[]).forEach((d,di)=>{
+      body+=`<tr class="edrow">
+        <td><input data-edit="pos" data-ti="${ti}" data-di="${di}" value="${esc(d.pos)}" style="width:38px"></td>
+        <td><input data-edit="name" data-ti="${ti}" data-di="${di}" value="${esc(d.name)}" style="width:160px" placeholder="ชื่อคนขับ"></td>
+        <td><input data-edit="phone" data-ti="${ti}" data-di="${di}" value="${esc(d.phone||'')}" class="mono" style="width:120px" placeholder="เบอร์โทร"></td>
+        <td><input data-edit="shift" data-ti="${ti}" data-di="${di}" value="${esc(d.shift||'')}" class="mono" style="width:118px" placeholder="06:00 - 14:00"></td>
+        <td><select data-edit="dayoff" data-ti="${ti}" data-di="${di}">${days.map(o=>`<option ${o===(d.dayOff||'')?'selected':''}>${o||'—'}</option>`).join('')}</select></td>
+        <td><button class="del" data-deldrv="${ti}" data-di="${di}">✕</button></td>
+      </tr>`;
+    });
+  });
+  return `<div class="hint">แก้ชื่อ/เบอร์โทร/เวลากะ/วันหยุด/เบอร์รถ ได้เลย บันทึกอัตโนมัติ · เพิ่มคนขับให้รถที่ยังว่าง (สำรอง/VT/12:12) ได้ · ค่าที่แก้จะถูกทับเมื่ออัปโหลดไฟล์กะใหม่</div>
+    <div style="margin-bottom:10px"><button class="btn primary" id="addTruck">＋ เพิ่มรถใหม่</button></div>
+    <div class="tablewrap scroll"><table><thead><tr><th>กะ</th><th>ชื่อคนขับ</th><th>เบอร์โทร</th><th>เวลากะ</th><th>วันหยุด</th><th>ลบ</th></tr></thead>
+    <tbody>${body}</tbody></table></div>`;
+}
+
+/* ---------- TAB 2: dispatch summary table + popup form ---------- */
+function renderDispatch(){
+  const rows=day.jobs.map((j,i)=>`<tr>
+    <td class="mono">${esc(j.date||curDate)}</td>
+    <td class="mono" style="text-align:center">${i+1}</td>
+    <td>${esc(j.product||'')}</td>
+    <td>${esc(j.origin||'')}</td>
+    <td>${esc(j.dest||'')}</td>
+    <td class="mono">${esc(j.code||'')}</td>
+    <td>${esc(j.driver||'')}</td>
+    <td class="mono">${esc(j.mainTruck||j.truck||'')}</td>
+    <td><input class="actualin" data-actual="${j.id}" value="${esc(j.actualTruck||j.mainTruck||j.truck||'')}"></td>
+    <td class="mono" style="text-align:center">${esc(j.trip||'')}</td>
+    <td><span class="jtype ${j.type}">${j.type==='main'?'สายหลัก':'VT'}</span></td>
+    <td><input type="time" class="departin" data-depart="${j.id}" value="${esc(j.depart||'')}" step="60"></td>
+    <td><input class="noteinp" data-note="${j.id}" value="${esc(j.note||'')}" placeholder="หมายเหตุ…"></td>
+    <td class="cno">${esc(j.by||'')}</td>
+    <td><button class="del" data-deljob="${j.id}">✕</button></td>
+  </tr>`).join('');
+  document.getElementById('view').innerHTML=`
+    <div class="toolbar">
+      <button class="btn primary" id="openDispatch">＋ จ่ายงานใหม่</button>
+      <span class="cno">จ่ายงานวันนี้ ${day.jobs.length} รายการ · หรือกด “จ่ายแผน” จากแท็บ 1 เพื่อจ่ายให้คนขับรายคน</span>
+      <div style="flex:1"></div>
+      <button class="btn" id="csvBtn">⬇ ส่งออก Excel</button>
+    </div>
+    <div class="tablewrap scroll"><table style="min-width:1260px">
+      <thead><tr>
+        <th>วันที่</th><th>ลำดับ</th><th>ชื่อสินค้า</th><th>ต้นทาง</th><th>ปลายทาง</th><th>รหัส พนง.</th><th>ชื่อ พนง.</th><th>เบอร์รถหลัก</th><th>เบอร์รถที่วิ่งจริง</th><th>เที่ยว</th><th>ประเภทงาน</th><th>เวลาออก</th><th>หมายเหตุ</th><th>ผู้บันทึก (CC)</th><th></th>
+      </tr></thead>
+      <tbody>${rows||'<tr><td colspan="15" class="empty-note">ยังไม่มีงานที่จ่าย — กด “จ่ายแผน” จากแท็บ 1 หรือปุ่ม “จ่ายงานใหม่”</td></tr>'}</tbody>
+    </table></div>`;
+}
+function dispatchFormHTML(){
+  const truckOpts=config.map(t=>`<option value="${esc(t.truckNo)}">${esc(t.truckNo)} — ${esc(t.routeGroup)}</option>`).join('');
+  const routeOpts=ROUTEDATA.map((r,i)=>`<option value="${i}">${esc(r.product)}</option>`).join('')+'<option value="__custom">+ ระบุเอง…</option>';
+  const oOpts=ORIGIN_OPTIONS.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')+'<option value="__custom">+ ระบุเอง…</option>';
+  const dOpts=DEST_OPTIONS.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')+'<option value="__custom">+ ระบุเอง…</option>';
+  return `<div class="modal-card">
+    <div class="modal-head"><h2>จ่ายแผนงาน</h2><button class="modal-x" id="closeModal">✕</button></div>
+    <div class="formgrid">
+      <div class="field"><label>วันที่</label><input id="j_date" value="${curDate}" readonly></div>
+      <div class="field"><label>เบอร์รถหลัก (ตามตารางกะ)</label><select id="j_truck">${truckOpts}</select></div>
+      <div class="field"><label>กะ / คนขับ</label><select id="j_shift"></select></div>
+      <div class="field"><label>รหัส / ชื่อ พนักงาน</label><input id="j_drvinfo" readonly></div>
+      <div class="field"><label>สินค้า / เส้นทาง</label><select id="j_route">${routeOpts}</select></div>
+      <div class="field" id="j_route_custom_wrap" style="display:none"><label>ระบุสินค้าเอง</label><input id="j_route_custom"></div>
+      <div class="field"><label>ต้นทาง</label><select id="j_origin">${oOpts}</select></div>
+      <div class="field" id="j_origin_custom_wrap" style="display:none"><label>ระบุต้นทางเอง</label><input id="j_origin_custom"></div>
+      <div class="field"><label>ปลายทาง</label><select id="j_dest">${dOpts}</select></div>
+      <div class="field" id="j_dest_custom_wrap" style="display:none"><label>ระบุปลายทางเอง</label><input id="j_dest_custom"></div>
+      <div class="field"><label>ระยะทาง (กม.) — match อัตโนมัติ</label><input id="j_distance" class="mono" inputmode="numeric"></div>
+      <div class="field"><label>ประเภทงาน (auto)</label><select id="j_type"><option value="main">สายหลัก (&gt;100 กม.)</option><option value="vt">VT สายสั้น (≤100 กม.)</option></select></div>
+      <div class="field"><label>เบอร์รถที่วิ่งจริง (แก้ได้)</label><input id="j_actual" class="mono" placeholder="ค่าเริ่ม = เบอร์รถหลัก"></div>
+      <div class="field"><label>เที่ยววิ่งงาน</label><input id="j_trip" class="mono" inputmode="numeric" value="1"></div>
+    </div>
+    <div class="modal-actions"><button class="btn" id="cancelJob">ยกเลิก</button><button class="btn primary" id="saveJob">บันทึกการจ่ายงาน</button></div>
+  </div>`;
+}
+function effOrigin(){const s=document.getElementById('j_origin');return s.value==='__custom'?(document.getElementById('j_origin_custom').value||''):s.value;}
+function effDest(){const s=document.getElementById('j_dest');return s.value==='__custom'?(document.getElementById('j_dest_custom').value||''):s.value;}
+function recalcDist(){
+  const km=matchDistance(effOrigin(),effDest());
+  const di=document.getElementById('j_distance');if(di)di.value=km;
+  const ty=document.getElementById('j_type');if(ty)ty.value=(km!==''&&km>100)?'main':(km!==''?'vt':ty.value);
+}
+function openModal(truck,pos){
+  const m=document.getElementById('modal');m.innerHTML=dispatchFormHTML();m.style.display='flex';
+  const ts=document.getElementById('j_truck');
+  if(truck&&[...ts.options].some(o=>o.value===truck))ts.value=truck;
+  fillShift();
+  if(pos){const ss=document.getElementById('j_shift');if(ss&&[...ss.options].some(o=>o.value===pos))ss.value=pos;}
+  preselectRoute();fillRoute();recalcDist();syncActual();syncDriverInfo();syncTrip();
+}
+function closeModal(){const m=document.getElementById('modal');m.style.display='none';m.innerHTML='';}
+function updateAdminChip(){const el=document.getElementById('adminChip');if(!el)return;el.innerHTML=adminName?`👤 ${esc(adminName)} <button class="linkish" id="changeAdmin">เปลี่ยน</button>`:`<button class="loginbtn" id="loginBtn">เข้าสู่ระบบ</button>`;}
+function openLogin(){
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="modal-card" style="max-width:480px">
+    <div class="modal-head"><h2>เข้าสู่ระบบ — ผู้บันทึก (CC)</h2>${adminName?'<button class="modal-x" id="closeModal">✕</button>':''}</div>
+    <div class="field"><label>ชื่อผู้บันทึก (CC)</label><input id="login_name" value="${esc(adminName)}" placeholder="เช่น CC สมชาย (กะเช้า)"></div>
+    <div class="field" style="margin-top:12px"><label>URL ระบบกลาง (Google Apps Script) — เว้นว่างได้ถ้าใช้เครื่องเดียว</label><input id="login_url" value="${esc(backendURL)}" placeholder="https://script.google.com/macros/s/.../exec"></div>
+    <p class="cno" style="margin:10px 0 0">ใส่ URL เดียวกันทุกเครื่องเพื่อแชร์ข้อมูลชุดเดียวกัน · ชื่อ CC จะถูกบันทึกกำกับทุกรายการที่คีย์</p>
+    <div class="modal-actions"><button class="btn primary" id="loginSave">เข้าใช้งาน</button></div>
+  </div>`;
+  m.style.display='flex';
+  setTimeout(()=>{const i=document.getElementById('login_name');if(i){i.focus();}},60);
+}
+async function doLogin(){
+  const v=(document.getElementById('login_name').value||'').trim();if(!v){alert('กรุณาระบุชื่อผู้บันทึก');return;}
+  const url=(document.getElementById('login_url').value||'').trim();
+  adminName=v;lsSet('fleet:admin',adminName);
+  backendURL=url;lsSet('fleet:backend',backendURL);
+  updateAdminChip();closeModal();
+  flag('saving');await loadConfig();await loadDay();flag('ok');render();startPoll();if(tab==='roster')scrollToCurrentHour();
+}
+function stampBy(){day.by=adminName;}
+function syncActual(){const a=document.getElementById('j_actual');if(a&&!a.dataset.touched)a.value=document.getElementById('j_truck').value;}
+function syncDriverInfo(){const t=truckByNo(document.getElementById('j_truck').value);const d=driverAt(t,document.getElementById('j_shift').value);const el=document.getElementById('j_drvinfo');if(el)el.value=d?((d.code?d.code+' · ':'')+d.name):'(ยังไม่กำหนดคนขับ)';}
+function syncTrip(){const no=document.getElementById('j_truck').value;const n=day.jobs.filter(j=>(j.mainTruck||j.truck)===no).length+1;const el=document.getElementById('j_trip');if(el&&!el.dataset.touched)el.value=n;}
+function saveJob(){
+  const g=id=>document.getElementById(id);
+  const no=g('j_truck').value,t=truckByNo(no),pos=g('j_shift').value,d=driverAt(t,pos);
+  const rv=g('j_route').value;let product;
+  if(rv==='__custom')product=g('j_route_custom').value.trim();else{const rd=ROUTEDATA[+rv];product=rd?rd.product:'';}
+  const origin=effOrigin().trim(),dest=effDest().trim(),dist=g('j_distance').value.trim(),actual=g('j_actual').value.trim(),trip=g('j_trip').value.trim();
+  const miss=[];
+  if(!d||d.name==='(ยังไม่กำหนดคนขับ)')miss.push('คนขับ (รถนี้ยังไม่มีคนขับในตารางกะ)');
+  if(!product)miss.push('สินค้า/เส้นทาง');
+  if(!origin)miss.push('ต้นทาง');
+  if(!dest)miss.push('ปลายทาง');
+  if(!dist)miss.push('ระยะทาง');
+  if(!actual)miss.push('เบอร์รถที่วิ่งจริง');
+  if(!trip)miss.push('เที่ยววิ่งงาน');
+  if(!adminName)miss.push('กรุณาเข้าสู่ระบบก่อน (ระบุชื่อผู้บันทึก)');
+  if(miss.length){alert('กรุณากรอกให้ครบก่อนบันทึก:\n• '+miss.join('\n• '));return;}
+  day.seq++;
+  day.jobs.push({id:uid(),date:curDate,truck:no,mainTruck:no,actualTruck:actual,shift:pos,code:d?(d.code||''):'',driver:d?d.name:'',product,route:product,origin,dest,distance:dist,type:g('j_type').value,trip,depart:'',by:adminName,note:'',chargeStart:'',chargeEnd:'',ret:''});
+  if(!day.running[no])day.running[no]=true;
+  saveDay();closeModal();tab='dispatch';render();
+}
+function fillShift(){
+  const no=document.getElementById('j_truck').value;const t=truckByNo(no);
+  const sel=document.getElementById('j_shift');
+  const ds=(t&&t.drivers&&t.drivers.length)?t.drivers:[{pos:'1',name:'(ยังไม่กำหนดคนขับ)'}];
+  sel.innerHTML=ds.map(d=>`<option value="${d.pos}">กะ${d.pos} — ${esc(d.name)}</option>`).join('');
+}
+function preselectRoute(){
+  const no=document.getElementById('j_truck').value;const t=truckByNo(no);if(!t)return;
+  const g=(t.routeGroup||'').replace('WJ','วังจันทร์');
+  const i=ROUTEDATA.findIndex(r=>g&&r.product&&r.product.includes(g));
+  if(i>=0)document.getElementById('j_route').value=i;
+}
+function setSelectOrCustom(id,val){
+  const s=document.getElementById(id);const cw=document.getElementById(id+'_custom_wrap');
+  if(!s)return;
+  if(val&&[...s.options].some(o=>o.value===val)){s.value=val;if(cw)cw.style.display='none';}
+  else if(val){s.value='__custom';if(cw)cw.style.display='block';const ci=document.getElementById(id+'_custom');if(ci)ci.value=val;}
+}
+function fillRoute(){
+  const sel=document.getElementById('j_route');const v=sel.value;
+  const cw=document.getElementById('j_route_custom_wrap');
+  if(v==='__custom'){cw.style.display='block';return;}
+  cw.style.display='none';
+  const r=ROUTEDATA[+v];if(!r)return;
+  const def=PROD_DEFAULT[r.product];
+  if(def){setSelectOrCustom('j_origin',def[0]);setSelectOrCustom('j_dest',def[1]);}
+  recalcDist();
+}
+
+/* ---------- TAB 3: live board ---------- */
+function jobStatus(j){
+  if(j.ret)return['done','b-done','กลับถึงแล้ว'];
+  if(j.chargeEnd)return['charged','b-charged','ชาร์จเสร็จ'];
+  if(j.chargeStart)return['charge','b-charge','กำลังชาร์จ'];
+  if(j.depart)return['run','b-run','ออกวิ่ง'];
+  return['wait','b-wait','รอออก'];
+}
+function renderBoard(){
+  const jobs=day.jobs;
+  const cnt={run:0,charge:0,charged:0,done:0};
+  jobs.forEach(j=>{const k=jobStatus(j)[0];if(cnt[k]!==undefined)cnt[k]++;});
+  const box=(bf,lab,n,cls)=>`<div class="stat boardbox ${cls} ${boardFilter===bf?'sel':''}" data-bf="${bf}"><div class="lab">${lab}</div><div class="val mono">${n}</div></div>`;
+  const stamp=(j,f)=>`<div class="stampcell"><input type="time" step="60" value="${esc(j[f]||'')}" data-job="${j.id}" data-field="${f}"><button data-stampnow="${j.id}" data-field="${f}">จับเวลา</button></div>`;
+  const shown=jobs.filter(j=>boardFilter==='all'||jobStatus(j)[0]===boardFilter);
+  const rows=shown.map(j=>{const[k,c,l]=jobStatus(j);return `<tr>
+    <td class="truck"><div class="plate">${esc(j.actualTruck||j.truck)} <span class="jtype ${j.type}">${j.type==='main'?'สายหลัก':'VT'}</span></div><div class="cno">${esc(j.product||'')} · ${esc(j.driver||'')}${j.trip?(' · เที่ยว '+esc(j.trip)):''}</div></td>
+    <td>${stamp(j,'depart')}</td><td>${stamp(j,'chargeStart')}</td><td>${stamp(j,'chargeEnd')}</td><td>${stamp(j,'ret')}</td>
+    <td><span class="badge ${c}">${l}</span></td></tr>`;}).join('');
+  document.getElementById('view').innerHTML=`
+    <section class="summary" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
+      ${box('run','รถออกวิ่ง',cnt.run,'go')}
+      ${box('charge','กำลังชาร์จ',cnt.charge,'chg')}
+      ${box('charged','ชาร์จเสร็จ',cnt.charged,'chd')}
+      ${box('done','กลับถึงแล้ว',cnt.done,'dn')}
+    </section>
+    <div class="toolbar"><span class="cno">กดกล่องด้านบนเพื่อกรองดูเฉพาะสถานะนั้น (กดซ้ำเพื่อดูทั้งหมด) · กด “จับเวลา” เพื่อบันทึกเวลาปัจจุบัน หรือแก้เวลาเองได้</span>
+      ${boardFilter!=='all'?'<button class="btn" id="clearBf">✕ ล้างตัวกรอง</button>':''}</div>
+    <div class="tablewrap scroll"><table style="min-width:900px">
+      <thead><tr><th>รถ / งาน</th><th>ออกวิ่ง</th><th>เริ่มชาร์จ</th><th>ชาร์จเสร็จ</th><th>กลับถึง</th><th>สถานะ</th></tr></thead>
+      <tbody>${shown.length?rows:'<tr><td colspan="6" class="empty-note">'+(jobs.length?'ไม่มีงานในสถานะนี้':'ยังไม่มีงานที่จ่าย — ไปที่แท็บ 2 เพื่อจ่ายงาน')+'</td></tr>'}</tbody>
+    </table></div>`;
+}
+
+/* ---------- TAB 4: planning (placeholder) ---------- */
+function hubTrucks(name){return config.filter(t=>{const g=(t.routeGroup||'').replace('WJ','วังจันทร์');return g===name;}).length;}
+function hubFullMin(origin){const h=HUBDATA.find(h=>origin&&origin.includes(h.name));return h?h.fullMin:45;}
+function renderPlan(){
+  const speed=planSpeed||65;
+  const over=ROUTEDATA.filter(r=>r.distance&&r.distance>RANGE_KM).length;
+  const routeRows=ROUTEDATA.map(r=>{
+    const d=r.distance||0;
+    const driveMin=d?Math.round(d/speed*60):null;
+    const chgMin=d?Math.round(d/RANGE_KM*hubFullMin(r.origin)):null;
+    const inRange=d<=RANGE_KM;
+    const rangeCell=d?(inRange?`<span style="color:var(--present)">พอ (เหลือ ${RANGE_KM-d} กม.)</span>`:`<span style="color:var(--absent)">เกิน ${d-RANGE_KM} กม.</span>`):'-';
+    return `<tr><td>${esc(r.product)}</td><td>${esc(r.origin||'-')}</td><td class="mono">${d||'-'}</td><td class="mono">${driveMin!=null?driveMin+' น.':'-'}</td><td class="mono">${chgMin!=null?chgMin+' น.':'-'}</td><td>${rangeCell}</td><td><span class="jtype ${r.type}">${r.type==='main'?'สายหลัก':'VT'}</span></td></tr>`;
+  }).join('');
+  const hubRows=HUBDATA.map(h=>{const n=hubTrucks(h.name);const perHr=Math.round(h.chargers/h.fullMin*60*10)/10;const rounds=Math.ceil(n/h.chargers);const allMin=rounds*h.fullMin;return `<tr><td><b>${esc(h.name)}</b></td><td class="mono">${h.chargers}</td><td class="mono">${h.fullMin} น.</td><td class="mono">${n}</td><td class="mono">${perHr} คัน/ชม.</td><td class="mono">${allMin} น. (${rounds} รอบ)</td></tr>`;}).join('');
+  const hubOpts=HUBDATA.map((h,i)=>`<option value="${i}">HUB ${esc(h.name)} (${h.chargers} หัว · ${h.fullMin} น.)</option>`).join('');
+  document.getElementById('view').innerHTML=`
+    <div class="card"><h2>จุดชาร์จ (HUB)</h2>
+      <div class="hint">พิสัยวิ่ง ${RANGE_KM} กม./ชาร์จเต็ม · ความเร็วเฉลี่ย ${speed} กม./ชม. · ${over===0?'ทุกเส้นทางปัจจุบันวิ่งจบได้ใน 1 ชาร์จ ไม่ต้องแวะชาร์จระหว่างทาง — คอขวดคือคิวชาร์จระหว่างเที่ยว':('มี '+over+' เส้นทางเกินพิสัย ต้องแวะชาร์จระหว่างทาง')}</div>
+      <div class="tablewrap"><table style="min-width:640px"><thead><tr><th>HUB</th><th>หัวชาร์จ</th><th>ชาร์จเต็ม</th><th>รถประจำ HUB</th><th>อัตราชาร์จ</th><th>ชาร์จครบทั้งกอง</th></tr></thead><tbody>${hubRows}</tbody></table></div>
+    </div>
+    <div class="card"><h2>จำลองคิวชาร์จ / แผนปล่อยรถ</h2>
+      <div class="formgrid">
+        <div class="field"><label>HUB</label><select id="s_hub">${hubOpts}</select></div>
+        <div class="field"><label>จำนวนรถที่ต้องชาร์จ</label><input id="s_n" class="mono" inputmode="numeric" value="6"></div>
+        <div class="field"><label>ชาร์จถึง % </label><input id="s_pct" class="mono" inputmode="numeric" value="100"></div>
+        <div class="field"><label>เวลาเริ่มชาร์จ</label><input type="time" id="s_start" value="${nowHM()}"></div>
+      </div>
+      <div class="formactions"><button class="btn primary" id="simBtn">คำนวณคิว →</button><span class="cno">ชาร์จเต็ม 100% ≈ วิ่งได้ ${RANGE_KM} กม.</span></div>
+      <div id="simResult"></div>
+    </div>
+    <div class="card"><h2>เส้นทาง &amp; สินค้า</h2>
+      <div class="toolbar"><label class="cno">ความเร็วเฉลี่ย</label><input id="planSpeed" class="mono" inputmode="numeric" value="${speed}" style="width:64px;border:1px solid var(--line);border-radius:8px;padding:6px 9px"><span class="cno">กม./ชม. · "ชาร์จ/เที่ยว" = เวลาชาร์จตามสัดส่วนระยะทางกับพิสัย ${RANGE_KM} กม.</span></div>
+      <div class="tablewrap"><table style="min-width:720px"><thead><tr><th>สินค้า</th><th>ต้นทาง (HUB)</th><th>ระยะ(กม.)</th><th>เวลาวิ่ง~</th><th>ชาร์จ/เที่ยว~</th><th>พิสัย</th><th>ประเภท</th></tr></thead><tbody>${routeRows}</tbody></table></div>
+    </div>`;
+}
+function runSim(){
+  const g=id=>document.getElementById(id);
+  const h=HUBDATA[+g('s_hub').value];const n=Math.max(1,parseInt(g('s_n').value)||1);
+  const pct=Math.min(100,Math.max(1,parseInt(g('s_pct').value)||100));
+  const chargeMin=Math.round(h.fullMin*pct/100);
+  const start=g('s_start').value||nowHM();
+  const [sh,sm]=start.split(':').map(Number);const startMin=sh*60+sm;
+  const waves=Math.ceil(n/h.chargers);let rows='';let rem=n;
+  const fmt=m=>{m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
+  for(let w=1;w<=waves;w++){const cnt=Math.min(h.chargers,rem);rem-=cnt;const s=startMin+(w-1)*chargeMin;const e=s+chargeMin;rows+=`<tr><td class="mono">รอบ ${w}</td><td class="mono">${cnt} คัน</td><td class="mono">${fmt(s)}</td><td class="mono">${fmt(e)}</td><td>พร้อมปล่อย ${fmt(e)}</td></tr>`;}
+  const total=waves*chargeMin;
+  g('simResult').innerHTML=`<div class="hint" style="margin-top:14px">HUB ${esc(h.name)} · ${h.chargers} หัว · ชาร์จ ${pct}% ≈ ${chargeMin} น./คัน · ${n} คัน = ${waves} รอบ · ใช้เวลารวม ${total} นาที (เสร็จ ${fmt(startMin+total)})</div>
+    <div class="tablewrap"><table style="min-width:520px"><thead><tr><th>รอบ</th><th>จำนวน</th><th>เริ่มชาร์จ</th><th>ชาร์จเสร็จ</th><th>ปล่อยรถ</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+/* ---------- TAB 5: summary ---------- */
+function minutesBetween(a,b){if(!a||!b)return null;const[ah,am]=a.split(':').map(Number);let[bh,bm]=b.split(':').map(Number);let x=ah*60+am,y=bh*60+bm;if(y<x)y+=1440;return y-x;}
+function renderSummary(){
+  const k=kpis();
+  const perTruck={},perDriver={};
+  for(const j of day.jobs){
+    perTruck[j.truck]=perTruck[j.truck]||{main:0,vt:0,mins:[]};
+    if(j.type==='vt')perTruck[j.truck].vt++;else perTruck[j.truck].main++;
+    const mm=minutesBetween(j.depart,j.ret);if(mm!=null)perTruck[j.truck].mins.push(mm);
+    const dn=j.driver||'(ไม่ระบุ)';perDriver[dn]=perDriver[dn]||{trips:0,jobs:[],mins:0};
+    perDriver[dn].trips++;perDriver[dn].jobs.push((j.jobName||j.route));if(mm!=null)perDriver[dn].mins+=mm;
+  }
+  const truckRows=config.filter(t=>perTruck[t.truckNo]).map(t=>{const p=perTruck[t.truckNo];const avg=p.mins.length?Math.round(p.mins.reduce((a,b)=>a+b,0)/p.mins.length):null;const hit=p.main>=3;return `<tr><td class="plate">${esc(t.truckNo)}</td><td>${esc(t.routeGroup)}</td><td class="mono">${p.main} <span class="cno">/3</span> ${hit?'✅':''}</td><td class="mono">${p.vt}</td><td class="mono">${avg!=null?avg+' นาที':'-'}</td></tr>`;}).join('');
+  const drvRows=Object.entries(perDriver).sort((a,b)=>b[1].trips-a[1].trips).map(([n,p])=>`<tr><td>${esc(n)}</td><td class="mono">${p.trips}</td><td class="cno">${esc(p.jobs.join(', '))}</td><td class="mono">${p.mins?Math.round(p.mins/60*10)/10+' ชม.':'-'}</td></tr>`).join('');
+  const mainTotal=Object.values(perTruck).reduce((a,b)=>a+b.main,0);
+  const vtTotal=Object.values(perTruck).reduce((a,b)=>a+b.vt,0);
+  document.getElementById('view').innerHTML=`
+    <section class="summary">
+      <div class="stat hero"><div class="lab">รถวิ่งงานวันนี้</div><div class="val mono">${k.running}<small> / ${config.length}</small></div></div>
+      <div class="stat"><div class="lab">เที่ยวสายหลักรวม</div><div class="val mono">${mainTotal}</div></div>
+      <div class="stat"><div class="lab">เที่ยว VT รวม</div><div class="val mono">${vtTotal}</div></div>
+      <div class="stat go"><div class="lab">คนขับมา</div><div class="val mono">${k.present}</div></div>
+      <div class="stat miss"><div class="lab">ขาด</div><div class="val mono">${k.absent}</div></div>
+      <div class="stat lv"><div class="lab">ลา</div><div class="val mono">${k.leave}</div></div>
+    </section>
+    <div class="card"><h2>สรุปรายคัน — ครบ 3 เที่ยวสายหลักไหม</h2>
+      <div class="tablewrap"><table style="min-width:600px"><thead><tr><th>เบอร์รถ</th><th>ต้นทาง</th><th>เที่ยวสายหลัก</th><th>VT</th><th>เวลาเฉลี่ย/เที่ยว</th></tr></thead>
+      <tbody>${truckRows||'<tr><td colspan="5" class="empty-note">ยังไม่มีงานวันนี้</td></tr>'}</tbody></table></div></div>
+    <div class="card"><h2>สรุปรายคนขับ</h2>
+      <div class="tablewrap"><table style="min-width:600px"><thead><tr><th>คนขับ</th><th>เที่ยว</th><th>งาน</th><th>เวลารวม</th></tr></thead>
+      <tbody>${drvRows||'<tr><td colspan="4" class="empty-note">ยังไม่มีข้อมูล</td></tr>'}</tbody></table></div></div>
+    <div class="card"><h2>สรุปการมาทำงาน</h2><p style="font-size:14px;color:#3a4759">มา ${k.present} · ขาด <b style="color:var(--absent)">${k.absent}</b> · ลา <b style="color:var(--leave)">${k.leave}</b> · วันหยุด ${k.off} · ยังไม่เช็ก ${k.unchecked}</p></div>`;
+}
+
+/* ---------- router ---------- */
+function render(){
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  ({roster:renderRoster,dispatch:renderDispatch,board:renderBoard,plan:renderPlan,summary:renderSummary}[tab])();
+}
+
+/* ---------- events (delegated) ---------- */
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(b){tab=b.dataset.tab;render();if(tab==='roster')scrollToCurrentHour();}});
+document.getElementById('dateInput').addEventListener('change',async e=>{curDate=e.target.value||todayStr();await loadDay();render();if(tab==='roster')scrollToCurrentHour();});
+
+document.getElementById('view').addEventListener('click',e=>{
+  const att=e.target.closest('[data-att]');const run=e.target.closest('[data-run]');const pill=e.target.closest('.pill[data-f]');
+  const add=e.target.closest('#addJob');const del=e.target.closest('[data-deljob]');const now=e.target.closest('[data-stampnow]');
+  const imp=e.target.closest('#importBtn');const csv=e.target.closest('#csvBtn');const prn=e.target.closest('#printBtn');
+  if(att){const no=att.dataset.att,p=att.dataset.pos,v=att.dataset.val;day.attend[no]=day.attend[no]||{};day.attend[no][p]=day.attend[no][p]===v?'':v;day.attendBy[no]=day.attendBy[no]||{};day.attendBy[no][p]=adminName;saveDay();renderRoster();return;}
+  const ot=e.target.closest('[data-ot]');
+  if(ot){const no=ot.dataset.ot,p=ot.dataset.pos;day.attend[no]=day.attend[no]||{};day.attend[no][p]=day.attend[no][p]==='ot'?'':'ot';day.attendBy[no]=day.attendBy[no]||{};day.attendBy[no][p]=adminName;saveDay();renderRoster();return;}
+  if(e.target.closest('#editBtn')){editMode=true;editBuf=JSON.parse(JSON.stringify(config));renderRoster();return;}
+  if(e.target.closest('#saveEdit')){config=editBuf;editBuf=null;editMode=false;flag('saving');saveConfig().then(()=>flag('ok'));renderRoster();alert('บันทึกการเปลี่ยนแปลงรายชื่อ/เบอร์รถแล้ว');return;}
+  if(e.target.closest('#cancelEdit')){editBuf=null;editMode=false;renderRoster();return;}
+  const plan=e.target.closest('[data-plan]');
+  if(plan){openModal(plan.dataset.plan,plan.dataset.pos);return;}
+  if(e.target.closest('#openDispatch')){openModal(null,null);return;}
+  const ad=e.target.closest('[data-adddrv]');
+  if(ad){const ti=+ad.dataset.adddrv;editBuf[ti].drivers=editBuf[ti].drivers||[];editBuf[ti].drivers.push({pos:String(editBuf[ti].drivers.length+1),name:'',phone:'',shift:'',dayOff:''});renderRoster();return;}
+  const dd=e.target.closest('[data-deldrv]');
+  if(dd){const ti=+dd.dataset.deldrv,di=+dd.dataset.di;editBuf[ti].drivers.splice(di,1);renderRoster();return;}
+  const dt=e.target.closest('[data-deltruck]');
+  if(dt){const ti=+dt.dataset.deltruck;if(confirm('ลบรถ '+editBuf[ti].truckNo+' และคนขับทั้งหมดของคันนี้?')){editBuf.splice(ti,1);renderRoster();}return;}
+  if(e.target.closest('#addTruck')){editBuf.push({truckNo:'ใหม่-'+(editBuf.length+1),routeGroup:'',product:'เชื้อเพลิงชีวมวล',type:'model',drivers:[]});renderRoster();return;}
+  if(run){const no=run.dataset.run;day.running[no]=!day.running[no];saveDay();renderRoster();return;}
+  if(pill){filter=pill.dataset.f;renderRoster();return;}
+  if(imp){document.getElementById('fileInput').click();return;}
+  if(csv){exportExcel();return;}
+  if(prn){window.print();return;}
+  if(del){const rid=String(del.dataset.deljob);day.deleted=day.deleted||[];if(day.deleted.indexOf(rid)<0)day.deleted.push(rid);day.jobs=day.jobs.filter(j=>String(j.id)!==rid);saveDay();renderDispatch();return;}
+  if(now){const j=day.jobs.find(x=>String(x.id)===now.dataset.stampnow);if(j){j[now.dataset.field]=nowHM();saveDay();renderBoard();}return;}
+  if(e.target.closest('#simBtn')){runSim();return;}
+  const bf=e.target.closest('[data-bf]');
+  if(bf){boardFilter=(boardFilter===bf.dataset.bf)?'all':bf.dataset.bf;renderBoard();return;}
+  if(e.target.closest('#clearBf')){boardFilter='all';renderBoard();return;}
+});
+document.getElementById('view').addEventListener('input',e=>{
+  if(e.target.id==='search'){search=e.target.value.trim();updateRosterArea();return;}
+  if(e.target.dataset&&e.target.dataset.edit){
+    const ti=+e.target.dataset.ti,f=e.target.dataset.edit,v=e.target.value;const buf=editBuf||config;
+    if(f==='truckno')buf[ti].truckNo=v.trim();
+    else if(f==='route')buf[ti].routeGroup=v.trim();
+    else{const di=+e.target.dataset.di;const key={pos:'pos',name:'name',phone:'phone',shift:'shift',dayoff:'dayOff'}[f];const dv=(f==='dayoff'&&v==='—')?'':v;buf[ti].drivers[di][key]=dv;}
+    return;
+  }
+  if(e.target.id==='planSpeed'){planSpeed=parseInt(e.target.value)||65;return;}
+  if(e.target.dataset&&e.target.dataset.actual!==undefined){const j=day.jobs.find(x=>String(x.id)===e.target.dataset.actual);if(j){j.actualTruck=e.target.value;saveDay();}return;}
+  if(e.target.dataset&&e.target.dataset.note!==undefined){const j=day.jobs.find(x=>String(x.id)===e.target.dataset.note);if(j){j.note=e.target.value;saveDay();}return;}
+  if(e.target.dataset&&e.target.dataset.depart!==undefined){const j=day.jobs.find(x=>String(x.id)===e.target.dataset.depart);if(j){j.depart=e.target.value;saveDay();}return;}
+});
+document.getElementById('modal').addEventListener('click',e=>{
+  if(e.target.closest('#loginSave')){doLogin();return;}
+  if(e.target.closest('#saveJob')){saveJob();return;}
+  if(e.target.closest('#cancelJob')||e.target.closest('#closeModal')||e.target.id==='modal'){closeModal();return;}
+});
+document.getElementById('adminChip').addEventListener('click',e=>{if(e.target.closest('#changeAdmin')||e.target.closest('#loginBtn'))openLogin();});
+document.getElementById('refreshBtn').addEventListener('click',async()=>{flag('saving');await loadConfig();await loadDay();flag('ok');render();if(tab==='roster')scrollToCurrentHour();});
+document.getElementById('settingsBtn').addEventListener('click',()=>openLogin());
+function odChange(id){const s=document.getElementById(id);const cw=document.getElementById(id+'_custom_wrap');if(cw)cw.style.display=s.value==='__custom'?'block':'none';recalcDist();}
+document.getElementById('modal').addEventListener('input',e=>{
+  if(e.target.id==='j_truck'){fillShift();preselectRoute();fillRoute();syncActual();syncDriverInfo();syncTrip();return;}
+  if(e.target.id==='j_shift'){syncDriverInfo();return;}
+  if(e.target.id==='j_route'){fillRoute();return;}
+  if(e.target.id==='j_origin'||e.target.id==='j_dest'){odChange(e.target.id);return;}
+  if(e.target.id==='j_origin_custom'||e.target.id==='j_dest_custom'){recalcDist();return;}
+  if(e.target.id==='j_actual'||e.target.id==='j_trip'){e.target.dataset.touched='1';return;}
+});
+document.getElementById('modal').addEventListener('change',e=>{
+  if(e.target.id==='j_truck'){fillShift();preselectRoute();fillRoute();syncActual();syncDriverInfo();syncTrip();return;}
+  if(e.target.id==='j_shift'){syncDriverInfo();return;}
+  if(e.target.id==='j_route'){fillRoute();return;}
+  if(e.target.id==='j_origin'||e.target.id==='j_dest'){odChange(e.target.id);return;}
+});
+document.getElementById('view').addEventListener('change',e=>{
+  if(e.target.id==='fileInput'&&e.target.files[0])importFile(e.target.files[0]);
+  if(e.target.id==='planSpeed'){planSpeed=parseInt(e.target.value)||65;renderPlan();}
+  if(e.target.dataset&&e.target.dataset.arrive!==undefined){
+    const no=e.target.dataset.arrive,p=e.target.dataset.pos;
+    const cell=e.target.closest('.hhmm');const h=cell.querySelector('[data-part="h"]').value;const m=cell.querySelector('[data-part="m"]').value;
+    const v=h!==''?(h+':'+(m||'00')):'';
+    day.arrive[no]=day.arrive[no]||{};day.arrive[no][p]=v;
+    day.attendBy[no]=day.attendBy[no]||{};day.attendBy[no][p]=adminName;
+    if(v){const t=truckByNo(no),d=driverAt(t,p),off=isOff(t,d,curDate);day.attend[no]=day.attend[no]||{};const cur=day.attend[no][p]||'';if(off){if(cur!=='ot')day.attend[no][p]='ot';}else if(!cur||cur==='absent')day.attend[no][p]='present';}
+    saveDay();renderRoster();return;
+  }
+  if(e.target.dataset&&e.target.dataset.edit==='dayoff'){const ti=+e.target.dataset.ti,di=+e.target.dataset.di;const buf=editBuf||config;buf[ti].drivers[di].dayOff=e.target.value==='—'?'':e.target.value;}
+  if(e.target.dataset&&e.target.dataset.job){const j=day.jobs.find(x=>String(x.id)===e.target.dataset.job);if(j){j[e.target.dataset.field]=e.target.value;saveDay();renderBoard();}return;}
+});
+
+/* ---------- Excel export ---------- */
+function exportExcel(){
+  const wb=XLSX.utils.book_new();
+  const att=[['เบอร์รถ','ต้นทาง','กะ','คนขับ','สถานะ','เวลามาจริง','ผู้บันทึก','วันหยุด','เวลากะ']];
+  const ST={present:'มา',absent:'ขาด',leave:'ลา',ot:'มา OT (วันหยุด)','':''};
+  for(const t of config)for(const d of (t.drivers||[])){const off=isOff(t,d,curDate);const cur=attOf(t.truckNo)[d.pos]||'';const status=cur==='ot'?'มา OT (วันหยุด)':(off?'วันหยุด':ST[cur]);const av=(day.arrive[t.truckNo]||{})[d.pos]||'';const by=(day.attendBy[t.truckNo]||{})[d.pos]||'';att.push([t.truckNo,t.routeGroup,d.pos,d.name,status,av,by,d.dayOff,d.shift]);}
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(att),'เช็กคนขับ');
+  const jb=[['วันที่','ลำดับ','ชื่อสินค้า','ต้นทาง','ปลายทาง','รหัสพนักงาน','ชื่อพนักงาน','เบอร์รถหลัก','เบอร์รถที่วิ่งจริง','เที่ยว','ประเภทงาน','เวลาออก','ผู้จ่ายงาน','เริ่มชาร์จ','ชาร์จเสร็จ','กลับถึง','หมายเหตุ']];
+  day.jobs.forEach((j,i)=>jb.push([j.date||curDate,i+1,j.product,j.origin,j.dest,j.code||'',j.driver,j.mainTruck||j.truck,j.actualTruck||j.mainTruck||j.truck,j.trip||'',j.type==='main'?'สายหลัก':'VT',j.depart,j.by||'',j.chargeStart,j.chargeEnd,j.ret,j.note||'']));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(jb),'จ่ายงาน');
+  XLSX.writeFile(wb,'รายงานงานขนส่ง-'+curDate+'.xlsx');
+}
+
+/* ---------- Excel import (monthly roster) ---------- */
+function importFile(file){
+  const r=new FileReader();
+  r.onload=async ev=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:false});
+      // find header row
+      let hi=aoa.findIndex(row=>row&&row.some(c=>String(c).includes('เบอร์รถ'))&&row.some(c=>String(c).includes('รายชื่อ')));
+      if(hi<0){alert('ไม่พบหัวตาราง (เบอร์รถ/รายชื่อพนักงาน) ในชีตแรก');return;}
+      const H=aoa[hi].map(c=>String(c||'').trim());
+      const col=k=>H.findIndex(h=>h.includes(k));
+      const cRoute=col('เส้นทาง'),cTruck=col('เบอร์รถ'),cOrder=col('ลำดับ'),cCode=col('รหัส'),cName=col('รายชื่อ'),cPhone=col('เบอร์โทร'),cProd=col('สินค้า'),cOff=col('off'),cTime=H.findIndex(h=>h.includes('1-15')||h.includes('ครึ่งเดือนแรก')||(h.includes('วันที่')&&!h.includes('เปลี่ยน')));
+      const trucks={};const order=[];
+      for(let i=hi+1;i<aoa.length;i++){
+        const row=aoa[i];if(!row)continue;const truck=String(row[cTruck]||'').trim();
+        if(!truck.startsWith('EV'))continue;
+        if(!trucks[truck]){const rt=String(row[cRoute]||'').trim();const ty=(truck==='EV1-033'||truck==='EV1-039')?'vt':(rt.includes('เปลือกไม้')?'twelve':'model');trucks[truck]={truckNo:truck,routeGroup:rt,product:String(row[cProd]||'เชื้อเพลิงชีวมวล').trim(),type:ty,drivers:[]};order.push(truck);}
+        const name=String(row[cName]||'').trim();
+        if(name&&name!=='Vacant'){let pos=String(row[cOrder]||'').trim();pos=pos.includes('Head')?'1':(pos[0]||'');const off=String(row[cOff]||'').trim().replace('อา.','อาทิตย์');trucks[truck].drivers.push({pos,code:String(row[cCode]||'').replace('.0',''),name,phone:String(row[cPhone]||'').trim(),dayOff:off,shift:String(row[cTime]||'').trim()});}
+      }
+      let roster=order.map(t=>trucks[t]);
+      EXTRA.forEach(x=>{if(!roster.find(t=>t.truckNo===x.truckNo))roster.push(x);});
+      if(roster.length<5){alert('อ่านได้ '+roster.length+' คัน — โครงไฟล์อาจต่างจากเดิม ยกเลิกการอัปเดต');return;}
+      config=roster;await saveConfig();render();
+      alert('อัปเดตตารางกะแล้ว: '+roster.length+' คัน');
+    }catch(err){alert('อ่านไฟล์ไม่สำเร็จ: '+err.message);}
+  };
+  r.readAsArrayBuffer(file);
+}
+
+/* ---- auto refresh: ดึงงานที่ CC คนอื่นคีย์เข้ามาแสดงเอง ---- */
+let pollTimer=null;
+function busyTyping(){const a=document.activeElement;if(!a)return false;const t=(a.tagName||'').toLowerCase();return t==='input'||t==='select'||t==='textarea';}
+async function pollDay(){
+  if(!backendURL||day==null)return;
+  if(document.hidden||editMode||dirty||busyTyping())return;
+  const m=document.getElementById('modal');
+  if(m&&m.style.display==='flex')return;
+  const ds=curDate,raw=await dayFetch(ds);
+  if(raw===null){flag('err');return;}
+  lastSyncTxt=nowHM();
+  if(ds!==curDate||dirty)return;
+  if(raw){
+    try{
+      const o=JSON.parse(raw);
+      if(o&&(o._rev||0)!==(day._rev||0)){normDay(o);day=o;render();}
+    }catch(e){}
+  }
+  flag('ok');
+}
+function startPoll(){clearInterval(pollTimer);if(backendURL)pollTimer=setInterval(pollDay,15000);}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollDay();});
+
+/* init */
+/* ---- passcode gate (deterrent) ---- */
+const GATE_HASH='1374cd4e';
+function gateHash(s){s=(s||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');let h=0;for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))>>>0;}return h.toString(16);}
+function unlockGate(){document.getElementById('gate').style.display='none';boot();}
+function tryGate(){
+  const v=document.getElementById('gate_code').value||'';
+  if(gateHash(v)===GATE_HASH){if(document.getElementById('gate_remember').checked)lsSet('fleet:unlocked',GATE_HASH);unlockGate();}
+  else{document.getElementById('gate_err').textContent='รหัสไม่ถูกต้อง ลองใหม่อีกครั้ง';}
+}
+document.getElementById('gate_go').addEventListener('click',tryGate);
+document.getElementById('gate_code').addEventListener('keydown',e=>{if(e.key==='Enter')tryGate();});
+if(lsGet('fleet:unlocked')===GATE_HASH){unlockGate();}
+else{setTimeout(()=>{const i=document.getElementById('gate_code');if(i)i.focus();},80);}
+
+async function boot(){
+  document.getElementById('dateInput').value=curDate;
+  adminName=lsGet('fleet:admin')||'';
+  backendURL=lsGet('fleet:backend')||BACKEND_URL_DEFAULT;
+  await loadConfig();await loadDay();
+  document.getElementById('fleetcount').textContent=config.length;
+  updateAdminChip();
+  render();flag('ok');startPoll();
+  if(tab==='roster')scrollToCurrentHour();
+  if(!adminName)openLogin();
+}
+</script>
+</body>
+</html>
