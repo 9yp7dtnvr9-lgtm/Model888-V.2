@@ -37,7 +37,7 @@
   .adminchip{display:flex;align-items:center;gap:8px;background:var(--nav2);padding:6px 12px;border-radius:10px;font-size:13px;color:#dfe7f1}
   .adminchip .linkish{background:none;border:0;color:var(--accent2);cursor:pointer;font-family:inherit;font-size:12px;text-decoration:underline}
   .adminchip .loginbtn{background:var(--accent2);color:#20130a;border:0;border-radius:8px;padding:5px 12px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
-  nav.tabs{background:var(--nav2);display:flex;gap:2px;padding:0 12px;overflow-x:auto}
+  nav.tabs{background:var(--nav2);display:flex;gap:2px;padding:0 12px;overflow-x:auto;position:sticky;top:var(--hh,56px);z-index:39;box-shadow:0 2px 8px rgba(15,33,56,.18)}
   nav.tabs button{background:transparent;border:0;color:#93a4bc;font-family:inherit;font-size:14px;padding:12px 15px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;display:flex;gap:7px;align-items:center}
   nav.tabs button .num{font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:12px;background:rgba(255,255,255,.08);padding:1px 7px;border-radius:20px}
   nav.tabs button.active{color:#fff;border-bottom-color:var(--accent2)}
@@ -64,6 +64,8 @@
   .tablewrap.scroll{max-height:calc(100vh - 320px)}
   .tablewrap.sbox{max-height:340px;overflow:auto}
   .tablewrap.sbox5{max-height:206px;overflow:auto}
+  .tablewrap.sbox10{max-height:472px;overflow:auto}
+  .tablewrap.sbox10{max-height:472px;overflow:auto}
   tr.aheadrow{background:#fbf3da}
   tr.nowrow{background:#e6f3ec}
   .cardhead{display:flex;align-items:center;gap:10px;margin:0 0 14px}
@@ -95,9 +97,6 @@
   .miniadd{border:1px dashed #b7c0cf;background:#fff;border-radius:7px;padding:4px 10px;font-size:12.5px;cursor:pointer;font-family:inherit;color:var(--accent)}
   .arrivein{border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:13px;background:#fff}
   .arrivein:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
-  .hhmm{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
-  .hhmm .arrsel{border:1px solid var(--line);border-radius:7px;padding:6px 4px;font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:13px;background:#fff}
-  .hhmm .arrsel:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
   .planlink{border:1px solid var(--accent);background:var(--present-bg);color:var(--accent);border-radius:8px;padding:6px 11px;font-family:inherit;font-size:13px;cursor:pointer;white-space:nowrap;font-weight:500}
   .planlink:hover{background:var(--accent);color:#fff}
   .actualin{border:1px solid var(--accent2);border-radius:7px;padding:4px 7px;font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:12px;background:#fffdf3;width:92px}
@@ -105,6 +104,14 @@
   .noteinp:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
   .departin{border:1px solid var(--accent2);border-radius:7px;padding:4px 6px;font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:12px;background:#fffdf3}
   .departin:focus{outline:2px solid var(--accent2)}
+  tr.jrow{cursor:pointer}
+  tr.jrow:hover{background:#eef4fb!important}
+  .dgrid{display:grid;grid-template-columns:132px 1fr;gap:7px 14px;font-size:13.5px;align-items:baseline}
+  .dgrid .lb{color:var(--muted);font-size:12.5px}
+  .dsec{margin:14px 0 6px;font-size:12.5px;font-weight:600;color:var(--n);border-bottom:1px solid var(--line);padding-bottom:5px}
+  .dbig{font-size:16px;font-weight:600}
+  .rin{width:100%;border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-family:inherit;font-size:13px;background:#fff}
+  .rin:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
   .planin{width:74px;text-align:center;border:1px solid var(--accent2);border-radius:7px;padding:5px 6px;font-family:inherit;font-size:13px;background:#fffdf3;font-variant-numeric:tabular-nums}
   .planin:focus{outline:2px solid var(--accent2)}
   .hmin{width:66px;text-align:center;letter-spacing:.5px;font-variant-numeric:tabular-nums}
@@ -198,10 +205,6 @@
   .field input,.field select{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-family:inherit;font-size:14px;background:#fff}
   .formactions{margin-top:14px;display:flex;gap:9px;align-items:center}
   /* board */
-  .jobrow{display:grid;grid-template-columns:1.4fr repeat(4,1fr) auto;gap:10px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:9px;background:var(--card)}
-  .jobrow .who{min-width:0}
-  .jobrow .who .t{font-weight:600;font-size:14px}
-  .jobrow .who .s{font-size:12px;color:var(--muted)}
   .stampcell{text-align:center}
   .stampcell .lab{font-size:11px;color:var(--muted);margin-bottom:3px}
   .stampcell input{width:78px;border:1px solid var(--line);border-radius:7px;padding:4px;font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:13px;text-align:center}
@@ -220,7 +223,7 @@
   .del{border:0;background:none;color:var(--absent);cursor:pointer;font-size:16px}
   .hint{background:#eef4fb;border:1px solid #d4e5f5;border-radius:10px;padding:12px 14px;font-size:13px;color:#33566f;margin-bottom:14px}
   footer{padding:14px 20px;color:var(--muted);font-size:12px;text-align:center}
-  @media(max-width:720px){.jobrow{grid-template-columns:1fr 1fr;gap:8px}.brand h1{font-size:16px}}
+  @media(max-width:720px){.brand h1{font-size:16px}}
   @media(prefers-reduced-motion:reduce){*{transition:none!important}}
   @media print{header,nav.tabs,.toolbar,footer,.switch .txt,.stampcell button,.del{display:none!important}.st:not(.sel){display:none}.tablewrap{border:0}table{min-width:0;font-size:11px}.track{display:none}}
 </style>
@@ -285,8 +288,55 @@ const PROD_DEFAULT={
   'เปลือกไม้หยาบ':['ศาลาลำดวน','โรงไฟฟ้า NPS (304)'],
   'รากไม้ยูคาสับ':['ปางสีดา','โรงไฟฟ้า NPS (304)']
 };
-/* จับคู่ระยะทางจาก ต้นทาง→ปลายทาง ตามกฎ 8 ข้อ */
+/* ============ ทะเบียนเส้นทางกลาง (หน้า 5) ============
+   fleet:routes = [{id, product, origin, dest, distance, type}]
+   ทุกหน้าที่ต้องใช้รายชื่อสินค้า/ต้นทาง/ปลายทาง ดึงจากที่นี่ที่เดียว */
+let routes=[];
+function ruid(){return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+function seedRoutes(){
+  return ROUTEDATA.map(r=>{
+    const def=PROD_DEFAULT[r.product]||[];
+    const o=(r.origin&&r.origin.trim())||def[0]||'';
+    const d=(r.dest&&r.dest.trim())||def[1]||'';
+    let km=r.distance||matchDistanceRule(o,d)||'';
+    return {id:ruid(),product:r.product||'',origin:o,dest:d,distance:String(km||''),
+            type:(km&&+km<=100)?'vt':(r.type||'main')};
+  });
+}
+function validRoutes(a){return Array.isArray(a)&&a.every(r=>r&&typeof r==='object'&&'product' in r);}
+async function loadRoutes(){
+  let raw=null;
+  try{raw=await store.get('fleet:routes');}catch(e){raw=null;}
+  let r=null; if(raw){try{r=JSON.parse(raw);}catch(e){r=null;}}
+  if(validRoutes(r)&&r.length){routes=r;return;}
+  routes=seedRoutes();
+  try{await saveRoutes();}catch(e){}
+}
+async function saveRoutes(){await store.set('fleet:routes',JSON.stringify(routes));}
+let rsT=null;
+function scheduleRoutesSave(){flag('saving');clearTimeout(rsT);rsT=setTimeout(async()=>{await saveRoutes();flag('ok');},400);}
+function routeProducts(type){
+  const out=[];
+  routes.forEach(r=>{if(r.product&&(!type||r.type===type)&&out.indexOf(r.product)<0)out.push(r.product);});
+  return out;
+}
+function uniqField(f){
+  const out=[];
+  routes.forEach(r=>{const v=(r[f]||'').trim();if(v&&out.indexOf(v)<0)out.push(v);});
+  return out.sort((a,b)=>a.localeCompare(b,'th'));
+}
+function routeByProduct(p){return routes.find(r=>r.product===p);}
+/* ระยะทาง: ดูจากทะเบียนก่อน ถ้าไม่มีค่อยใช้กฎเดิม */
 function matchDistance(o,d){
+  o=(o||'').trim();d=(d||'').trim();
+  const hit=routes.find(r=>(r.origin||'').trim()===o&&(r.dest||'').trim()===d&&r.distance);
+  if(hit)return +hit.distance;
+  const one=routes.find(r=>(r.origin||'').trim()===o&&r.distance);
+  if(one&&!d)return +one.distance;
+  return matchDistanceRule(o,d);
+}
+/* กฎสำรอง (ใช้เมื่อยังไม่มีในทะเบียน) */
+function matchDistanceRule(o,d){
   o=o||'';d=d||'';const H=(s,k)=>s.indexOf(k)>=0;
   const plant=H(d,'โรงไฟฟ้า'),jc=H(d,'JC'),ev=H(d,'EV');
   if(H(o,'วังจันทร์')&&plant)return 140;
@@ -310,7 +360,7 @@ const TYPELABEL={model:'3 กะ',twelve:'12 ชม.',vt:'VT',spare:'สำร�
 
 /* storage: shared backend (Apps Script) when URL set, else window.storage, else memory */
 const mem={};
-const BACKEND_URL_DEFAULT='https://script.google.com/macros/s/AKfycbw_yRzpyIL-PxPUrmovGds1BjLt49gwVcwX2SIcJFMrxBxF3OIBzDmLYfEX55yoFgLWjw/exec';   /* <<< วาง URL Apps Script ที่ลงท้าย /exec ตรงนี้ */
+const BACKEND_URL_DEFAULT='';   /* เว้นว่าง = ให้ CC กรอก URL เองตอนเข้าระบบ (ปุ่ม ⚙ ตั้งค่าระบบกลาง) */
 const API_TOKEN='54O7NXcm4720HQb8ZGiqMBoH';            /* <<< ใส่ให้ตรงกับ TOKEN ใน Apps Script (เว้นว่าง = ปิดการตรวจ) */
 let backendURL=BACKEND_URL_DEFAULT;
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
@@ -393,8 +443,9 @@ function normDay(d){
 
 let config=null,curDate=todayStr(),day=null,tab='roster';
 let filter='all',search='',editMode=false,pendingDispatch=null,adminName='',editBuf=null,boardFilter='all';
-let sumProdOpen=true;   /* ตารางที่ 2: แสดง/ยุบรายสินค้า */
+let sumProdOpen={main:true,vt:true};   /* ตารางที่ 2: ยุบ/ขยาย แยกรายกลุ่ม */
 let roundSort={key:'truck',dir:1};   /* ตารางที่ 4: คอลัมน์ที่ใช้เรียง */
+let routeSearch='';                  /* หน้า 5: ค้นหาเส้นทาง */
 
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function nowHM(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
@@ -404,7 +455,7 @@ function dayName(ds){return DAYS[new Date(ds+'T00:00:00').getDay()];}
    คืน ''   = ช่องว่าง        คืน null = รูปแบบไม่ถูกต้อง            */
 const LATE_GRACE=10;   /* มาช้ากว่าเวลาเข้ากะเกินกี่นาที ถือว่า "สาย" (ตรงกับเกณฑ์ Alert) */
 function isLateArrival(d,arriveHM){
-  const sm=parseStart(d&&d.shift), am=hm2min(arriveHM);
+  const sm=parseStart(shiftOf(d,curDate)), am=hm2min(arriveHM);
   if(sm===null||am===null)return false;
   let diff=am-sm;
   if(diff>720)diff-=1440;          /* กะข้ามเที่ยงคืน */
@@ -433,6 +484,24 @@ function badHM(el,fallback){
   el.value=fallback||'';
   alert('เวลาไม่ถูกต้อง — ใส่แบบ 24 ชั่วโมง เช่น 06:30 หรือ 1830');
 }
+/* ---- ตัวช่วยเรียงข้อมูลของทุกตาราง ---- */
+const tsort={};
+function thS(tbl,k,lab,al){
+  const st=tsort[tbl]||{},on=st.key===k;
+  return `<th class="th-sort${on?' on':''}" data-ts="${tbl}" data-tsk="${k}"${al?` style="text-align:${al}"`:''}>${lab}<span class="sortcaret">${on?(st.dir>0?'▲':'▼'):'⇅'}</span></th>`;
+}
+function sortBy(tbl,arr,getters){
+  const st=tsort[tbl];
+  if(!st||!st.key||!getters[st.key])return arr;
+  const g=getters[st.key],d=st.dir;
+  return arr.slice().sort((a,b)=>{
+    const x=g(a),y=g(b);
+    const nx=(typeof x==='number'),ny=(typeof y==='number');
+    if(nx||ny)return (((nx?x:0)||0)-((ny?y:0)||0))*d;
+    return String(x==null?'':x).localeCompare(String(y==null?'':y),'th')*d;
+  });
+}
+function sortActive(tbl){const st=tsort[tbl];return !!(st&&st.key);}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function blankDay(){return {attend:{},running:{},jobs:[],seq:0,arrive:{},attendBy:{},plan:{},deleted:[],_rev:0};}
 function truckByNo(no){return config.find(t=>t.truckNo===no);}
@@ -440,7 +509,7 @@ function driverAt(t,pos){return (t.drivers||[]).find(d=>d.pos===String(pos));}
 
 /* save */
 let st=null;
-function flag(s){const e=document.getElementById('saveFlag');if(!e)return;if(s==='saving'){e.textContent='● กำลังบันทึก…';e.className='saveflag saving';}else if(s==='err'){e.textContent='● ต่อระบบกลางไม่ได้';e.className='saveflag saving';}else{e.textContent=(backendURL&&lastSyncTxt)?('● ซิงก์ '+lastSyncTxt):'● บันทึกแล้ว';e.className='saveflag';}}
+function flag(s){const e=document.getElementById('saveFlag');if(!e)return;if(s==='saving'){e.textContent='● กำลังบันทึก…';e.className='saveflag saving';}else if(s==='err'){e.textContent='● ต่อระบบกลางไม่ได้';e.className='saveflag saving';}else{e.textContent=backendURL?(lastSyncTxt?('● ซิงก์ '+lastSyncTxt):'● บันทึกแล้ว'):'● เก็บในเครื่อง';e.className='saveflag';}}
 function saveDay(){
   flag('saving');dirty=true;clearTimeout(st);
   st=setTimeout(async()=>{
@@ -457,17 +526,56 @@ function saveDay(){
     }
   },250);
 }
-async function saveConfig(){await store.set('fleet:roster',JSON.stringify(config));}
+async function saveConfig(){
+  const v=rosterVersions.find(x=>x.id===activeVerId);
+  if(v){v.roster=config;v.savedAt=new Date().toISOString();v.by=adminName||v.by;}
+  else rosterVersions.push({id:'v'+Date.now(),from:'2000-01-01',name:'ตารางกะเริ่มต้น',
+        roster:config,savedAt:new Date().toISOString(),by:adminName||''});
+  if(!activeVerId&&rosterVersions.length)activeVerId=rosterVersions[rosterVersions.length-1].id;
+  await saveRosters();
+}
 let cs=null;function scheduleConfigSave(){flag('saving');clearTimeout(cs);cs=setTimeout(async()=>{await saveConfig();flag('ok');},400);}
+/* ============ ตารางกะแบบมีเวอร์ชัน ============
+   fleet:rosters = [{id, from:'YYYY-MM-DD', name, roster:[...], savedAt, by}]
+   วันไหนใช้ชุดไหน = ชุดที่ from <= วันนั้น และใหม่สุด -> ข้อมูลย้อนหลังไม่ถูกกระทบ */
+let rosterVersions=[], activeVerId=null, rosterRev='';
+function rosterFor(ds){
+  if(!rosterVersions.length)return null;
+  const sorted=rosterVersions.slice().sort((a,b)=>String(a.from).localeCompare(String(b.from)));
+  let pick=sorted[0];
+  for(const v of sorted){ if(String(v.from)<=ds) pick=v; }
+  return pick;
+}
+function applyRosterForDate(){
+  const v=rosterFor(curDate);
+  if(v&&validConfig(v.roster)){config=v.roster;activeVerId=v.id;}
+  else{config=seed();activeVerId=null;}
+}
+function activeVerName(){
+  const v=rosterVersions.find(x=>x.id===activeVerId);
+  return v?(v.name+' (เริ่ม '+v.from+')'):'ตารางกะในไฟล์';
+}
+async function saveRosters(){
+  rosterRev=String(Date.now());
+  await store.set('fleet:rosters',JSON.stringify(rosterVersions));
+  await store.set('fleet:rosters:rev',rosterRev);
+}
 async function loadConfig(){
   let raw=null;
-  try{raw=await store.get('fleet:roster');}catch(e){raw=null;}
-  let c=null;
-  if(raw){try{c=JSON.parse(raw);}catch(e){c=null;}}
-  if(validConfig(c)){config=c;return;}
-  config=seed();                       /* ข้อมูลบน Sheet ใช้ไม่ได้ -> กลับไปใช้ตารางกะในไฟล์ */
-  if(raw)console.warn('ตารางกะบนระบบกลางรูปแบบไม่ถูกต้อง จึงใช้ตารางกะในไฟล์แทน');
-  try{await saveConfig();}catch(e){}
+  try{raw=await store.get('fleet:rosters');}catch(e){raw=null;}
+  let vs=null; if(raw){try{vs=JSON.parse(raw);}catch(e){vs=null;}}
+  if(Array.isArray(vs)&&vs.length&&vs.every(v=>v&&v.from&&validConfig(v.roster))){
+    rosterVersions=vs;
+  }else{
+    /* ย้ายของเดิม (fleet:roster ชุดเดียว) มาเป็นเวอร์ชันแรก */
+    let old=null; try{old=await store.get('fleet:roster');}catch(e){}
+    let oc=null; if(old){try{oc=JSON.parse(old);}catch(e){}}
+    rosterVersions=[{id:'v0',from:'2000-01-01',name:'ตารางกะเริ่มต้น',
+      roster:validConfig(oc)?oc:seed(),savedAt:new Date().toISOString(),by:adminName||''}];
+    try{await saveRosters();}catch(e){}
+  }
+  try{rosterRev=String(await store.get('fleet:rosters:rev')||'');}catch(e){}
+  applyRosterForDate();
 }
 function seed(){const r=ROSTER.map(t=>({...t,routeGroup:(t.routeGroup||'').trim()}));EXTRA.forEach(x=>{if(!r.find(t=>t.truckNo===x.truckNo))r.push(x);});return r;}
 async function loadDay(){
@@ -482,6 +590,21 @@ async function loadDay(){
 /* attendance helpers */
 function isOff(t,d,ds){return d&&d.dayOff&&d.dayOff===dayName(ds);}
 function attOf(no){return day.attend[no]||{};}
+/* บันทึกเวลามาจริง แล้วให้ระบบเลือกสถานะ มา / สาย / OT ให้เอง */
+function setArrive(no,p,v){
+  day.arrive[no]=day.arrive[no]||{};day.arrive[no][p]=v;
+  day.attendBy[no]=day.attendBy[no]||{};day.attendBy[no][p]=adminName;
+  if(v){
+    const t=truckByNo(no),d=driverAt(t,p),off=isOff(t,d,curDate);
+    day.attend[no]=day.attend[no]||{};
+    const cur=day.attend[no][p]||'';
+    if(off){ if(cur!=='ot')day.attend[no][p]='ot'; }
+    else if(cur===''||cur==='absent'||cur==='present'||cur==='late'){
+      day.attend[no][p]=isLateArrival(d,v)?'late':'present';
+    }
+  }
+  saveDay();renderRoster();
+}
 function isRunning(no){return !!day.running[no];}
 
 /* ---------- KPIs ---------- */
@@ -519,6 +642,51 @@ function summaryBar(){
 
 /* ---------- TAB 1: roster (roll-call by report time + editor) ---------- */
 function parseStart(shift){if(!shift)return null;const m=String(shift).match(/(\d{1,2}):(\d{2})/);if(!m)return null;return ((+m[1])%24)*60+(+m[2]);}
+/* ---- เวลากะที่ใช้จริงของ พจส. ในวันหนึ่ง ----
+   ไฟล์ตารางกะมี 2 ชุดเวลา + วันที่ให้เปลี่ยนของแต่ละคัน (รอให้ถึงรอบวันหยุดก่อน)
+   ถ้าวันที่ดู >= วันเปลี่ยน -> ใช้เวลาชุดใหม่ ไม่งั้นใช้ชุดเดิม            */
+function shiftOf(d,ds){
+  if(!d)return '';
+  ds=ds||curDate;
+  if(d.shift2&&d.shiftFrom&&String(ds)>=String(d.shiftFrom))return d.shift2;
+  return d.shift||'';
+}
+/* พจส. คนนี้มีคิวเปลี่ยนเวลากะที่ยังไม่ถึงหรือไม่ */
+function shiftPending(d,ds){
+  ds=ds||curDate;
+  return !!(d&&d.shift2&&d.shiftFrom&&String(ds)<String(d.shiftFrom)&&d.shift2!==d.shift);
+}
+/* แปลงค่าวันที่จาก Excel: รับได้ทั้งเลข serial, "19 Jul 26", "19/07/2026", "2026-07-19" */
+const MON3={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+function xlDate(v){
+  if(v===null||v===undefined||v==='')return '';
+  if(typeof v==='number'&&isFinite(v)&&v>20000){
+    const d=new Date(Date.UTC(1899,11,30)+v*86400000);
+    return d.toISOString().slice(0,10);
+  }
+  const t=String(v).trim();
+  let m=t.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m)return m[1]+'-'+m[2]+'-'+m[3];
+  m=t.match(/^(\d{1,2})\s+([A-Za-z]{3})[a-z]*\s+(\d{2,4})/);
+  if(m){const mo=MON3[m[2].toLowerCase()];let y=+m[3];if(y<100)y+=2000;
+    if(mo)return y+'-'+String(mo).padStart(2,'0')+'-'+String(+m[1]).padStart(2,'0');}
+  m=t.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);
+  if(m){let y=+m[3];if(y<100)y+=2000;if(y>2400)y-=543;
+    return y+'-'+String(+m[2]).padStart(2,'0')+'-'+String(+m[1]).padStart(2,'0');}
+  const dt=new Date(t);
+  return isNaN(dt.getTime())?'':dt.toISOString().slice(0,10);
+}
+function parseEnd(shift){
+  if(!shift)return null;
+  const m=String(shift).match(/(\d{1,2}):(\d{2})\s*[-–—]\s*(\d{1,2}):(\d{2})/);
+  if(!m)return null;
+  return ((+m[3])%24)*60+(+m[4]);
+}
+function shiftDuration(shift){
+  const a=parseStart(shift), b=parseEnd(shift);
+  if(a===null||b===null)return null;
+  let dur=b-a; if(dur<=0)dur+=1440;      /* กะข้ามเที่ยงคืน */
+  return dur;
+}
 function startLabel(shift){if(!shift)return '-';const m=String(shift).match(/(\d{1,2}:\d{2})/);return m?m[1]:'-';}
 function shiftCls(pos){return pos==='1'?'m':pos==='2'?'a':'n';}
 
@@ -533,8 +701,11 @@ function renderRoster(){
       <button class="pill ${filter==='off'?'active':''}" data-f="off">วันหยุด</button>
       <button class="pill ${filter==='incomplete'?'active':''}" data-f="incomplete">ยังไม่เช็ก</button>
       ${STATUS_FILTERS[filter]?'<button class="btn" data-f="all">✕ ล้างตัวกรอง</button>':''}
+      ${sortActive('roster')?'<button class="btn" id="clearSort">↩ กลับไปจัดกลุ่มตามชั่วโมง</button>':''}
+      ${sortActive('roster')?'<button class="btn" id="clearSort">↩ กลับไปจัดกลุ่มตามชั่วโมง</button>':''}
       <button class="btn" id="editBtn">✎ แก้ไขรายชื่อ/เบอร์รถ</button>
       <button class="btn" id="importBtn">⬆ อัปโหลดตารางกะใหม่</button>
+      <button class="btn" id="verBtn" title="ชุดตารางกะและวันเริ่มมีผล">🗓 ชุดตารางกะ (${rosterVersions.length})</button>
       <button class="btn" id="csvBtn">⬇ ส่งออก Excel</button>
       <button class="btn" id="printBtn">🖨 พิมพ์</button>
       <input type="file" id="fileInput" accept=".xlsx" style="display:none">
@@ -556,7 +727,7 @@ function updateRosterArea(){const ra=document.getElementById('rosterArea');if(ra
 
 function rollCallTable(){
   let list=[];
-  for(const t of config)for(const d of (t.drivers||[]))list.push({t,d,startMin:parseStart(d.shift)});
+  for(const t of config)for(const d of (t.drivers||[]))list.push({t,d,startMin:parseStart(shiftOf(d,curDate))});
   list=list.filter(r=>{
     const off=isOff(r.t,r.d,curDate);
     if(filter==='work'&&off)return false;
@@ -567,35 +738,45 @@ function rollCallTable(){
     return true;
   });
   list.sort((a,b)=>{const x=a.startMin==null?99999:a.startMin,y=b.startMin==null?99999:b.startMin;return x-y||a.t.truckNo.localeCompare(b.t.truckNo);});
-  const groups={};for(const r of list){const h=r.startMin==null?-1:Math.floor(r.startMin/60);(groups[h]=groups[h]||[]).push(r);}
-  const hours=Object.keys(groups).map(Number).sort((a,b)=>a-b);
   let body='';
-  for(const h of hours){
-    const label=h<0?'ไม่ระบุเวลา':(String(h).padStart(2,'0')+':00 น.');
-    body+=`<tr class="grouphdr"><td colspan="7">🕐 ${label} — ${groups[h].length} คนรายงานตัว</td></tr>`;
-    for(const r of groups[h])body+=rollRow(r);
+  if(sortActive('roster')){
+    const ST={present:'1 มา',late:'2 สาย',ot:'3 OT',absent:'4 ขาด',leave:'5 ลา','':'9 ยังไม่เช็ก'};
+    const sorted=sortBy('roster',list,{
+      start:r=>r.startMin==null?99999:r.startMin,
+      truck:r=>r.t.truckNo+' '+(r.t.routeGroup||''),
+      pos:r=>+r.d.pos||0,
+      name:r=>r.d.name||'',
+      status:r=>ST[attOf(r.t.truckNo)[r.d.pos]||'']||'9',
+      arrive:r=>((day.arrive[r.t.truckNo]||{})[r.d.pos]||'~')
+    });
+    for(const r of sorted)body+=rollRow(r);
+  }else{
+    const groups={};for(const r of list){const h=r.startMin==null?-1:Math.floor(r.startMin/60);(groups[h]=groups[h]||[]).push(r);}
+    const hours=Object.keys(groups).map(Number).sort((a,b)=>a-b);
+    for(const h of hours){
+      const label=h<0?'ไม่ระบุเวลา':(String(h).padStart(2,'0')+':00 น.');
+      body+=`<tr class="grouphdr"><td colspan="7">🕐 ${label} — ${groups[h].length} คนรายงานตัว</td></tr>`;
+      for(const r of groups[h])body+=rollRow(r);
+    }
   }
   return `<div class="tablewrap scroll"><table>
-    <thead><tr><th>เข้ากะ</th><th>เบอร์รถ / ต้นทาง</th><th>กะ</th><th>คนขับ</th><th>สถานะ</th><th>เวลามาจริง</th><th>จ่ายแผน</th></tr></thead>
+    <thead><tr>${thS('roster','start','เข้ากะ')}${thS('roster','truck','เบอร์รถ / ต้นทาง')}${thS('roster','pos','กะ')}${thS('roster','name','พจส.')}${thS('roster','status','สถานะ')}${thS('roster','arrive','เวลามาจริง')}<th>จ่ายแผน</th></tr></thead>
     <tbody>${body||'<tr><td colspan="7" class="empty-note">ไม่พบรายการ</td></tr>'}</tbody></table></div>`;
 }
 function rollRow(r){
   const t=r.t,d=r.d,off=isOff(t,d,curDate),cur=attOf(t.truckNo)[d.pos]||'',sc=shiftCls(d.pos);
   const av=(day.arrive[t.truckNo]||{})[d.pos]||'';
-  const ah=av?av.split(':')[0]:'',am=av?av.split(':')[1]:'';
-  const hOpts='<option value=""></option>'+Array.from({length:24},(_,i)=>{const v=String(i).padStart(2,'0');return `<option value="${v}"${v===ah?' selected':''}>${v}</option>`}).join('');
-  const mOpts=Array.from({length:60},(_,i)=>{const v=String(i).padStart(2,'0');return `<option value="${v}"${v===am?' selected':''}>${v}</option>`}).join('');
   let statusCell;
   if(off&&cur!=='ot')statusCell=`<span class="offbadge">วันหยุด (${esc(d.dayOff)})</span> <button class="otbtn" data-ot="${esc(t.truckNo)}" data-pos="${d.pos}">＋ มาทำ OT</button>`;
   else if(off&&cur==='ot')statusCell=`<span class="otyes">✓ มา OT</span><button class="otbtn" data-ot="${esc(t.truckNo)}" data-pos="${d.pos}">ยกเลิก</button>`;
   else statusCell=`<div class="stbtns">${[['present','มา'],['late','สาย'],['absent','ขาด'],['leave','ลา']].map(([v,l])=>`<button class="st ${v}${cur===v?' sel':''}" data-att="${esc(t.truckNo)}" data-pos="${d.pos}" data-val="${v}">${l}</button>`).join('')}</div>`;
   return `<tr>
-    <td class="mono" style="font-weight:600">${startLabel(d.shift)}</td>
+    <td class="mono" style="font-weight:600">${startLabel(shiftOf(d,curDate))}${shiftPending(d,curDate)?`<div class="cno" title="รอถึงรอบวันหยุดก่อนเปลี่ยน">→ ${esc(startLabel(d.shift2))} ${esc(d.shiftFrom)}</div>`:''}</td>
     <td class="truck"><span class="plate">${esc(t.truckNo)}</span><div class="cno">${esc(t.routeGroup)}</div></td>
     <td><span class="tag" style="color:var(--${sc});background:var(--${sc}-bg)">กะ${esc(d.pos)}</span></td>
     <td><div class="drv">${esc(d.name)}</div><div class="cno">${d.code?('รหัส '+esc(d.code)):''}${(d.code&&d.phone)?' · ':''}${d.phone?esc(d.phone):''}</div></td>
     <td>${statusCell}</td>
-    <td><span class="hhmm"><select class="arrsel" data-arrive="${esc(t.truckNo)}" data-pos="${d.pos}" data-part="h">${hOpts}</select><b>:</b><select class="arrsel" data-arrive="${esc(t.truckNo)}" data-pos="${d.pos}" data-part="m">${mOpts}</select><span class="cno">น.</span></span></td>
+    <td><div class="stampcell">${hmField(av,'data-arrive="'+esc(t.truckNo)+'" data-pos="'+d.pos+'"')}<button data-arrnow="${esc(t.truckNo)}" data-pos="${d.pos}">จับเวลา</button></div></td>
     <td>${(cur==='absent'||cur==='leave')
       ? '<span class="cno">— จ่ายแผนไม่ได้ ('+(cur==='absent'?'ขาด':'ลา')+')</span>'
       : '<button class="planlink" data-plan="'+esc(t.truckNo)+'" data-pos="'+d.pos+'">จ่ายแผน →</button>'}</td>
@@ -607,7 +788,7 @@ function editorTable(){
   const data=editBuf||config;
   let body='';
   data.forEach((t,ti)=>{
-    body+=`<tr class="edtruck"><td colspan="6">
+    body+=`<tr class="edtruck"><td colspan="8">
       เบอร์รถ <input data-edit="truckno" data-ti="${ti}" value="${esc(t.truckNo)}" class="mono" style="width:96px">
       &nbsp;ต้นทาง <input data-edit="route" data-ti="${ti}" value="${esc(t.routeGroup)}" style="width:120px">
       <span class="tag">${TYPELABEL[t.type]||''}</span>
@@ -619,15 +800,17 @@ function editorTable(){
         <td><input data-edit="pos" data-ti="${ti}" data-di="${di}" value="${esc(d.pos)}" style="width:38px"></td>
         <td><input data-edit="name" data-ti="${ti}" data-di="${di}" value="${esc(d.name)}" style="width:160px" placeholder="ชื่อคนขับ"></td>
         <td><input data-edit="phone" data-ti="${ti}" data-di="${di}" value="${esc(d.phone||'')}" class="mono" style="width:120px" placeholder="เบอร์โทร"></td>
-        <td><input data-edit="shift" data-ti="${ti}" data-di="${di}" value="${esc(d.shift||'')}" class="mono" style="width:118px" placeholder="06:00 - 14:00"></td>
+        <td><input data-edit="shift" data-ti="${ti}" data-di="${di}" value="${esc(d.shift||'')}" class="mono" style="width:112px" placeholder="06:00 - 14:00"></td>
+        <td><input data-edit="shift2" data-ti="${ti}" data-di="${di}" value="${esc(d.shift2||'')}" class="mono" style="width:112px" placeholder="(ไม่เปลี่ยน)"></td>
+        <td><input type="date" data-edit="shiftfrom" data-ti="${ti}" data-di="${di}" value="${esc(d.shiftFrom||'')}" style="width:136px"></td>
         <td><select data-edit="dayoff" data-ti="${ti}" data-di="${di}">${days.map(o=>`<option ${o===(d.dayOff||'')?'selected':''}>${o||'—'}</option>`).join('')}</select></td>
         <td><button class="del" data-deldrv="${ti}" data-di="${di}">✕</button></td>
       </tr>`;
     });
   });
-  return `<div class="hint">แก้ชื่อ/เบอร์โทร/เวลากะ/วันหยุด/เบอร์รถ ได้เลย บันทึกอัตโนมัติ · เพิ่มคนขับให้รถที่ยังว่าง (สำรอง/VT/12:12) ได้ · ค่าที่แก้จะถูกทับเมื่ออัปโหลดไฟล์กะใหม่</div>
+  return `<div class="hint">แก้ชื่อ/เบอร์โทร/เวลากะ/วันหยุด/เบอร์รถ ได้เลย · ช่อง <b>เปลี่ยนเป็น + ตั้งแต่วันที่</b> ใช้ตอนสลับเวลากะรายคัน (เว้นว่าง = ไม่เปลี่ยน) · บันทึกอัตโนมัติ · เพิ่มคนขับให้รถที่ยังว่าง (สำรอง/VT/12:12) ได้ · ค่าที่แก้จะถูกทับเมื่ออัปโหลดไฟล์กะใหม่</div>
     <div style="margin-bottom:10px"><button class="btn primary" id="addTruck">＋ เพิ่มรถใหม่</button></div>
-    <div class="tablewrap scroll"><table><thead><tr><th>กะ</th><th>ชื่อคนขับ</th><th>เบอร์โทร</th><th>เวลากะ</th><th>วันหยุด</th><th>ลบ</th></tr></thead>
+    <div class="tablewrap scroll"><table><thead><tr><th>กะ</th><th>ชื่อ พจส.</th><th>เบอร์โทร</th><th>เวลากะ</th><th>เปลี่ยนเป็น</th><th>ตั้งแต่วันที่</th><th>วันหยุด</th><th>ลบ</th></tr></thead>
     <tbody>${body}</tbody></table></div>`;
 }
 
@@ -645,7 +828,14 @@ function arriveCell(j){
     : '<td style="text-align:center"><span class="cno" title="\u0e22\u0e31\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e04\u0e35\u0e22\u0e4c\u0e40\u0e27\u0e25\u0e32\u0e21\u0e32\u0e08\u0e23\u0e34\u0e07\u0e17\u0e35\u0e48\u0e2b\u0e19\u0e49\u0e32 1">\u2014</span></td>';
 }
 function renderDispatch(){
-  const rows=day.jobs.map((j,i)=>`<tr>
+  const list=sortBy('dispatch',day.jobs.map((j,i)=>({j,i})),{
+    date:x=>x.j.date||curDate, seq:x=>x.i+1, product:x=>x.j.product||'',
+    origin:x=>x.j.origin||'', dest:x=>x.j.dest||'', code:x=>x.j.code||'',
+    driver:x=>x.j.driver||'', mtruck:x=>x.j.mainTruck||x.j.truck||'',
+    atruck:x=>x.j.actualTruck||'', trip:x=>+x.j.trip||0, type:x=>x.j.type||'',
+    arrive:x=>jobArrive(x.j)||'~', depart:x=>x.j.depart||'~', by:x=>x.j.by||''
+  });
+  const rows=list.map(({j,i})=>`<tr class="jrow" data-jobrow="${j.id}" title="กดเพื่อดูรายละเอียดแผนงานเที่ยวนี้">
     <td class="mono">${esc(j.date||curDate)}</td>
     <td class="mono" style="text-align:center">${i+1}</td>
     <td>${esc(j.product||'')}</td>
@@ -666,22 +856,23 @@ function renderDispatch(){
   document.getElementById('view').innerHTML=`
     <div class="toolbar">
       <button class="btn primary" id="openDispatch">＋ จ่ายงานใหม่</button>
-      <span class="cno">จ่ายงานวันนี้ ${day.jobs.length} รายการ · หรือกด “จ่ายแผน” จากแท็บ 1 เพื่อจ่ายให้คนขับรายคน</span>
+      <span class="cno">จ่ายงานวันนี้ ${day.jobs.length} รายการ · <b>กดที่แถวเพื่อดูรายละเอียดแผนงานเที่ยวนั้น</b> · หรือกด “จ่ายแผน” จากหน้า 1</span>
       <div style="flex:1"></div>
       <button class="btn" id="csvBtn">⬇ ส่งออก Excel</button>
     </div>
-    <div class="tablewrap scroll"><table style="min-width:1360px">
+    <div class="tablewrap sbox10"><table style="min-width:1360px">
       <thead><tr>
-        <th>วันที่</th><th>ลำดับ</th><th>ชื่อสินค้า</th><th>ต้นทาง</th><th>ปลายทาง</th><th>รหัส พจส.</th><th>ชื่อ พจส.</th><th>เบอร์รถหลัก</th><th>เบอร์รถที่วิ่งจริง</th><th>เที่ยว</th><th>ประเภทงาน</th><th>เวลามาจริง</th><th>เวลาออก</th><th>หมายเหตุ</th><th>ผู้บันทึก (CC)</th><th></th>
+        ${thS('dispatch','date','วันที่')}${thS('dispatch','seq','ลำดับ','center')}${thS('dispatch','product','ชื่อสินค้า')}${thS('dispatch','origin','ต้นทาง')}${thS('dispatch','dest','ปลายทาง')}${thS('dispatch','code','รหัส พจส.')}${thS('dispatch','driver','ชื่อ พจส.')}${thS('dispatch','mtruck','เบอร์รถหลัก')}${thS('dispatch','atruck','เบอร์รถที่วิ่งจริง')}${thS('dispatch','trip','เที่ยว','center')}${thS('dispatch','type','ประเภทงาน')}${thS('dispatch','arrive','เวลามาจริง')}${thS('dispatch','depart','เวลาออก')}<th>หมายเหตุ</th>${thS('dispatch','by','ผู้บันทึก (CC)')}<th></th>
       </tr></thead>
       <tbody>${rows||'<tr><td colspan="16" class="empty-note">ยังไม่มีงานที่จ่าย — กด “จ่ายแผน” จากแท็บ 1 หรือปุ่ม “จ่ายงานใหม่”</td></tr>'}</tbody>
     </table></div>`;
 }
 function dispatchFormHTML(){
   const truckOpts=config.map(t=>`<option value="${esc(t.truckNo)}">${esc(t.truckNo)} — ${esc(t.routeGroup)}</option>`).join('');
-  const routeOpts=ROUTEDATA.map((r,i)=>`<option value="${i}">${esc(r.product)}</option>`).join('')+'<option value="__custom">+ ระบุเอง…</option>';
-  const oOpts=ORIGIN_OPTIONS.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')+'<option value="__custom">+ ระบุเอง…</option>';
-  const dOpts=DEST_OPTIONS.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')+'<option value="__custom">+ ระบุเอง…</option>';
+  const grp=(lab,t)=>{const ps=routes.filter(r=>r.type===t);return ps.length?('<optgroup label="'+lab+'">'+ps.map(r=>`<option value="${esc(r.id)}">${esc(r.product)}${r.origin?(' — '+esc(r.origin)):''}</option>`).join('')+'</optgroup>'):'';};
+  const routeOpts=grp('งานหลัก','main')+grp('งานรอง (VT)','vt')+'<option value="__custom">+ ระบุเอง…</option>';
+  const oOpts=uniqField('origin').map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')+'<option value="__custom">+ ระบุเอง…</option>';
+  const dOpts=uniqField('dest').map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')+'<option value="__custom">+ ระบุเอง…</option>';
   return `<div class="modal-card">
     <div class="modal-head"><h2>จ่ายแผนงาน</h2><button class="modal-x" id="closeModal">✕</button></div>
     <div class="formgrid">
@@ -725,7 +916,17 @@ function openLogin(){
   m.innerHTML=`<div class="modal-card" style="max-width:480px">
     <div class="modal-head"><h2>เข้าสู่ระบบ — ผู้บันทึก (CC)</h2>${adminName?'<button class="modal-x" id="closeModal">✕</button>':''}</div>
     <div class="field"><label>ชื่อผู้บันทึก (CC)</label><input id="login_name" value="${esc(adminName)}" placeholder="เช่น CC สมชาย (กะเช้า)"></div>
-    <div class="field" style="margin-top:12px"><label>URL ระบบกลาง (Google Apps Script) — เว้นว่างได้ถ้าใช้เครื่องเดียว</label><input id="login_url" value="${esc(backendURL)}" placeholder="https://script.google.com/macros/s/.../exec"></div>
+    <div class="field" style="margin-top:12px"><label>URL ระบบกลาง (Google Apps Script) — ต้องใส่เพื่อแชร์ข้อมูลกับ CC เครื่องอื่น</label><input id="login_url" value="${esc(backendURL)}" placeholder="https://script.google.com/macros/s/.../exec"></div>
+    <div class="hint" style="margin-top:10px;font-size:12.5px">
+      ${backendURL
+        ? 'กำลังใช้ deployment: <b class="mono">…'+esc(backendURL.slice(-18))+'</b> <span class="tag" style="background:var(--present-bg);color:var(--present)">ตั้งไว้ในเครื่องนี้แล้ว</span>'
+        : '<b style="color:var(--absent)">ยังไม่ได้ตั้ง URL ระบบกลาง</b> — ตอนนี้ข้อมูลเก็บในเครื่องนี้เท่านั้น ไม่แชร์กับ CC คนอื่น'}
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn mini" id="testBackend">🔍 ทดสอบการเชื่อมต่อ</button>
+        <button class="btn mini" id="resetBackend">↺ ล้าง URL</button>
+      </div>
+      <div id="testResult" class="mono" style="margin-top:8px;font-size:12px"></div>
+    </div>
     <p class="cno" style="margin:10px 0 0">ใส่ URL เดียวกันทุกเครื่องเพื่อแชร์ข้อมูลชุดเดียวกัน · ชื่อ CC จะถูกบันทึกกำกับทุกรายการที่คีย์</p>
     <div class="modal-actions"><button class="btn primary" id="loginSave">เข้าใช้งาน</button></div>
   </div>`;
@@ -736,9 +937,10 @@ async function doLogin(){
   const v=(document.getElementById('login_name').value||'').trim();if(!v){alert('กรุณาระบุชื่อผู้บันทึก');return;}
   const url=(document.getElementById('login_url').value||'').trim();
   adminName=v;lsSet('fleet:admin',adminName);
-  backendURL=url;lsSet('fleet:backend',backendURL);
+  if(url&&url!==BACKEND_URL_DEFAULT){backendURL=url;lsSet('fleet:backend',url);lsSet('fleet:backend:manual','1');}
+  else{backendURL=BACKEND_URL_DEFAULT;lsSet('fleet:backend',BACKEND_URL_DEFAULT);lsSet('fleet:backend:manual','0');}
   updateAdminChip();closeModal();
-  flag('saving');await loadConfig();await loadDay();flag('ok');render();startPoll();startAlarms();if(tab==='roster')scrollToCurrentHour();
+  flag('saving');await loadConfig();await loadRoutes();await loadDay();flag('ok');render();startPoll();startAlarms();if(tab==='roster')scrollToCurrentHour();
 }
 function stampBy(){day.by=adminName;}
 function syncActual(){const a=document.getElementById('j_actual');if(a&&!a.dataset.touched)a.value=document.getElementById('j_truck').value;}
@@ -748,7 +950,8 @@ function saveJob(){
   const g=id=>document.getElementById(id);
   const no=g('j_truck').value,t=truckByNo(no),pos=g('j_shift').value,d=driverAt(t,pos);
   const rv=g('j_route').value;let product;
-  if(rv==='__custom')product=g('j_route_custom').value.trim();else{const rd=ROUTEDATA[+rv];product=rd?rd.product:'';}
+  if(rv==='__custom')product=g('j_route_custom').value.trim();
+  else{const rd=routes.find(x=>x.id===rv);product=rd?rd.product:'';}
   const origin=effOrigin().trim(),dest=effDest().trim(),dist=g('j_distance').value.trim(),actual=g('j_actual').value.trim(),trip=g('j_trip').value.trim();
   const miss=[];
   if(!d||d.name==='(ยังไม่กำหนดคนขับ)')miss.push('คนขับ (รถนี้ยังไม่มีคนขับในตารางกะ)');
@@ -774,8 +977,8 @@ function fillShift(){
 function preselectRoute(){
   const no=document.getElementById('j_truck').value;const t=truckByNo(no);if(!t)return;
   const g=(t.routeGroup||'').replace('WJ','วังจันทร์');
-  const i=ROUTEDATA.findIndex(r=>g&&r.product&&r.product.includes(g));
-  if(i>=0)document.getElementById('j_route').value=i;
+  const hit=routes.find(r=>g&&r.product&&r.product.indexOf(g)>=0);
+  if(hit)document.getElementById('j_route').value=hit.id;
 }
 function setSelectOrCustom(id,val){
   const s=document.getElementById(id);const cw=document.getElementById(id+'_custom_wrap');
@@ -788,10 +991,68 @@ function fillRoute(){
   const cw=document.getElementById('j_route_custom_wrap');
   if(v==='__custom'){cw.style.display='block';return;}
   cw.style.display='none';
-  const r=ROUTEDATA[+v];if(!r)return;
-  const def=PROD_DEFAULT[r.product];
-  if(def){setSelectOrCustom('j_origin',def[0]);setSelectOrCustom('j_dest',def[1]);}
-  recalcDist();
+  const r=routes.find(x=>x.id===v);if(!r)return;
+  setSelectOrCustom('j_origin',r.origin||'');
+  setSelectOrCustom('j_dest',r.dest||'');
+  const di=document.getElementById('j_distance');if(di&&r.distance)di.value=r.distance;
+  const ty=document.getElementById('j_type');if(ty&&r.type)ty.value=r.type;
+  if(!r.distance)recalcDist();
+}
+
+/* ---------- หน้าต่างรายละเอียดแผนงานรายเที่ยว (กดจากแถวในหน้า 2) ---------- */
+function openJobDetail(id){
+  const idx=day.jobs.findIndex(x=>String(x.id)===String(id));
+  if(idx<0)return;
+  const j=day.jobs[idx];
+  const st=runStatus(j);
+  const tm=travelMin(j), eta=addMin(j.depart,tm), p=chargerPlan(day.jobs)[j.id]||{};
+  const wb=workBreakdown(j);
+  const t=truckByNo(j.mainTruck||j.truck), d=driverAt(t,j.shift);
+  const row=(lb,v)=>`<div class="lb">${lb}</div><div>${v}</div>`;
+  const tval=v=>v?('<span class="mono">'+esc(v)+'</span> <span class="cno">น.</span>'):'<span class="cno">— ยังไม่ระบุ</span>';
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="modal-card" style="max-width:640px">
+    <div class="modal-head">
+      <h2>แผนงานเที่ยวที่ ${idx+1} <span class="badge ${st[1]}" style="margin-left:6px">${st[2]}</span></h2>
+      <button class="modal-x" id="closeModal">✕</button></div>
+    <div class="dgrid">
+      ${row('วันที่','<span class="mono">'+esc(j.date||curDate)+'</span>')}
+      ${row('สินค้า','<span class="dbig">'+esc(j.product||'-')+'</span> <span class="jtype '+j.type+'">'+(j.type==='main'?'สายหลัก':'งานรอง VT')+'</span>')}
+      ${row('เส้นทาง',esc(j.origin||'-')+' <span class="cno">→</span> '+esc(j.dest||'-'))}
+      ${row('ระยะทาง',j.distance?('<span class="mono">'+esc(j.distance)+'</span> กม.'):'<span class="cno">-</span>')}
+    </div>
+    <div class="dsec">พจส. และรถ</div>
+    <div class="dgrid">
+      ${row('พจส.','<span class="dbig">'+esc(j.driver||'-')+'</span>'+(j.code?' <span class="cno">รหัส '+esc(j.code)+'</span>':''))}
+      ${row('เบอร์โทร',(d&&d.phone)?('<a class="tel" href="tel:'+esc(String(d.phone).replace(/[^0-9+]/g,''))+'">'+esc(d.phone)+'</a>'):'<span class="cno">-</span>')}
+      ${row('กะ','กะ '+esc(j.shift||'-')+((d&&shiftOf(d,j.date||curDate))?(' <span class="cno">('+esc(shiftOf(d,j.date||curDate))+')</span>'):''))}
+      ${row('เบอร์รถหลัก','<span class="plate">'+esc(j.mainTruck||j.truck||'-')+'</span>')}
+      ${row('เบอร์รถที่วิ่งจริง','<span class="plate">'+esc(j.actualTruck||j.mainTruck||j.truck||'-')+'</span>'+((j.actualTruck&&j.actualTruck!==(j.mainTruck||j.truck))?' <span class="tag" style="background:var(--m-bg);color:var(--off)">สับรถ</span>':''))}
+      ${row('เที่ยวที่','<span class="mono">'+esc(j.trip||'-')+'</span>')}
+    </div>
+    <div class="dsec">เวลาตามแผนและที่เกิดขึ้นจริง</div>
+    <div class="dgrid">
+      ${row('เวลามาจริง (หน้า 1)',tval(jobArrive(j)))}
+      ${row('เวลาออก',tval(j.depart))}
+      ${row('ถึงต้นทาง (คาดการณ์)',eta?('<span class="mono">'+esc(eta.hm)+'</span> <span class="cno">น.'+(eta.nextDay?' (+1 วัน)':'')+' · ใช้เวลา '+(tm/60)+' ชม.</span>'):'<span class="cno">— ยังไม่มีเวลาออก</span>')}
+      ${row('แผนชาร์จ','<span class="otyes" style="background:var(--n-bg);color:var(--n);border-color:#c3cbe4">ตู้ '+(p.no||'-')+'</span>'+(p.seq>CHARGER_COUNT?(' <span class="cno">คิวที่ '+p.seq+' · รอบ '+Math.ceil(p.seq/CHARGER_COUNT)+'</span>'):''))}
+      ${row('เวลาชาร์จ',tval(j.chargeStart))}
+      ${row('เวลากลับ',tval(j.ret))}
+      ${row('เวลาปิดงาน',tval(j.closed))}
+      ${row('รวมเวลาทำงาน',wb.parts.length
+          ?('<span class="dbig mono">'+wb.total+'</span> ชม.'+(wb.closed?'':' <span class="tag">ถึง'+esc(wb.upto)+'</span>')
+            +'<div class="cno" style="margin-top:3px">'+wb.parts.map(x=>esc(x.label)+' '+x.h).join(' · ')+'</div>')
+          :(wb.started?'<span class="badge b-run">กำลังเดินทาง</span>':'<span class="badge b-wait">รอออก</span>'))}
+      ${(wb.closed&&wb.total>8)?row('สาเหตุเกิน 8 ชม.','<span style="color:var(--absent)">'+(esc(j.overNote||'')||'<span class="cno">ยังไม่ได้ระบุ (กรอกที่หน้า 3)</span>')+'</span>'):''}
+      ${row('หมายเหตุ',esc(j.note||'')||'<span class="cno">-</span>')}
+      ${row('ผู้บันทึก (CC)','<span class="cno">'+(esc(j.by||'-'))+'</span>')}
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelJob">ปิด</button>
+      <button class="btn solid" id="goBoard">ไปหน้า 3 เพื่อจับเวลา →</button>
+    </div>
+  </div>`;
+  m.style.display='flex';
 }
 
 /* ---------- TAB 3: live board ---------- */
@@ -885,13 +1146,22 @@ function renderBoard(){
   const stamp = (j,f)=>`<div class="stampcell">${hmField(j[f],'data-job="'+j.id+'" data-field="'+f+'"')}<button data-stampnow="${j.id}" data-field="${f}">จับเวลา</button></div>`;
   const shown = jobs.filter(j=>boardFilter==='all'||runStatus(j)[0]===boardFilter);
 
-  const rows = shown.map(j=>{
+  const sorted = sortBy('board',shown,{
+    seq:j=>jobs.indexOf(j)+1, date:j=>j.date||curDate, driver:j=>j.driver||'',
+    truck:j=>j.actualTruck||j.mainTruck||j.truck||'', depart:j=>j.depart||'~',
+    eta:j=>{const e=addMin(j.depart,travelMin(j));return e?e.hm:'~';},
+    status:j=>runStatus(j)[2], charger:j=>(chargerPlan(jobs)[j.id]||{}).seq||0,
+    cs:j=>j.chargeStart||'~', ret:j=>j.ret||'~', closed:j=>j.closed||'~',
+    hours:j=>workBreakdown(j).total||0
+  });
+  const rows = sorted.map(j=>{
     const idx = jobs.indexOf(j)+1;
     const [k,c,l] = runStatus(j);
     const tm = travelMin(j);
     const eta = addMin(j.depart, tm);
     const p = plan[j.id] || {};
     const wb = workBreakdown(j);
+    const over8 = wb.closed && wb.total > 8;
     const etaCell = eta
       ? `<div class="mono" style="font-weight:600">${esc(eta.hm)} <span class="cno">น.</span>${eta.nextDay?' <span class="tag">+1 วัน</span>':''}</div>
          <div class="cno">${esc(j.origin||'-')} · ใช้เวลา ${tm/60} ชม.</div>`
@@ -915,6 +1185,9 @@ function renderBoard(){
           +(wb.closed?'':' <span class="tag">ถึง'+esc(wb.upto)+'</span>')
           +'<div class="cno" style="margin-top:3px;line-height:1.4">'+wb.parts.map(p=>esc(p.label)+' '+p.h).join(' · ')+'</div>'
       }</td>
+      <td><input class="noteinp" style="width:170px${over8?';border-color:var(--absent);background:#fff7f6':''}" data-over="${j.id}"
+        value="${esc(j.overNote||'')}" placeholder="${over8?'ระบุสาเหตุที่เกิน 8 ชม.':'—'}"
+        ${over8?'':'title="ใช้เมื่อรอบนี้เกิน 8 ชม."'}></td>
     </tr>`;
   }).join('');
 
@@ -929,61 +1202,57 @@ function renderBoard(){
     <div class="hint">เวลาถึงต้นทางเป็น <b>ค่าคาดการณ์</b> จากเวลาออกในหน้า 2 (สายหลัก +3 ชม. · สายรอง/ไม่เกิน 100 กม. +1 ชม.) · <b>เวลาชาร์จ / เวลากลับ / เวลาปิดงาน</b> ให้ CC กดปุ่ม “จับเวลา” หรือแก้เวลาเอง · รวมเวลาทำงาน = เวลาออก → เวลาปิดงาน</div>
     <div class="toolbar"><span class="cno">กดกล่องด้านบนเพื่อกรองเฉพาะสถานะนั้น (กดซ้ำเพื่อดูทั้งหมด) · แก้เวลาออกได้ที่หน้า 2</span>
       ${boardFilter!=='all'?'<button class="btn" id="clearBf">✕ ล้างตัวกรอง</button>':''}</div>
-    <div class="tablewrap scroll"><table style="min-width:1420px">
-      <thead><tr><th>ลำดับ</th><th>วันที่</th><th>ชื่อ พจส.</th><th>เบอร์รถ</th><th>เวลาออก</th><th>เวลาถึงต้นทาง (คาดการณ์)</th><th>สถานะ</th><th>แผนชาร์จ</th><th>เวลาชาร์จ</th><th>เวลากลับ</th><th>เวลาปิดงาน</th><th>รวมเวลาทำงาน</th></tr></thead>
-      <tbody>${shown.length?rows:'<tr><td colspan="12" class="empty-note">'+(jobs.length?'ไม่มีงานในสถานะนี้':'ยังไม่มีงานที่จ่าย — ไปที่หน้า 2 เพื่อจ่ายงาน')+'</td></tr>'}</tbody>
+    <div class="tablewrap sbox10"><table style="min-width:1620px">
+      <thead><tr>${thS('board','seq','ลำดับ','center')}${thS('board','date','วันที่')}${thS('board','driver','ชื่อ พจส.')}${thS('board','truck','เบอร์รถ')}${thS('board','depart','เวลาออก')}${thS('board','eta','เวลาถึงต้นทาง (คาดการณ์)')}${thS('board','status','สถานะ','center')}${thS('board','charger','แผนชาร์จ','center')}${thS('board','cs','เวลาชาร์จ')}${thS('board','ret','เวลากลับ')}${thS('board','closed','เวลาปิดงาน')}${thS('board','hours','รวมเวลาทำงาน','center')}<th>สาเหตุเกิน 8 ชม.</th></tr></thead>
+      <tbody>${shown.length?rows:'<tr><td colspan="13" class="empty-note">'+(jobs.length?'ไม่มีงานในสถานะนี้':'ยังไม่มีงานที่จ่าย — ไปที่หน้า 2 เพื่อจ่ายงาน')+'</td></tr>'}</tbody>
     </table></div>`;
 }
 
 /* ---------- TAB 4: planning (placeholder) ---------- */
-function hubTrucks(name){return config.filter(t=>{const g=(t.routeGroup||'').replace('WJ','วังจันทร์');return g===name;}).length;}
-function hubFullMin(origin){const h=HUBDATA.find(h=>origin&&origin.includes(h.name));return h?h.fullMin:45;}
+let routeSort={key:'type',dir:1};
 function renderPlan(){
-  const speed=planSpeed||65;
-  const over=ROUTEDATA.filter(r=>r.distance&&r.distance>RANGE_KM).length;
-  const routeRows=ROUTEDATA.map(r=>{
-    const d=r.distance||0;
-    const driveMin=d?Math.round(d/speed*60):null;
-    const chgMin=d?Math.round(d/RANGE_KM*hubFullMin(r.origin)):null;
-    const inRange=d<=RANGE_KM;
-    const rangeCell=d?(inRange?`<span style="color:var(--present)">พอ (เหลือ ${RANGE_KM-d} กม.)</span>`:`<span style="color:var(--absent)">เกิน ${d-RANGE_KM} กม.</span>`):'-';
-    return `<tr><td>${esc(r.product)}</td><td>${esc(r.origin||'-')}</td><td class="mono">${d||'-'}</td><td class="mono">${driveMin!=null?driveMin+' น.':'-'}</td><td class="mono">${chgMin!=null?chgMin+' น.':'-'}</td><td>${rangeCell}</td><td><span class="jtype ${r.type}">${r.type==='main'?'สายหลัก':'VT'}</span></td></tr>`;
-  }).join('');
-  const hubRows=HUBDATA.map(h=>{const n=hubTrucks(h.name);const perHr=Math.round(h.chargers/h.fullMin*60*10)/10;const rounds=Math.ceil(n/h.chargers);const allMin=rounds*h.fullMin;return `<tr><td><b>${esc(h.name)}</b></td><td class="mono">${h.chargers}</td><td class="mono">${h.fullMin} น.</td><td class="mono">${n}</td><td class="mono">${perHr} คัน/ชม.</td><td class="mono">${allMin} น. (${rounds} รอบ)</td></tr>`;}).join('');
-  const hubOpts=HUBDATA.map((h,i)=>`<option value="${i}">HUB ${esc(h.name)} (${h.chargers} หัว · ${h.fullMin} น.)</option>`).join('');
+  const q=(routeSearch||'').toLowerCase();
+  let data=routes.filter(r=>!q||((r.product||'')+' '+(r.origin||'')+' '+(r.dest||'')).toLowerCase().indexOf(q)>=0);
+  const dir=routeSort.dir;
+  data=data.slice().sort((a,b)=>{
+    const k=routeSort.key;let x=a[k],y=b[k];
+    if(k==='distance'){x=+x||0;y=+y||0;return (x-y)*dir||String(a.product).localeCompare(String(b.product),'th');}
+    return String(x||'').localeCompare(String(y||''),'th')*dir||String(a.product).localeCompare(String(b.product),'th');
+  });
+  const TH=[['product','สินค้า'],['origin','ต้นทาง'],['dest','ปลายทาง'],['distance','ระยะทาง (กม.)'],['type','ประเภทงาน']];
+  const head=TH.map(([k,lab])=>{const on=routeSort.key===k;
+    return `<th class="th-sort${on?' on':''}" data-rtsort="${k}">${lab}<span class="sortcaret">${on?(dir>0?'▲':'▼'):'⇅'}</span></th>`;}).join('');
+  const rows=data.map(r=>`<tr>
+    <td><input class="rin" data-rt="product" data-id="${r.id}" value="${esc(r.product)}" placeholder="ชื่อสินค้า"></td>
+    <td><input class="rin" data-rt="origin" data-id="${r.id}" value="${esc(r.origin)}" list="dlOrigin" placeholder="ต้นทาง"></td>
+    <td><input class="rin" data-rt="dest" data-id="${r.id}" value="${esc(r.dest)}" list="dlDest" placeholder="ปลายทาง"></td>
+    <td><input class="rin mono" data-rt="distance" data-id="${r.id}" value="${esc(r.distance)}" inputmode="numeric" style="width:78px;text-align:center"></td>
+    <td><select class="rin" data-rt="type" data-id="${r.id}" style="width:112px">
+        <option value="main"${r.type==='main'?' selected':''}>งานหลัก</option>
+        <option value="vt"${r.type==='vt'?' selected':''}>งานรอง (VT)</option></select></td>
+    <td style="text-align:center"><button class="del" data-rtdel="${r.id}" title="ลบเส้นทางนี้">✕</button></td>
+  </tr>`).join('');
+  const nMain=routes.filter(r=>r.type==='main').length, nVt=routes.filter(r=>r.type==='vt').length;
   document.getElementById('view').innerHTML=`
-    <div class="card"><h2>จุดชาร์จ (HUB)</h2>
-      <div class="hint">พิสัยวิ่ง ${RANGE_KM} กม./ชาร์จเต็ม · ความเร็วเฉลี่ย ${speed} กม./ชม. · ${over===0?'ทุกเส้นทางปัจจุบันวิ่งจบได้ใน 1 ชาร์จ ไม่ต้องแวะชาร์จระหว่างทาง — คอขวดคือคิวชาร์จระหว่างเที่ยว':('มี '+over+' เส้นทางเกินพิสัย ต้องแวะชาร์จระหว่างทาง')}</div>
-      <div class="tablewrap"><table style="min-width:640px"><thead><tr><th>HUB</th><th>หัวชาร์จ</th><th>ชาร์จเต็ม</th><th>รถประจำ HUB</th><th>อัตราชาร์จ</th><th>ชาร์จครบทั้งกอง</th></tr></thead><tbody>${hubRows}</tbody></table></div>
+    <datalist id="dlOrigin">${uniqField('origin').map(o=>`<option value="${esc(o)}">`).join('')}</datalist>
+    <datalist id="dlDest">${uniqField('dest').map(o=>`<option value="${esc(o)}">`).join('')}</datalist>
+    <section class="summary" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      <div class="stat hero"><div class="lab">เส้นทางทั้งหมด</div><div class="val mono">${routes.length}</div></div>
+      <div class="stat"><div class="lab">งานหลัก</div><div class="val mono">${nMain}</div></div>
+      <div class="stat"><div class="lab">งานรอง (VT)</div><div class="val mono">${nVt}</div></div>
+      <div class="stat"><div class="lab">ต้นทาง / ปลายทาง</div><div class="val mono">${uniqField('origin').length} / ${uniqField('dest').length}</div></div>
+    </section>
+    <div class="hint">หน้านี้คือ <b>ทะเบียนกลางของแผนงานเส้นทาง</b> — ฟอร์ม “จ่ายแผน” ในหน้า 1 และ 2 จะดึงรายชื่อสินค้า/ต้นทาง/ปลายทาง/ระยะทาง จากที่นี่ทั้งหมด
+      · แก้ในช่องได้เลย ระบบบันทึกให้อัตโนมัติและแชร์ให้ CC ทุกเครื่อง
+      · ระยะทาง ≤ 100 กม. ระบบจะตั้งเป็นงานรองให้เอง (แก้ทับได้)</div>
+    <div class="toolbar">
+      <input type="search" id="routeSearch" placeholder="ค้นหา สินค้า / ต้นทาง / ปลายทาง…" value="${esc(routeSearch)}">
+      <button class="btn primary" id="addRoute">＋ เพิ่มเส้นทางใหม่</button>
     </div>
-    <div class="card"><h2>จำลองคิวชาร์จ / แผนปล่อยรถ</h2>
-      <div class="formgrid">
-        <div class="field"><label>HUB</label><select id="s_hub">${hubOpts}</select></div>
-        <div class="field"><label>จำนวนรถที่ต้องชาร์จ</label><input id="s_n" class="mono" inputmode="numeric" value="6"></div>
-        <div class="field"><label>ชาร์จถึง % </label><input id="s_pct" class="mono" inputmode="numeric" value="100"></div>
-        <div class="field"><label>เวลาเริ่มชาร์จ (24 ชม.)</label>${hmField(nowHM(),'id="s_start"')}</div>
-      </div>
-      <div class="formactions"><button class="btn primary" id="simBtn">คำนวณคิว →</button><span class="cno">ชาร์จเต็ม 100% ≈ วิ่งได้ ${RANGE_KM} กม.</span></div>
-      <div id="simResult"></div>
-    </div>
-    <div class="card"><h2>เส้นทาง &amp; สินค้า</h2>
-      <div class="toolbar"><label class="cno">ความเร็วเฉลี่ย</label><input id="planSpeed" class="mono" inputmode="numeric" value="${speed}" style="width:64px;border:1px solid var(--line);border-radius:8px;padding:6px 9px"><span class="cno">กม./ชม. · "ชาร์จ/เที่ยว" = เวลาชาร์จตามสัดส่วนระยะทางกับพิสัย ${RANGE_KM} กม.</span></div>
-      <div class="tablewrap"><table style="min-width:720px"><thead><tr><th>สินค้า</th><th>ต้นทาง (HUB)</th><th>ระยะ(กม.)</th><th>เวลาวิ่ง~</th><th>ชาร์จ/เที่ยว~</th><th>พิสัย</th><th>ประเภท</th></tr></thead><tbody>${routeRows}</tbody></table></div>
-    </div>`;
-}
-function runSim(){
-  const g=id=>document.getElementById(id);
-  const h=HUBDATA[+g('s_hub').value];const n=Math.max(1,parseInt(g('s_n').value)||1);
-  const pct=Math.min(100,Math.max(1,parseInt(g('s_pct').value)||100));
-  const chargeMin=Math.round(h.fullMin*pct/100);
-  const sv=normHM(g('s_start').value);const start=(sv===null||sv==='')?nowHM():sv;
-  const [sh,sm]=start.split(':').map(Number);const startMin=sh*60+sm;
-  const waves=Math.ceil(n/h.chargers);let rows='';let rem=n;
-  const fmt=m=>{m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
-  for(let w=1;w<=waves;w++){const cnt=Math.min(h.chargers,rem);rem-=cnt;const s=startMin+(w-1)*chargeMin;const e=s+chargeMin;rows+=`<tr><td class="mono">รอบ ${w}</td><td class="mono">${cnt} คัน</td><td class="mono">${fmt(s)}</td><td class="mono">${fmt(e)}</td><td>พร้อมปล่อย ${fmt(e)}</td></tr>`;}
-  const total=waves*chargeMin;
-  g('simResult').innerHTML=`<div class="hint" style="margin-top:14px">HUB ${esc(h.name)} · ${h.chargers} หัว · ชาร์จ ${pct}% ≈ ${chargeMin} น./คัน · ${n} คัน = ${waves} รอบ · ใช้เวลารวม ${total} นาที (เสร็จ ${fmt(startMin+total)})</div>
-    <div class="tablewrap"><table style="min-width:520px"><thead><tr><th>รอบ</th><th>จำนวน</th><th>เริ่มชาร์จ</th><th>ชาร์จเสร็จ</th><th>ปล่อยรถ</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    <div class="tablewrap sbox"><table style="min-width:860px">
+      <thead><tr>${head}<th style="width:44px"></th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="6" class="empty-note">ยังไม่มีเส้นทาง — กด “เพิ่มเส้นทางใหม่”</td></tr>'}</tbody>
+    </table></div>`;
 }
 
 /* ---------- TAB 5: summary ---------- */
@@ -994,7 +1263,7 @@ function hourlyAttend(){
   const mk = h => (b[h] = b[h] || {plan:0,present:0,ot:0,late:0,absent:0,leave:0,unchecked:0,off:0});
   for(const t of config){
     for(const d of (t.drivers||[])){
-      const sm = parseStart(d.shift);
+      const sm = parseStart(shiftOf(d,curDate));
       if(sm === null) continue;
       const row = mk(Math.floor(sm/60));
       const v = attOf(t.truckNo)[d.pos] || '';
@@ -1014,7 +1283,8 @@ function tableAttend(){
   const b = hourlyAttend();
   const nowH = new Date().getHours();
   const lastH = Math.min(23, nowH + 1);          /* แสดงแผนล่วงหน้า 1 ชม. */
-  let cp = 0, ca = 0, rows = '';
+  let cp = 0, ca = 0;
+  const list=[];
   for(let h = 0; h <= lastH; h++){
     const r = b[h] || {plan:0,present:0,ot:0,late:0,absent:0,leave:0,unchecked:0,off:0};
     const ahead = h > nowH;
@@ -1023,7 +1293,7 @@ function tableAttend(){
     const diff = ca - cp;
     const hl = String(h).padStart(2,'0') + ':00';
     const cls = ahead ? 'aheadrow' : (h===nowH ? 'nowrow' : '');
-    rows += `<tr class="${cls}">
+    list.push({h,r,ahead,actual,cp,ca,diff,cls,html:`<tr class="${cls}">
       <td class="mono" style="font-weight:600">${hl}${h===nowH?' <span class="tag">ชม.นี้</span>':''}${ahead?' <span class="tag" style="background:var(--m-bg);color:var(--off)">ล่วงหน้า</span>':''}</td>
       <td class="mono" style="text-align:center">${r.plan||'-'}</td>
       <td class="mono" style="text-align:center">${ahead?'<span class="cno">—</span>':(actual||'-')}${(!ahead&&r.ot)?` <span class="otyes">+${r.ot} OT</span>`:''}</td>
@@ -1035,68 +1305,79 @@ function tableAttend(){
       <td class="mono" style="text-align:center">${ahead?'':cp}</td>
       <td class="mono" style="text-align:center">${ahead?'':ca}</td>
       <td class="mono" style="text-align:center;font-weight:600;color:${diff<0?'var(--absent)':'var(--present)'}">${ahead?'':(diff>0?'+':'')+diff}</td>
-    </tr>`;
+    </tr>`});
   }
+  const rows=sortBy('sum1',list,{hour:x=>x.h,plan:x=>x.r.plan,actual:x=>x.actual,late:x=>x.r.late,
+    absent:x=>x.r.absent,leave:x=>x.r.leave,unchecked:x=>x.r.unchecked,off:x=>x.r.off,
+    cp:x=>x.cp,ca:x=>x.ca,diff:x=>x.diff}).map(x=>x.html).join('');
   return `<div class="card"><h2>1 · พจส. มาทำงานเทียบแผน รายชั่วโมง</h2>
     <div class="hint">แผนมาจากเวลาเข้ากะในตารางกะ (ไม่นับวันหยุด) · มาจริงมาจากการเช็กในหน้า 1 · แถวเหลืองคือแผนล่วงหน้า 1 ชม. ยังไม่ถึงเวลา · <b>ตารางแสดง 5 บรรทัด เลื่อนขึ้นดูชั่วโมงก่อนหน้าได้</b> (ระบบเลื่อนมาที่ชั่วโมงปัจจุบันให้แล้ว)</div>
     <div class="tablewrap sbox5" id="t1box"><table style="min-width:820px"><thead><tr>
-      <th>เวลาเข้ากะ</th><th style="text-align:center">แผน (คน)</th><th style="text-align:center">มาจริง</th>
-      <th style="text-align:center">สาย</th><th style="text-align:center">ขาด</th><th style="text-align:center">ลา</th><th style="text-align:center">ยังไม่เช็ก</th>
-      <th style="text-align:center">วันหยุด</th><th style="text-align:center">แผนสะสม</th><th style="text-align:center">มาจริงสะสม</th><th style="text-align:center">ผลต่าง</th>
+      ${thS('sum1','hour','เวลาเข้ากะ')}${thS('sum1','plan','แผน (คน)','center')}${thS('sum1','actual','มาจริง','center')}
+      ${thS('sum1','late','สาย','center')}${thS('sum1','absent','ขาด','center')}${thS('sum1','leave','ลา','center')}${thS('sum1','unchecked','ยังไม่เช็ก','center')}
+      ${thS('sum1','off','วันหยุด','center')}${thS('sum1','cp','แผนสะสม','center')}${thS('sum1','ca','มาจริงสะสม','center')}${thS('sum1','diff','ผลต่าง','center')}
     </tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
 /* ===== ตารางที่ 2: งานหลักรายสินค้า / งานรอง เทียบแผนที่ CC กรอก ===== */
 function tablePlanVsActual(){
-  const actMain = {}, prods = [];
-  ROUTEDATA.forEach(r=>{ if(r.type==='main' && r.product && prods.indexOf(r.product)<0) prods.push(r.product); });
-  let vtAct = 0;
+  /* นับงานจริงแยกตามกลุ่มและสินค้า */
+  const act={main:{},vt:{}};
   for(const j of day.jobs){
-    if(j.type === 'vt'){ vtAct++; continue; }
-    const p = j.product || '(ไม่ระบุสินค้า)';
-    if(prods.indexOf(p) < 0) prods.push(p);
-    actMain[p] = (actMain[p]||0) + 1;
+    const g=(j.type==='vt')?'vt':'main';
+    const p=j.product||'(ไม่ระบุสินค้า)';
+    act[g][p]=(act[g][p]||0)+1;
   }
-  const pv = k => { const v = day.plan[k]; return (v===undefined||v===null||v==='') ? '' : v; };
-  let sumPlan = 0, sumAct = 0, rows = '';
-  prods.forEach(p=>{
-    const plan = Number(pv(p)) || 0, act = actMain[p] || 0;
-    sumPlan += plan; sumAct += act;
-    if(!sumProdOpen) return;                       /* ยุบอยู่: ยังรวมยอด แต่ไม่วาดแถว */
-    const diff = act - plan;
-    const pct = plan ? Math.round(act/plan*100) : null;
-    rows += `<tr>
-      <td>${esc(p)}</td>
-      <td style="text-align:center"><input class="planin mono" inputmode="numeric" data-planprod="${esc(p)}" value="${esc(pv(p))}" placeholder="-"></td>
-      <td class="mono" style="text-align:center;font-weight:600">${act}</td>
-      <td class="mono" style="text-align:center;color:${diff<0?'var(--absent)':'var(--present)'}">${plan||act?((diff>0?'+':'')+diff):'-'}</td>
-      <td class="mono" style="text-align:center">${pct!==null?(pct+'%'):'<span class="cno">-</span>'}</td>
-    </tr>`;
+  const pv=k=>{const v=day.plan[k];return (v===undefined||v===null||v==='')?'':v;};
+  const GRP=[['main','งานหลัก','main'],['vt','งานรอง (VT)','vt']];
+  let gPlan=0,gAct=0,html='';
+
+  GRP.forEach(([g,lab,cls])=>{
+    /* รายการสินค้าของกลุ่ม = จากทะเบียนหน้า 5 + สินค้าที่วิ่งจริงวันนี้ */
+    const prods=routeProducts(g).slice();
+    Object.keys(act[g]).forEach(p=>{if(prods.indexOf(p)<0)prods.push(p);});
+    let sp=0,sa=0,rows='';
+    const sortedP=sortBy('sum2',prods.map(p=>({p,plan:Number(pv(p))||0,a:act[g][p]||0})),
+      {product:x=>x.p,plan:x=>x.plan,actual:x=>x.a,diff:x=>x.a-x.plan,pct:x=>x.plan?x.a/x.plan:0}).map(x=>x.p);
+    sortedP.forEach(p=>{
+      const plan=Number(pv(p))||0, a=act[g][p]||0;
+      sp+=plan; sa+=a;
+      if(!sumProdOpen[g])return;
+      const diff=a-plan, pct=plan?Math.round(a/plan*100):null;
+      const inReg=routes.some(r=>r.product===p&&r.type===g);
+      rows+=`<tr>
+        <td style="padding-left:22px">${esc(p)}${inReg?'':' <span class="tag" title="ยังไม่มีในทะเบียนหน้า 5">นอกทะเบียน</span>'}</td>
+        <td style="text-align:center"><input class="planin mono" inputmode="numeric" data-planprod="${esc(p)}" value="${esc(pv(p))}" placeholder="-"></td>
+        <td class="mono" style="text-align:center;font-weight:600">${a}</td>
+        <td class="mono" style="text-align:center;color:${diff<0?'var(--absent)':'var(--present)'}">${(plan||a)?((diff>0?'+':'')+diff):'-'}</td>
+        <td class="mono" style="text-align:center">${pct!==null?(pct+'%'):'<span class="cno">-</span>'}</td></tr>`;
+    });
+    gPlan+=sp; gAct+=sa;
+    const open=sumProdOpen[g];
+    html+=`<tr class="grouphdr" style="position:static"><td colspan="5" style="padding:8px 12px">
+        <button class="btn mini" data-grp="${g}" style="margin-right:8px">${open?'▲ ยุบ':'▼ ขยาย'}</button>
+        <span class="jtype ${cls}">${lab}</span> <span class="cno">${prods.length} รายการ</span>
+        <span style="float:right" class="cno">แผน <b>${sp||'-'}</b> · วิ่งจริง <b>${sa}</b> · ${sp?Math.round(sa/sp*100)+'%':'-'}</span>
+      </td></tr>${rows}`;
+    if(open)html+=`<tr><td colspan="5" style="padding:8px 12px 12px 22px">
+        <input id="newprod_${g}" class="rin" style="width:230px;display:inline-block" placeholder="ชื่อสินค้า/เส้นทางใหม่ในกลุ่ม${lab}">
+        <button class="miniadd" data-addgrp="${g}">＋ เพิ่มเข้ากลุ่มนี้</button>
+        <span class="cno" style="margin-left:6px">เพิ่มแล้วไปใส่ต้นทาง/ปลายทาง/ระยะทางต่อที่หน้า 5</span></td></tr>`;
   });
-  const vtPlan = Number(pv('__vt')) || 0, vtDiff = vtAct - vtPlan;
+
+  const gd=gAct-gPlan;
   return `<div class="card">
-    <div class="cardhead"><h2>2 · ปริมาณงานเทียบแผน (แยกรายสินค้า เฉพาะงานหลัก)</h2>
-      <button class="btn mini" id="toggleProd">${sumProdOpen?('▲ ยุบรายสินค้า ('+prods.length+')'):('▼ แสดงรายสินค้า ('+prods.length+' รายการ)')}</button></div>
-    <div class="hint">${sumProdOpen?'กรอกแผนงานประจำวันในช่องสีเหลือง ระบบบันทึกให้อัตโนมัติและแชร์ให้ CC ทุกเครื่องเห็น · วิ่งจริงนับจากงานที่จ่ายในหน้า 2':'<b>ยุบรายสินค้าอยู่</b> — กด “แสดงรายสินค้า” เพื่อกรอกหรือแก้แผนแต่ละสินค้า (ยอดรวมด้านล่างยังคิดจากแผนที่กรอกไว้ครบทุกสินค้า)'}</div>
-    <div class="tablewrap sbox"><table style="min-width:640px"><thead><tr>
-      <th>สินค้า (งานหลัก)</th><th style="text-align:center">แผน (เที่ยว)</th><th style="text-align:center">วิ่งจริง</th><th style="text-align:center">ผลต่าง</th><th style="text-align:center">% ของแผน</th>
-    </tr></thead><tbody>${rows}
-      <tr style="background:#f7f9fc"><td style="font-weight:600">รวมงานหลัก</td>
-        <td class="mono" style="text-align:center;font-weight:600">${sumPlan||'-'}</td>
-        <td class="mono" style="text-align:center;font-weight:600">${sumAct}</td>
-        <td class="mono" style="text-align:center;font-weight:600;color:${sumAct-sumPlan<0?'var(--absent)':'var(--present)'}">${(sumAct-sumPlan>0?'+':'')+(sumAct-sumPlan)}</td>
-        <td class="mono" style="text-align:center;font-weight:600">${sumPlan?Math.round(sumAct/sumPlan*100)+'%':'-'}</td></tr>
-      <tr><td><span class="jtype vt">งานรอง (VT)</span> รวมทุกสินค้า</td>
-        <td style="text-align:center"><input class="planin mono" inputmode="numeric" data-planprod="__vt" value="${esc(pv('__vt'))}" placeholder="-"></td>
-        <td class="mono" style="text-align:center;font-weight:600">${vtAct}</td>
-        <td class="mono" style="text-align:center;color:${vtDiff<0?'var(--absent)':'var(--present)'}">${vtPlan||vtAct?((vtDiff>0?'+':'')+vtDiff):'-'}</td>
-        <td class="mono" style="text-align:center">${vtPlan?Math.round(vtAct/vtPlan*100)+'%':'<span class="cno">-</span>'}</td></tr>
+    <div class="cardhead"><h2>2 · ปริมาณงานเทียบแผน (แยกกลุ่ม งานหลัก / งานรอง)</h2></div>
+    <div class="hint">รายชื่อสินค้าในแต่ละกลุ่มมาจาก <b>ทะเบียนเส้นทางหน้า 5</b> · เพิ่มรายการเข้ากลุ่มได้จากช่องท้ายกลุ่ม · กรอกแผนในช่องสีเหลือง ระบบบันทึกและแชร์ให้ CC ทุกเครื่องอัตโนมัติ</div>
+    <div class="tablewrap sbox"><table style="min-width:660px"><thead><tr>
+      ${thS('sum2','product','สินค้า / เส้นทาง')}${thS('sum2','plan','แผน (เที่ยว)','center')}${thS('sum2','actual','วิ่งจริง','center')}${thS('sum2','diff','ผลต่าง','center')}${thS('sum2','pct','% ของแผน','center')}
+    </tr></thead><tbody>${html}
       <tr style="background:var(--nav);color:#fff">
         <td style="font-weight:600;color:#fff">รวมทั้งหมด (งานหลัก + งานรอง)</td>
-        <td class="mono" style="text-align:center;font-weight:600">${(sumPlan+vtPlan)||'-'}</td>
-        <td class="mono" style="text-align:center;font-weight:600;font-size:15px">${sumAct+vtAct}</td>
-        <td class="mono" style="text-align:center;font-weight:600;color:${(sumAct+vtAct)-(sumPlan+vtPlan)<0?'#ffb3aa':'#7fd6a8'}">${((sumAct+vtAct)-(sumPlan+vtPlan)>0?'+':'')+((sumAct+vtAct)-(sumPlan+vtPlan))}</td>
-        <td class="mono" style="text-align:center;font-weight:600">${(sumPlan+vtPlan)?Math.round((sumAct+vtAct)/(sumPlan+vtPlan)*100)+'%':'-'}</td></tr>
+        <td class="mono" style="text-align:center;font-weight:600">${gPlan||'-'}</td>
+        <td class="mono" style="text-align:center;font-weight:600;font-size:15px">${gAct}</td>
+        <td class="mono" style="text-align:center;font-weight:600;color:${gd<0?'#ffb3aa':'#7fd6a8'}">${(gd>0?'+':'')+gd}</td>
+        <td class="mono" style="text-align:center;font-weight:600">${gPlan?Math.round(gAct/gPlan*100)+'%':'-'}</td></tr>
     </tbody></table></div></div>`;
 }
 
@@ -1138,7 +1419,7 @@ function tableWorkTime(){
 
 /* ===== ตารางที่ 4: จำนวนรอบต่อคัน (1 คัน = 3 กะ = เป้า 3 รอบ/วัน) ===== */
 const TARGET_ROUNDS = 3;
-function tableRounds(){
+function roundsData(){
   const per = {};
   for(const j of day.jobs){
     const no = j.mainTruck || j.truck || '(ไม่ระบุ)';
@@ -1162,6 +1443,10 @@ function tableRounds(){
                avg: p.hrs.length ? Math.round(p.hrs.reduce((a,b)=>a+b,0)/p.hrs.length*10)/10 : null };
     });
 
+  return data;
+}
+function tableRounds(){
+  const data = roundsData();
   /* ---- สรุปจำนวนคันตามรอบที่ทำได้ ---- */
   const c0 = data.filter(r=>r.rounds===0).length;
   const c1 = data.filter(r=>r.rounds===1).length;
@@ -1228,18 +1513,24 @@ function scrollSumToNow(){
 function renderSummary(){
   const k = kpis();
   let mainTotal = 0, vtTotal = 0, closedTotal = 0;
-  day.jobs.forEach(j=>{ if(j.type==='vt') vtTotal++; else mainTotal++; if(j.closed) closedTotal++; });
-  const per = {};
-  day.jobs.forEach(j=>{ const no=j.mainTruck||j.truck; per[no]=(per[no]||0)+1; });
-  const hitTrucks = Object.keys(per).filter(no=>per[no]>=TARGET_ROUNDS).length;
+  const runTrucks = {};
+  day.jobs.forEach(j=>{
+    if(j.type==='vt') vtTotal++; else mainTotal++;      /* นับตามแผนที่จ่าย ไม่ลดเมื่อปิดงาน */
+    if(j.closed) closedTotal++;
+    else runTrucks[j.actualTruck||j.mainTruck||j.truck]=1;
+  });
+  const runningTrucks = Object.keys(runTrucks).length;
+  const rd = roundsData();                              /* ใช้ตรรกะเดียวกับตารางที่ 4 */
+  const hitTrucks = rd.filter(r=>r.ok).length;
   document.getElementById('view').innerHTML=`
     <section class="summary">
       <div class="stat hero"><div class="lab">พจส. มาทำงาน</div><div class="val mono">${k.actual}<small> / ${k.scheduled}</small></div><div class="bar" style="width:${k.scheduled?Math.min(100,k.actual/k.scheduled*100):0}%"></div></div>
-      <div class="stat"><div class="lab">เที่ยวงานหลัก</div><div class="val mono">${mainTotal}</div></div>
-      <div class="stat"><div class="lab">เที่ยว VT</div><div class="val mono">${vtTotal}</div></div>
-      <div class="stat go"><div class="lab">ปิดงานแล้ว</div><div class="val mono">${closedTotal}</div></div>
+      <div class="stat"><div class="lab">เที่ยวงานหลัก (ตามแผนที่จ่าย)</div><div class="val mono">${mainTotal}</div></div>
+      <div class="stat"><div class="lab">เที่ยวงานรอง VT (ตามแผนที่จ่าย)</div><div class="val mono">${vtTotal}</div></div>
+      <div class="stat ot"><div class="lab">กำลังวิ่งงาน (คัน)</div><div class="val mono">${runningTrucks}</div></div>
+      <div class="stat go"><div class="lab">ปิดงานแล้ว (เที่ยว)</div><div class="val mono">${closedTotal}</div></div>
       <div class="stat miss"><div class="lab">ขาด / ลา</div><div class="val mono">${k.absent} / ${k.leave}</div></div>
-      <div class="stat gap"><div class="lab">รถครบ ${TARGET_ROUNDS} รอบ</div><div class="val mono">${hitTrucks}</div></div>
+      <div class="stat gap"><div class="lab">รถครบ ${TARGET_ROUNDS} รอบ</div><div class="val mono">${hitTrucks}<small> / ${rd.length}</small></div></div>
     </section>
     <div class="toolbar"><span class="cno">สรุปของวันที่ ${curDate} · ข้อมูลดึงจากหน้า 1 (เช็กคนขับ) หน้า 2 (จ่ายงาน) และหน้า 3 (เวลาทำงาน)</span>
       <div style="flex:1"></div><button class="btn" id="csvBtn">⬇ ส่งออก Excel</button><button class="btn" id="printBtn">🖨 พิมพ์</button></div>
@@ -1263,6 +1554,20 @@ let alarmList=[], alertList=[], alarmSeen={}, alertSeen={};
 let alarmTimer=null, alertTimer=null, tickTimer=null;
 
 function nowMin(){const d=new Date();return d.getHours()*60+d.getMinutes();}
+/* วัดความสูงหัวเว็บจริง แล้วให้แถบแท็บตรึงพอดีใต้หัวเว็บ (หัวเว็บสูงไม่เท่ากันบนจอแคบ) */
+function fitTabs(){
+  const h=document.querySelector('header');
+  if(!h)return;
+  const px=Math.round(h.getBoundingClientRect().height);
+  if(px>20)document.documentElement.style.setProperty('--hh',px+'px');   /* ถ้าวัดไม่ได้ ใช้ค่าสำรอง 56px */
+}
+if(window.ResizeObserver){
+  const ro=new ResizeObserver(fitTabs);
+  const hh=document.querySelector('header');
+  if(hh)ro.observe(hh);
+}
+window.addEventListener('resize',fitTabs);
+window.addEventListener('orientationchange',fitTabs);
 function nKey(kind,what){return 'fleet:'+kind+what+':'+curDate;}
 function loadNotify(){
   const rd=(k,dflt)=>{try{return JSON.parse(lsGet(k)||'null')||dflt;}catch(e){return dflt;}};
@@ -1276,22 +1581,34 @@ function saveNotify(){
 }
 function driverItem(t,d){
   return {key:t.truckNo+':'+d.pos,truck:t.truckNo,pos:d.pos,name:d.name||'(ไม่ระบุชื่อ)',
-          code:d.code||'',phone:d.phone||'',start:startLabel(d.shift),route:t.routeGroup||''};
+          code:d.code||'',phone:d.phone||'',start:startLabel(shiftOf(d,curDate)),route:t.routeGroup||''};
 }
 function tickAlarms(){
   if(!config||!day)return;
   if(curDate!==todayStr()){updateBells();return;}     /* ดูวันย้อนหลัง ไม่ต้องเตือน */
   const now=nowMin();
-  let na=0, nl=0, marked=false;
+  let na=0, nl=0, swept=0, marked=false;
   for(const t of config){
     for(const d of (t.drivers||[])){
       if(isOff(t,d,curDate))continue;                 /* วันหยุดของ พจส. ไม่นับ */
-      const sm=parseStart(d.shift); if(sm===null)continue;
+      const sm=parseStart(shiftOf(d,curDate)); if(sm===null)continue;
       const k=t.truckNo+':'+d.pos;
       if(((day.attend[t.truckNo]||{})[d.pos]||'')!=='')continue;   /* เช็กแล้ว ไม่ต้องเตือน */
       const lead=sm-now, over=now-sm;
       if(lead>0 && lead<=ALARM_LEAD && !alarmSeen[k]){
         alarmSeen[k]=1; alarmList.push(driverItem(t,d)); na++;
+      }
+      /* จบกะแล้วยังไม่มีใครเช็ก -> ปิดยอดเป็น "ขาด" เงียบ ๆ ไม่เด้งวิดเจท
+         (เลยเวลาเลิกกะแล้ว การเตือนให้โทรตามไม่มีประโยชน์อีก)          */
+      const dur=shiftDuration(shiftOf(d,curDate));
+      if(dur!==null && now>=sm && (now-sm)>=dur && !alertSeen[k]){
+        alertSeen[k]=1; swept++;
+        day.attend[t.truckNo]=day.attend[t.truckNo]||{};
+        day.attend[t.truckNo][d.pos]='absent';
+        day.attendBy[t.truckNo]=day.attendBy[t.truckNo]||{};
+        day.attendBy[t.truckNo][d.pos]='ระบบ (จบกะแล้วไม่มีการเช็ก)';
+        marked=true;
+        continue;
       }
       if(over>=ALERT_GRACE && over<=ALERT_WINDOW && !alertSeen[k]){
         alertSeen[k]=1; alertList.push(driverItem(t,d)); nl++;
@@ -1304,6 +1621,7 @@ function tickAlarms(){
     }
   }
   if(marked){saveDay(); if(tab==='roster')renderRoster();}
+  if(swept)console.warn('ปิดยอดอัตโนมัติ (จบกะแล้วไม่มีการเช็ก): '+swept+' คน');
   if(na||nl)saveNotify();
   if(na)showAlarm();
   if(nl)showAlert();
@@ -1352,6 +1670,7 @@ function updateBells(){
   };
   set('alarmBtn','alarmCount',alarmList,'alarmBox');
   set('alertBtn','alertCount',alertList,'alertBox');
+  fitTabs();
 }
 function startAlarms(){
   loadNotify(); tickAlarms();
@@ -1374,10 +1693,29 @@ function render(){
 
 /* ---------- events (delegated) ---------- */
 document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(b){tab=b.dataset.tab;render();if(tab==='roster')scrollToCurrentHour();}});
-document.getElementById('dateInput').addEventListener('change',async e=>{curDate=e.target.value||todayStr();await loadDay();closeWidget('alarm');closeWidget('alert');loadNotify();tickAlarms();render();if(tab==='roster')scrollToCurrentHour();});
+document.getElementById('dateInput').addEventListener('change',async e=>{curDate=e.target.value||todayStr();applyRosterForDate();await loadDay();closeWidget('alarm');closeWidget('alert');loadNotify();tickAlarms();render();if(tab==='roster')scrollToCurrentHour();});
 
 document.getElementById('view').addEventListener('click',e=>{
-  if(e.target.closest('#toggleProd')){sumProdOpen=!sumProdOpen;lsSet('fleet:sumprod',sumProdOpen?'1':'0');renderSummary();return;}
+  const tg=e.target.closest('[data-grp]');
+  if(tg){const g=tg.dataset.grp;sumProdOpen[g]=!sumProdOpen[g];lsSet('fleet:sumprod',JSON.stringify(sumProdOpen));renderSummary();return;}
+  const ga=e.target.closest('[data-addgrp]');
+  if(ga){
+    const g=ga.dataset.addgrp;
+    const inp=document.getElementById('newprod_'+g);
+    const name=(inp&&inp.value||'').trim();
+    if(!name){if(inp)inp.focus();return;}
+    if(routes.some(r=>r.product===name)){alert('มีสินค้า "'+name+'" ในทะเบียนแล้ว');return;}
+    routes.push({id:ruid(),product:name,origin:'',dest:'',distance:'',type:g});
+    scheduleRoutesSave();sumProdOpen[g]=true;renderSummary();
+    return;
+  }
+  const ts=e.target.closest('[data-ts]');
+  if(ts){
+    const tb=ts.dataset.ts,k=ts.dataset.tsk,st=tsort[tb]||{};
+    tsort[tb]=(st.key===k)?{key:k,dir:-st.dir}:{key:k,dir:1};
+    render();return;
+  }
+  if(e.target.closest('#clearSort')){tsort['roster']=null;renderRoster();return;}
   const rs=e.target.closest('[data-rsort]');
   if(rs){
     const k=rs.dataset.rsort;
@@ -1391,12 +1729,21 @@ document.getElementById('view').addEventListener('click',e=>{
   if(att){const no=att.dataset.att,p=att.dataset.pos,v=att.dataset.val;day.attend[no]=day.attend[no]||{};day.attend[no][p]=day.attend[no][p]===v?'':v;day.attendBy[no]=day.attendBy[no]||{};day.attendBy[no][p]=adminName;saveDay();renderRoster();return;}
   const ot=e.target.closest('[data-ot]');
   if(ot){const no=ot.dataset.ot,p=ot.dataset.pos;day.attend[no]=day.attend[no]||{};day.attend[no][p]=day.attend[no][p]==='ot'?'':'ot';day.attendBy[no]=day.attendBy[no]||{};day.attendBy[no][p]=adminName;saveDay();renderRoster();return;}
+  const an=e.target.closest('[data-arrnow]');
+  if(an){setArrive(an.dataset.arrnow,an.dataset.pos,nowHM());return;}
   if(e.target.closest('#editBtn')){editMode=true;editBuf=JSON.parse(JSON.stringify(config));renderRoster();return;}
-  if(e.target.closest('#saveEdit')){config=editBuf;editBuf=null;editMode=false;flag('saving');saveConfig().then(()=>flag('ok'));renderRoster();alert('บันทึกการเปลี่ยนแปลงรายชื่อ/เบอร์รถแล้ว');return;}
+  if(e.target.closest('#saveEdit')){
+    config=editBuf;editBuf=null;editMode=false;flag('saving');
+    saveConfig().then(()=>{flag('ok');renderRoster();
+      alert('บันทึกแล้ว — มีผลกับชุด “'+activeVerName()+'” ทันที และ CC เครื่องอื่นจะเห็นภายใน 1 นาที');
+    });
+    renderRoster();return;}
   if(e.target.closest('#cancelEdit')){editBuf=null;editMode=false;renderRoster();return;}
   const plan=e.target.closest('[data-plan]');
   if(plan){openModal(plan.dataset.plan,plan.dataset.pos);return;}
   if(e.target.closest('#openDispatch')){openModal(null,null);return;}
+  const jr=e.target.closest('[data-jobrow]');
+  if(jr&&!e.target.closest('input,button,select,textarea,a')){openJobDetail(jr.dataset.jobrow);return;}
   const ad=e.target.closest('[data-adddrv]');
   if(ad){const ti=+ad.dataset.adddrv;editBuf[ti].drivers=editBuf[ti].drivers||[];editBuf[ti].drivers.push({pos:String(editBuf[ti].drivers.length+1),name:'',phone:'',shift:'',dayOff:''});renderRoster();return;}
   const dd=e.target.closest('[data-deldrv]');
@@ -1407,11 +1754,29 @@ document.getElementById('view').addEventListener('click',e=>{
   if(run){const no=run.dataset.run;day.running[no]=!day.running[no];saveDay();renderRoster();return;}
   if(pill){const f=pill.dataset.f;filter=(filter===f&&f!=='all')?'all':f;renderRoster();return;}
   if(imp){document.getElementById('fileInput').click();return;}
+  if(e.target.closest('#verBtn')){openVersionDialog();return;}
   if(csv){exportExcel();return;}
   if(prn){window.print();return;}
   if(del){const rid=String(del.dataset.deljob);day.deleted=day.deleted||[];if(day.deleted.indexOf(rid)<0)day.deleted.push(rid);day.jobs=day.jobs.filter(j=>String(j.id)!==rid);saveDay();renderDispatch();return;}
   if(now){const j=day.jobs.find(x=>String(x.id)===now.dataset.stampnow);if(j){j[now.dataset.field]=nowHM();saveDay();renderBoard();}return;}
-  if(e.target.closest('#simBtn')){runSim();return;}
+  if(e.target.closest('#addRoute')){
+    routes.unshift({id:ruid(),product:'',origin:'',dest:'',distance:'',type:'main'});
+    scheduleRoutesSave();renderPlan();
+    const f=document.querySelector('[data-rt="product"]');if(f)f.focus();
+    return;
+  }
+  const rtd=e.target.closest('[data-rtdel]');
+  if(rtd){
+    const r=routes.find(x=>x.id===rtd.dataset.rtdel);
+    if(r&&confirm('ลบเส้นทาง "'+(r.product||'(ไม่มีชื่อ)')+'" ?')){
+      routes=routes.filter(x=>x.id!==rtd.dataset.rtdel);scheduleRoutesSave();renderPlan();
+    }
+    return;
+  }
+  const rts=e.target.closest('[data-rtsort]');
+  if(rts){const k=rts.dataset.rtsort;
+    if(routeSort.key===k)routeSort.dir=-routeSort.dir;else routeSort={key:k,dir:1};
+    renderPlan();return;}
   const bf=e.target.closest('[data-bf]');
   if(bf){boardFilter=(boardFilter===bf.dataset.bf)?'all':bf.dataset.bf;renderBoard();return;}
   if(e.target.closest('#clearBf')){boardFilter='all';renderBoard();return;}
@@ -1422,7 +1787,7 @@ document.getElementById('view').addEventListener('input',e=>{
     const ti=+e.target.dataset.ti,f=e.target.dataset.edit,v=e.target.value;const buf=editBuf||config;
     if(f==='truckno')buf[ti].truckNo=v.trim();
     else if(f==='route')buf[ti].routeGroup=v.trim();
-    else{const di=+e.target.dataset.di;const key={pos:'pos',name:'name',phone:'phone',shift:'shift',dayoff:'dayOff'}[f];const dv=(f==='dayoff'&&v==='—')?'':v;buf[ti].drivers[di][key]=dv;}
+    else{const di=+e.target.dataset.di;const key={pos:'pos',name:'name',phone:'phone',shift:'shift',shift2:'shift2',shiftfrom:'shiftFrom',dayoff:'dayOff'}[f];const dv=(f==='dayoff'&&v==='—')?'':v;buf[ti].drivers[di][key]=dv;}
     return;
   }
   if(e.target.dataset&&e.target.dataset.planprod!==undefined){
@@ -1432,18 +1797,57 @@ document.getElementById('view').addEventListener('input',e=>{
     day.plan[key]=(raw==='')?'':Number(raw);   /* ใช้ '' ไม่ใช่ delete เพื่อให้การล้างค่าส่งถึงเครื่องอื่นด้วย */
     saveDay();return;
   }
+  if(e.target.id==='routeSearch'){routeSearch=e.target.value.trim();renderPlan();
+    const f=document.getElementById('routeSearch');if(f){f.focus();f.setSelectionRange(f.value.length,f.value.length);}return;}
+  if(e.target.dataset&&e.target.dataset.rt!==undefined){
+    const r=routes.find(x=>x.id===e.target.dataset.id);if(!r)return;
+    const f=e.target.dataset.rt;
+    r[f]=(f==='distance')?String(e.target.value).replace(/[^0-9]/g,''):e.target.value;
+    if(f==='distance'&&r.distance)r.type=(+r.distance<=100)?'vt':'main';
+    scheduleRoutesSave();return;
+  }
   if(e.target.id==='planSpeed'){planSpeed=parseInt(e.target.value)||65;return;}
   if(e.target.dataset&&e.target.dataset.actual!==undefined){const j=day.jobs.find(x=>String(x.id)===e.target.dataset.actual);if(j){j.actualTruck=e.target.value;saveDay();}return;}
+  if(e.target.dataset&&e.target.dataset.over!==undefined){
+    const j=day.jobs.find(x=>String(x.id)===e.target.dataset.over);if(j){j.overNote=e.target.value;saveDay();}return;}
   if(e.target.dataset&&e.target.dataset.note!==undefined){const j=day.jobs.find(x=>String(x.id)===e.target.dataset.note);if(j){j.note=e.target.value;saveDay();}return;}
   if(e.target.dataset&&e.target.dataset.depart!==undefined)return;   /* รอบันทึกตอนออกจากช่อง (ดู listener change) */
 });
 document.getElementById('modal').addEventListener('click',e=>{
   if(e.target.closest('#loginSave')){doLogin();return;}
+  if(e.target.closest('#resetBackend')){
+    lsSet('fleet:backend:manual','0');lsSet('fleet:backend',BACKEND_URL_DEFAULT);
+    const i=document.getElementById('login_url');if(i)i.value=BACKEND_URL_DEFAULT;
+    return;
+  }
+  if(e.target.closest('#testBackend')){
+    const u=(document.getElementById('login_url').value||'').trim()||BACKEND_URL_DEFAULT;
+    const out=document.getElementById('testResult');
+    out.textContent='กำลังทดสอบ…';out.style.color='var(--muted)';
+    fetch(u+'?day='+curDate+(API_TOKEN?('&tk='+encodeURIComponent(API_TOKEN)):''))
+      .then(r=>r.text()).then(t=>{
+        let ok=false,msg=t.slice(0,120);
+        try{const d=JSON.parse(t);ok=!d.error;if(d.error)msg='เซิร์ฟเวอร์ตอบ error: '+d.error;}
+        catch(e){msg=(t.indexOf('<')>=0)?'ได้หน้า HTML กลับมา (ยังไม่ได้ตั้ง Who has access = Anyone)':('อ่านคำตอบไม่ได้: '+msg);}
+        out.textContent=(ok?'✅ เชื่อมต่อได้ พร้อมใช้งาน':'❌ '+msg);
+        out.style.color=ok?'var(--present)':'var(--absent)';
+      })
+      .catch(e=>{out.textContent='❌ ต่อไม่ได้เลย: URL ผิด หรือ deployment ถูกลบ/archive';out.style.color='var(--absent)';});
+    return;
+  }
   if(e.target.closest('#saveJob')){saveJob();return;}
+  if(e.target.closest('#imp_go')){applyImport();return;}
+  const vd=e.target.closest('[data-verdel]');
+  if(vd){const v=rosterVersions.find(x=>x.id===vd.dataset.verdel);
+    if(v&&confirm('ลบชุด "'+v.name+'" (เริ่ม '+v.from+') ?')){
+      rosterVersions=rosterVersions.filter(x=>x.id!==vd.dataset.verdel);
+      saveRosters().then(()=>{applyRosterForDate();openVersionDialog();render();});
+    }return;}
+  if(e.target.closest('#goBoard')){closeModal();tab='board';render();return;}
   if(e.target.closest('#cancelJob')||e.target.closest('#closeModal')||e.target.id==='modal'){closeModal();return;}
 });
 document.getElementById('adminChip').addEventListener('click',e=>{if(e.target.closest('#changeAdmin')||e.target.closest('#loginBtn'))openLogin();});
-document.getElementById('refreshBtn').addEventListener('click',async()=>{flag('saving');await loadConfig();await loadDay();flag('ok');render();if(tab==='roster')scrollToCurrentHour();});
+document.getElementById('refreshBtn').addEventListener('click',async()=>{flag('saving');await loadConfig();await loadRoutes();await loadDay();flag('ok');render();if(tab==='roster')scrollToCurrentHour();});
 document.getElementById('settingsBtn').addEventListener('click',()=>openLogin());
 function odChange(id){const s=document.getElementById(id);const cw=document.getElementById(id+'_custom_wrap');if(cw)cw.style.display=s.value==='__custom'?'block':'none';recalcDist();}
 document.getElementById('modal').addEventListener('input',e=>{
@@ -1455,6 +1859,11 @@ document.getElementById('modal').addEventListener('input',e=>{
   if(e.target.id==='j_actual'||e.target.id==='j_trip'){e.target.dataset.touched='1';return;}
 });
 document.getElementById('modal').addEventListener('change',e=>{
+  if(e.target.id==='imp_sheet'){openImportDialog(e.target.value);return;}
+  if(e.target.dataset&&e.target.dataset.verfrom){
+    const v=rosterVersions.find(x=>x.id===e.target.dataset.verfrom);
+    if(v&&e.target.value){v.from=e.target.value;saveRosters().then(()=>{applyRosterForDate();openVersionDialog();render();});}
+    return;}
   if(e.target.id==='j_truck'){fillShift();preselectRoute();fillRoute();syncActual();syncDriverInfo();syncTrip();return;}
   if(e.target.id==='j_shift'){syncDriverInfo();return;}
   if(e.target.id==='j_route'){fillRoute();return;}
@@ -1470,25 +1879,17 @@ document.getElementById('view').addEventListener('change',e=>{
     return;
   }
   if(e.target.id==='fileInput'&&e.target.files[0])importFile(e.target.files[0]);
-  if(e.target.id==='planSpeed'){planSpeed=parseInt(e.target.value)||65;renderPlan();}
+  if(e.target.dataset&&e.target.dataset.rt==='type'){renderPlan();return;}
+  if(e.target.dataset&&e.target.dataset.rt==='distance'){renderPlan();return;}
   if(e.target.dataset&&e.target.dataset.arrive!==undefined){
     const no=e.target.dataset.arrive,p=e.target.dataset.pos;
-    const cell=e.target.closest('.hhmm');const h=cell.querySelector('[data-part="h"]').value;const m=cell.querySelector('[data-part="m"]').value;
-    const v=h!==''?(h+':'+(m||'00')):'';
-    day.arrive[no]=day.arrive[no]||{};day.arrive[no][p]=v;
-    day.attendBy[no]=day.attendBy[no]||{};day.attendBy[no][p]=adminName;
-    if(v){
-      const t=truckByNo(no),d=driverAt(t,p),off=isOff(t,d,curDate);
-      day.attend[no]=day.attend[no]||{};
-      const cur=day.attend[no][p]||'';
-      if(off){ if(cur!=='ot')day.attend[no][p]='ot'; }
-      else if(cur===''||cur==='absent'||cur==='present'||cur==='late'){
-        /* คีย์เวลามาจริงแล้ว ระบบเลือกให้เองว่า "มา" หรือ "สาย" (ไม่แตะ ลา / OT) */
-        day.attend[no][p]=isLateArrival(d,v)?'late':'present';
-      }
-    }
-    saveDay();renderRoster();return;
+    const nv=normHM(e.target.value);
+    if(nv===null){badHM(e.target,(day.arrive[no]||{})[p]||'');return;}
+    setArrive(no,p,nv);return;
   }
+  if(e.target.dataset&&e.target.dataset.edit==='shiftfrom'){
+    const ti=+e.target.dataset.ti,di=+e.target.dataset.di;const buf=editBuf||config;
+    buf[ti].drivers[di].shiftFrom=e.target.value;return;}
   if(e.target.dataset&&e.target.dataset.edit==='dayoff'){const ti=+e.target.dataset.ti,di=+e.target.dataset.di;const buf=editBuf||config;buf[ti].drivers[di].dayOff=e.target.value==='—'?'':e.target.value;}
   if(e.target.dataset&&e.target.dataset.job){
     const j=day.jobs.find(x=>String(x.id)===e.target.dataset.job),f=e.target.dataset.field;
@@ -1502,50 +1903,160 @@ document.getElementById('view').addEventListener('change',e=>{
 /* ---------- Excel export ---------- */
 function exportExcel(){
   const wb=XLSX.utils.book_new();
-  const att=[['เบอร์รถ','ต้นทาง','กะ','คนขับ','สถานะ','เวลามาจริง','ผู้บันทึก','วันหยุด','เวลากะ']];
+  const att=[['เบอร์รถ','ต้นทาง','กะ','คนขับ','สถานะ','เวลามาจริง','ผู้บันทึก','วันหยุด','เวลากะที่ใช้','เปลี่ยนเป็น']];
   const ST={present:'มา',late:'สาย',absent:'ขาด',leave:'ลา',ot:'มา OT (วันหยุด)','':''};
-  for(const t of config)for(const d of (t.drivers||[])){const off=isOff(t,d,curDate);const cur=attOf(t.truckNo)[d.pos]||'';const status=cur==='ot'?'มา OT (วันหยุด)':(off?'วันหยุด':ST[cur]);const av=(day.arrive[t.truckNo]||{})[d.pos]||'';const by=(day.attendBy[t.truckNo]||{})[d.pos]||'';att.push([t.truckNo,t.routeGroup,d.pos,d.name,status,av,by,d.dayOff,d.shift]);}
+  for(const t of config)for(const d of (t.drivers||[])){const off=isOff(t,d,curDate);const cur=attOf(t.truckNo)[d.pos]||'';const status=cur==='ot'?'มา OT (วันหยุด)':(off?'วันหยุด':ST[cur]);const av=(day.arrive[t.truckNo]||{})[d.pos]||'';const by=(day.attendBy[t.truckNo]||{})[d.pos]||'';att.push([t.truckNo,t.routeGroup,d.pos,d.name,status,av,by,d.dayOff,shiftOf(d,curDate),d.shift2?(d.shift2+' ตั้งแต่ '+(d.shiftFrom||'-')):'']);}
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(att),'เช็กคนขับ');
-  const jb=[['วันที่','ลำดับ','ชื่อสินค้า','ต้นทาง','ปลายทาง','รหัส พจส.','ชื่อ พจส.','เบอร์รถหลัก','เบอร์รถที่วิ่งจริง','เที่ยว','ประเภทงาน','เวลามาจริง','เวลาออก','ผู้จ่ายงาน','เวลาชาร์จ','ชาร์จเสร็จ','เวลากลับ','เวลาปิดงาน','รวมเวลาทำงาน (ชม.)','หมายเหตุ']];
-  day.jobs.forEach((j,i)=>jb.push([j.date||curDate,i+1,j.product,j.origin,j.dest,j.code||'',j.driver,j.mainTruck||j.truck,j.actualTruck||j.mainTruck||j.truck,j.trip||'',j.type==='main'?'สายหลัก':'VT',jobArrive(j),j.depart,j.by||'',j.chargeStart,j.chargeEnd,j.ret,j.closed||'',workHoursText(j),j.note||'']));
+  const jb=[['วันที่','ลำดับ','ชื่อสินค้า','ต้นทาง','ปลายทาง','รหัส พจส.','ชื่อ พจส.','เบอร์รถหลัก','เบอร์รถที่วิ่งจริง','เที่ยว','ประเภทงาน','เวลามาจริง','เวลาออก','ผู้จ่ายงาน','เวลาชาร์จ','ชาร์จเสร็จ','เวลากลับ','เวลาปิดงาน','รวมเวลาทำงาน (ชม.)','สาเหตุเกิน 8 ชม.','หมายเหตุ']];
+  day.jobs.forEach((j,i)=>jb.push([j.date||curDate,i+1,j.product,j.origin,j.dest,j.code||'',j.driver,j.mainTruck||j.truck,j.actualTruck||j.mainTruck||j.truck,j.trip||'',j.type==='main'?'สายหลัก':'VT',jobArrive(j),j.depart,j.by||'',j.chargeStart,j.chargeEnd,j.ret,j.closed||'',workHoursText(j),j.overNote||'',j.note||'']));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(jb),'จ่ายงาน');
   XLSX.writeFile(wb,'รายงานงานขนส่ง-'+curDate+'.xlsx');
 }
 
 /* ---------- Excel import (monthly roster) ---------- */
+let pendingWb=null;
+/* อ่านชีตหนึ่ง ๆ ให้เป็นตารางกะ — แก้บั๊ก array มีรู (ช่อง A1 ว่าง) ด้วย Array.from */
+function parseSheet(wb,name){
+  const ws=wb.Sheets[name];
+  if(!ws)return {ok:false,msg:'ไม่พบชีต'};
+  const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:false});
+  const aoaRaw=XLSX.utils.sheet_to_json(ws,{header:1,raw:true});   /* ไว้อ่านวันที่แบบ serial */
+  const cell=(row,idx)=>{const v=row?row[idx]:undefined;return v==null?'':String(v).trim();};
+  let hi=-1;
+  for(let r=0;r<Math.min(aoa.length,30);r++){
+    const arr=Array.from(aoa[r]||[],c=>String(c==null?'':c));
+    if(arr.some(c=>c.indexOf('เบอร์รถ')>=0)&&arr.some(c=>c.indexOf('รายชื่อ')>=0||c.indexOf('ชื่อ')>=0)){hi=r;break;}
+  }
+  if(hi<0)return {ok:false,msg:'ไม่พบหัวตาราง (ต้องมีคอลัมน์ “เบอร์รถ” และ “รายชื่อ”)'};
+  const H=Array.from(aoa[hi]||[],c=>String(c==null?'':c).trim());
+  const col=k=>H.findIndex(h=>h.indexOf(k)>=0);
+  const cRoute=col('เส้นทาง'),cTruck=col('เบอร์รถ'),cOrder=col('ลำดับ'),cCode=col('รหัส'),
+        cName=col('รายชื่อ'),cPhone=col('เบอร์โทร'),cProd=col('สินค้า'),cOff=col('off'),
+        cTime=H.findIndex(h=>h.indexOf('1-15')>=0||h.indexOf('ครึ่งเดือนแรก')>=0||(h.indexOf('วันที่')>=0&&h.indexOf('เปลี่ยน')<0));
+  const cChg=H.findIndex(h=>h.indexOf('เปลี่ยน')>=0);
+  const cTime2=H.findIndex((h,ix)=>ix!==cTime&&(h.indexOf('16-31')>=0||h.indexOf('ครึ่งเดือนหลัง')>=0||(h.indexOf('วันที่')>=0&&h.indexOf('เปลี่ยน')<0&&ix>cTime)));
+  if(cTruck<0||cName<0)return {ok:false,msg:'หาคอลัมน์เบอร์รถหรือรายชื่อไม่เจอ'};
+  const trucks={},order=[];let skipped=0;
+  for(let r=hi+1;r<aoa.length;r++){
+    const row=aoa[r];if(!row)continue;
+    const truck=cell(row,cTruck);
+    if(truck.indexOf('EV')!==0){if(cell(row,cName))skipped++;continue;}
+    if(!trucks[truck]){
+      const rt=cell(row,cRoute);
+      const ty=(truck==='EV1-033'||truck==='EV1-039')?'vt':(rt.indexOf('เปลือกไม้')>=0?'twelve':'model');
+      trucks[truck]={truckNo:truck,routeGroup:rt,product:cell(row,cProd)||'เชื้อเพลิงชีวมวล',type:ty,drivers:[]};
+      order.push(truck);
+    }
+    const nm=cell(row,cName);
+    if(nm&&nm!=='Vacant'){
+      let pos=cell(row,cOrder);pos=pos.indexOf('Head')>=0?'1':(pos[0]||String(trucks[truck].drivers.length+1));
+      const rawRow=aoaRaw[r]||[];
+      const chg=(cChg>=0)?(xlDate(rawRow[cChg])||xlDate(cell(row,cChg))):'';
+      const sh2=(cTime2>=0)?cell(row,cTime2):'';
+      const drv={pos,code:cell(row,cCode).replace('.0',''),name:nm,
+        phone:cell(row,cPhone),dayOff:cell(row,cOff).replace('อา.','อาทิตย์'),shift:cell(row,cTime)};
+      if(sh2&&chg){drv.shift2=sh2;drv.shiftFrom=chg;}
+      trucks[truck].drivers.push(drv);
+    }
+  }
+  let roster=order.map(t=>trucks[t]);
+  EXTRA.forEach(x=>{if(!roster.find(t=>t.truckNo===x.truckNo))roster.push(x);});
+  const drv=roster.reduce((a,t)=>a+(t.drivers||[]).length,0);
+  const noShift=roster.reduce((a,t)=>a+(t.drivers||[]).filter(d=>!d.shift).length,0);
+  const noOff=roster.reduce((a,t)=>a+(t.drivers||[]).filter(d=>!d.dayOff).length,0);
+  const chgN=roster.reduce((a,t)=>a+(t.drivers||[]).filter(d=>d.shiftFrom).length,0);
+  const chgDates=[...new Set([].concat.apply([],roster.map(t=>(t.drivers||[]).map(d=>d.shiftFrom).filter(Boolean))))].sort();
+  return {ok:roster.length>=5,msg:roster.length<5?('อ่านได้แค่ '+roster.length+' คัน โครงไฟล์อาจต่างจากที่รองรับ'):'',
+          roster,trucks:roster.length,drivers:drv,noShift,noOff,skipped,chgN,chgDates,
+          cols:{เส้นทาง:cRoute,เบอร์รถ:cTruck,ลำดับ:cOrder,รหัส:cCode,รายชื่อ:cName,เบอร์โทร:cPhone,สินค้า:cProd,'วัน off':cOff,เวลากะ:cTime}};
+}
 function importFile(file){
   const r=new FileReader();
-  r.onload=async ev=>{
+  r.onload=ev=>{
     try{
       const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
-      const ws=wb.Sheets[wb.SheetNames[0]];
-      const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:false});
-      // find header row
-      let hi=aoa.findIndex(row=>row&&row.some(c=>String(c).includes('เบอร์รถ'))&&row.some(c=>String(c).includes('รายชื่อ')));
-      if(hi<0){alert('ไม่พบหัวตาราง (เบอร์รถ/รายชื่อพนักงาน) ในชีตแรก');return;}
-      const H=aoa[hi].map(c=>String(c||'').trim());
-      const col=k=>H.findIndex(h=>h.includes(k));
-      const cRoute=col('เส้นทาง'),cTruck=col('เบอร์รถ'),cOrder=col('ลำดับ'),cCode=col('รหัส'),cName=col('รายชื่อ'),cPhone=col('เบอร์โทร'),cProd=col('สินค้า'),cOff=col('off'),cTime=H.findIndex(h=>h.includes('1-15')||h.includes('ครึ่งเดือนแรก')||(h.includes('วันที่')&&!h.includes('เปลี่ยน')));
-      const trucks={};const order=[];
-      for(let i=hi+1;i<aoa.length;i++){
-        const row=aoa[i];if(!row)continue;const truck=String(row[cTruck]||'').trim();
-        if(!truck.startsWith('EV'))continue;
-        if(!trucks[truck]){const rt=String(row[cRoute]||'').trim();const ty=(truck==='EV1-033'||truck==='EV1-039')?'vt':(rt.includes('เปลือกไม้')?'twelve':'model');trucks[truck]={truckNo:truck,routeGroup:rt,product:String(row[cProd]||'เชื้อเพลิงชีวมวล').trim(),type:ty,drivers:[]};order.push(truck);}
-        const name=String(row[cName]||'').trim();
-        if(name&&name!=='Vacant'){let pos=String(row[cOrder]||'').trim();pos=pos.includes('Head')?'1':(pos[0]||'');const off=String(row[cOff]||'').trim().replace('อา.','อาทิตย์');trucks[truck].drivers.push({pos,code:String(row[cCode]||'').replace('.0',''),name,phone:String(row[cPhone]||'').trim(),dayOff:off,shift:String(row[cTime]||'').trim()});}
-      }
-      let roster=order.map(t=>trucks[t]);
-      EXTRA.forEach(x=>{if(!roster.find(t=>t.truckNo===x.truckNo))roster.push(x);});
-      if(roster.length<5){alert('อ่านได้ '+roster.length+' คัน — โครงไฟล์อาจต่างจากเดิม ยกเลิกการอัปเดต');return;}
-      config=roster;await saveConfig();render();
-      alert('อัปเดตตารางกะแล้ว: '+roster.length+' คัน');
+      pendingWb={wb,results:{}};
+      wb.SheetNames.forEach(nm=>{pendingWb.results[nm]=parseSheet(wb,nm);});
+      openImportDialog();
     }catch(err){alert('อ่านไฟล์ไม่สำเร็จ: '+err.message);}
   };
+  r.onerror=()=>alert('เปิดไฟล์ไม่ได้');
   r.readAsArrayBuffer(file);
+}
+function openImportDialog(sel){
+  const names=pendingWb.wb.SheetNames;
+  const cur=sel||names.find(nm=>pendingWb.results[nm].ok)||names[0];
+  const R=pendingWb.results[cur];
+  const opts=names.map(nm=>{const x=pendingWb.results[nm];
+    return `<option value="${esc(nm)}"${nm===cur?' selected':''}>${esc(nm)} — ${x.ok?(x.trucks+' คัน / '+x.drivers+' คน'):'อ่านไม่ได้'}</option>`;}).join('');
+  const prev=R.ok?R.roster.slice(0,4).map(t=>`<tr><td class="plate">${esc(t.truckNo)}</td><td class="cno">${esc(t.routeGroup||'-')}</td>
+      <td class="cno">${esc((t.drivers||[]).map(d=>d.name+' ('+d.shift+(d.shiftFrom?(' → '+d.shift2+' ตั้งแต่ '+d.shiftFrom):'')+')').join(' · ')||'ไม่มีคนขับ')}</td></tr>`).join(''):'';
+  const warn=[];
+  if(R.ok){
+    if(R.noShift)warn.push(R.noShift+' คนไม่มีเวลากะ');
+    if(R.noOff)warn.push(R.noOff+' คนไม่มีวันหยุด');
+    if(R.skipped)warn.push('ข้ามแถวที่เบอร์รถไม่ขึ้นต้นด้วย EV '+R.skipped+' แถว');
+  }
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="modal-card" style="max-width:720px">
+    <div class="modal-head"><h2>อัปโหลดตารางกะใหม่</h2><button class="modal-x" id="closeModal">✕</button></div>
+    <div class="formgrid">
+      <div class="field"><label>เลือกชีตในไฟล์ (${names.length} ชีต)</label><select id="imp_sheet">${opts}</select></div>
+      <div class="field"><label>เริ่มมีผลตั้งแต่วันที่</label><input type="date" id="imp_from" value="${todayStr()}"></div>
+    </div>
+    <div class="hint" style="margin-top:12px">ข้อมูลของวัน<b>ก่อนหน้า</b>วันที่นี้จะยังใช้ตารางกะชุดเดิม ไม่ถูกกระทบ · ชุดที่ใช้อยู่ตอนนี้: <b>${esc(activeVerName())}</b></div>
+    ${R.ok?`<div class="card" style="margin:12px 0 0;padding:12px">
+      <div style="font-size:14px;margin-bottom:8px">อ่านได้ <b style="font-size:17px">${R.trucks}</b> คัน · <b style="font-size:17px">${R.drivers}</b> คน
+        ${R.chgN?`<span class="tag" style="background:var(--n-bg);color:var(--n)">มีคิวเปลี่ยนเวลากะ ${R.chgN} คน (${esc(R.chgDates[0])} ถึง ${esc(R.chgDates[R.chgDates.length-1])})</span>`:''}
+        ${warn.length?`<span class="tag" style="background:var(--m-bg);color:var(--off)">${esc(warn.join(' · '))}</span>`:'<span class="tag" style="background:var(--present-bg);color:var(--present)">ครบถ้วน</span>'}</div>
+      <div class="tablewrap" style="max-height:190px;overflow:auto"><table style="min-width:520px"><thead><tr><th>เบอร์รถ</th><th>ต้นทาง</th><th>พจส. / เวลากะ</th></tr></thead>
+        <tbody>${prev}<tr><td colspan="3" class="cno">…และอีก ${Math.max(0,R.trucks-4)} คัน</td></tr></tbody></table></div>
+      </div>`
+    :`<div class="card" style="margin:12px 0 0;padding:12px;border-color:var(--absent)">
+        <b style="color:var(--absent)">ชีตนี้ใช้ไม่ได้:</b> ${esc(R.msg||'อ่านไม่สำเร็จ')}
+        <div class="cno" style="margin-top:6px">ลองเลือกชีตอื่นจากรายการด้านบน</div></div>`}
+    <div class="modal-actions"><button class="btn" id="cancelJob">ยกเลิก</button>
+      <button class="btn primary" id="imp_go"${R.ok?'':' disabled style="opacity:.4"'}>ใช้ตารางกะชุดนี้</button></div>
+  </div>`;
+  m.style.display='flex';
+}
+async function applyImport(){
+  const nm=document.getElementById('imp_sheet').value;
+  const from=document.getElementById('imp_from').value||todayStr();
+  const R=pendingWb.results[nm];
+  if(!R||!R.ok)return;
+  const dup=rosterVersions.find(v=>v.from===from);
+  if(dup&&!confirm('มีตารางกะที่เริ่มวันที่ '+from+' อยู่แล้ว ("'+dup.name+'") ต้องการแทนที่ไหม?'))return;
+  if(dup)rosterVersions=rosterVersions.filter(v=>v.from!==from);
+  rosterVersions.push({id:'v'+Date.now(),from,name:nm,roster:R.roster,savedAt:new Date().toISOString(),by:adminName||''});
+  flag('saving');await saveRosters();flag('ok');
+  applyRosterForDate();pendingWb=null;closeModal();render();
+  alert('เพิ่มตารางกะ "'+nm+'" เริ่มมีผล '+from+' แล้ว\n\nวันที่ดูอยู่ตอนนี้ ('+curDate+') ใช้ชุด: '+activeVerName());
+}
+/* ---- จัดการชุดตารางกะ ---- */
+function openVersionDialog(){
+  const vs=rosterVersions.slice().sort((a,b)=>String(b.from).localeCompare(String(a.from)));
+  const rows=vs.map(v=>`<tr${v.id===activeVerId?' style="background:var(--present-bg)"':''}>
+    <td><input type="date" class="hmin" style="width:132px" data-verfrom="${v.id}" value="${esc(v.from)}"></td>
+    <td>${esc(v.name)}${v.id===activeVerId?' <span class="tag" style="background:var(--present-bg);color:var(--present)">ใช้อยู่</span>':''}</td>
+    <td class="mono" style="text-align:center">${(v.roster||[]).length}</td>
+    <td class="mono" style="text-align:center">${(v.roster||[]).reduce((a,t)=>a+(t.drivers||[]).length,0)}</td>
+    <td class="cno">${esc(v.by||'-')}</td>
+    <td style="text-align:center">${vs.length>1?`<button class="del" data-verdel="${v.id}">✕</button>`:''}</td></tr>`).join('');
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="modal-card" style="max-width:720px">
+    <div class="modal-head"><h2>ชุดตารางกะทั้งหมด (${vs.length} ชุด)</h2><button class="modal-x" id="closeModal">✕</button></div>
+    <div class="hint">แต่ละวันจะใช้ชุดที่ “เริ่มมีผล” ล่าสุดที่ไม่เกินวันนั้น · แก้วันเริ่มมีผลได้ในช่อง · วันที่ดูอยู่ ${curDate} ใช้ชุด <b>${esc(activeVerName())}</b></div>
+    <div class="tablewrap" style="margin-top:10px;max-height:300px;overflow:auto"><table style="min-width:560px">
+      <thead><tr><th>เริ่มมีผล</th><th>ชื่อชุด</th><th style="text-align:center">รถ</th><th style="text-align:center">พจส.</th><th>ผู้บันทึก</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <div class="modal-actions"><button class="btn" id="cancelJob">ปิด</button></div>
+  </div>`;
+  m.style.display='flex';
 }
 
 /* ---- auto refresh: ดึงงานที่ CC คนอื่นคีย์เข้ามาแสดงเอง ---- */
-let pollTimer=null;
+let pollTimer=null, pollN=0;
 function busyTyping(){const a=document.activeElement;if(!a)return false;const t=(a.tagName||'').toLowerCase();return t==='input'||t==='select'||t==='textarea';}
 async function pollDay(){
   if(!backendURL||day==null)return;
@@ -1564,7 +2075,21 @@ async function pollDay(){
   }
   flag('ok');
 }
-function startPoll(){clearInterval(pollTimer);if(backendURL)pollTimer=setInterval(pollDay,15000);}
+/* ตรวจว่าตารางกะถูกแก้จากเครื่องอื่นไหม (นาทีละครั้ง ใช้คีย์เล็ก ๆ) */
+async function pollRoster(){
+  if(!backendURL||editMode)return;
+  let rev=''; try{rev=String(await store.get('fleet:rosters:rev')||'');}catch(e){return;}
+  if(rev&&rev!==rosterRev){
+    rosterRev=rev;
+    await loadConfig();
+    render();
+    console.warn('ตารางกะถูกแก้จากเครื่องอื่น — โหลดชุดล่าสุดแล้ว');
+  }
+}
+function startPoll(){
+  clearInterval(pollTimer);
+  if(backendURL)pollTimer=setInterval(()=>{pollDay();if((++pollN%4)===0)pollRoster();},15000);
+}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollDay();});
 
 /* init */
@@ -1588,19 +2113,17 @@ async function boot(){
 async function boot_(){
   document.getElementById('dateInput').value=curDate;
   adminName=lsGet('fleet:admin')||'';
-  sumProdOpen=lsGet('fleet:sumprod')!=='0';
-  /* URL ในไฟล์เป็นตัวตัดสินเสมอ: กันเครื่องที่เคยจำ URL เก่าไว้แล้วยิงไป deployment เก่า */
-  backendURL=BACKEND_URL_DEFAULT||lsGet('fleet:backend')||'';
-  if(BACKEND_URL_DEFAULT&&lsGet('fleet:backend')&&lsGet('fleet:backend')!==BACKEND_URL_DEFAULT){
-    lsSet('fleet:backend',BACKEND_URL_DEFAULT);
-    console.warn('อัปเดต URL ระบบกลางเป็นค่าล่าสุดในไฟล์แล้ว');
-  }
-  await loadConfig();await loadDay();
+  try{const o=JSON.parse(lsGet('fleet:sumprod')||'null');if(o&&typeof o==='object')sumProdOpen=o;}catch(e){}
+  /* URL ที่ตั้งเองผ่าน ⚙ ชนะ (มี flag manual) · ค่าค้างเก่าที่ไม่ได้ตั้งใจ ใช้ค่าในไฟล์แทน */
+  const man=lsGet('fleet:backend:manual')==='1'?(lsGet('fleet:backend')||''):'';
+  backendURL=man||BACKEND_URL_DEFAULT||'';
+  if(!man&&lsGet('fleet:backend')&&lsGet('fleet:backend')!==BACKEND_URL_DEFAULT)lsSet('fleet:backend',BACKEND_URL_DEFAULT);
+  await loadConfig();await loadRoutes();await loadDay();
   document.getElementById('fleetcount').textContent=Array.isArray(config)?config.length:'?';
   updateAdminChip();
-  render();flag('ok');startPoll();startAlarms();
+  render();flag('ok');startPoll();startAlarms();fitTabs();
   if(tab==='roster')scrollToCurrentHour();
-  if(!adminName)openLogin();
+  if(!adminName||!backendURL)openLogin();
 }
 </script>
 </body>
