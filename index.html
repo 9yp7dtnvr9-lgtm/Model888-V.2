@@ -1420,11 +1420,16 @@ function tablePlanVsActual(){
     });
     gPlan+=sp; gAct+=sa;
     const open=sumProdOpen[g];
-    html+=`<tr class="grouphdr" style="position:static"><td colspan="5" style="padding:8px 12px">
-        <button class="btn mini" data-grp="${g}" style="margin-right:8px">${open?'▲ ยุบ':'▼ ขยาย'}</button>
-        <span class="jtype ${cls}">${lab}</span> <span class="cno">${prods.length} รายการ</span>
-        <span style="float:right" class="cno">แผน <b>${sp||'-'}</b> · วิ่งจริง <b>${sa}</b> · ${sp?Math.round(sa/sp*100)+'%':'-'}</span>
-      </td></tr>${rows}`;
+    const gdif=sa-sp;
+    html+=`<tr class="grouphdr" style="position:static">
+        <td style="padding:8px 12px">
+          <button class="btn mini" data-grp="${g}" style="margin-right:8px">${open?'▲ ยุบ':'▼ ขยาย'}</button>
+          <span class="jtype ${cls}">${lab}</span> <span class="cno">${prods.length} รายการ</span></td>
+        <td class="mono" style="text-align:center;font-weight:600">${sp||'-'}</td>
+        <td class="mono" style="text-align:center;font-weight:600">${sa}</td>
+        <td class="mono" style="text-align:center;font-weight:600;color:${gdif<0?'var(--absent)':'var(--present)'}">${(sp||sa)?((gdif>0?'+':'')+gdif):'-'}</td>
+        <td class="mono" style="text-align:center;font-weight:600">${sp?Math.round(sa/sp*100)+'%':'-'}</td>
+      </tr>${rows}`;
     if(open)html+=`<tr><td colspan="5" style="padding:8px 12px 12px 22px">
         <input id="newprod_${g}" class="rin" style="width:230px;display:inline-block" placeholder="ชื่อสินค้า/เส้นทางใหม่ในกลุ่ม${lab}">
         <button class="miniadd" data-addgrp="${g}">＋ เพิ่มเข้ากลุ่มนี้</button>
