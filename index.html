@@ -219,6 +219,8 @@
   .jtype{font-size:10.5px;padding:1px 7px;border-radius:20px;border:1px solid var(--line)}
   .jtype.main{background:#eaf3fb;color:#2f6f96;border-color:#cfe3f2}
   .jtype.vt{background:#f4ecfb;color:#7b5599;border-color:#e4d3f2}
+  .jtype.oth_l{background:#e9f6f1;color:#2f8f6b;border-color:#c6e6da}
+  .jtype.oth_s{background:#fdf0d5;color:#b57608;border-color:#e9d29a}
   .empty-note{padding:34px;text-align:center;color:var(--muted)}
   .del{border:0;background:none;color:var(--absent);cursor:pointer;font-size:16px}
   .hint{background:#eef4fb;border:1px solid #d4e5f5;border-radius:10px;padding:12px 14px;font-size:13px;color:#33566f;margin-bottom:14px}
@@ -264,7 +266,7 @@
     <button class="btn primary" id="gate_go">เข้าใช้งาน →</button>
   </div>
 </div>
-<footer>ข้อมูลคนขับ/รถ จากไฟล์ตารางกะ (ชีตแรก) · บันทึกอัตโนมัติในเครื่อง แยกตามวันที่ · อัปโหลดไฟล์กะใหม่เพื่ออัปเดตรายเดือน</footer>
+<footer>ข้อมูลคนขับ/รถ จากไฟล์ตารางกะ (ชีตแรก) · บันทึกอัตโนมัติ (ในเครื่อง + ระบบกลางถ้าตั้ง URL ไว้) แยกตามวันที่ · อัปโหลดไฟล์กะใหม่เพื่ออัปเดตรายเดือน</footer>
 
 <script>
 const ROSTER = [{"truckNo": "EV1-118", "routeGroup": "วังจันทร์", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6700610", "name": "อิทธิพล กันทาท้าว", "phone": "085-835-7288", "dayOff": "เสาร์", "shift": "06:00 - 14:00"}, {"pos": "2", "code": "6700313", "name": "สรวิชญ์ แม้นศรนรา", "phone": "085-835-0067", "dayOff": "เสาร์", "shift": "14:00 - 22:00"}, {"pos": "3", "code": "6700597", "name": "องค์กร สุขไม้", "phone": "085-835-3675", "dayOff": "เสาร์", "shift": "22:00 - 06:00"}]}, {"truckNo": "EV1-110", "routeGroup": "วังจันทร์", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6600214", "name": "พัชรี จานเหนือ", "phone": "085-835-6777", "dayOff": "อังคาร", "shift": "06:00 - 14:00"}, {"pos": "2", "code": "6600641", "name": "อัสนี แย้มยิ้ม", "phone": "085-835-7720", "dayOff": "อังคาร", "shift": "14:00 - 22:00"}, {"pos": "3", "code": "6700605", "name": "วาชิด ปัญญายอง", "phone": "085-835-1193", "dayOff": "อังคาร", "shift": "22:00 - 06:00"}]}, {"truckNo": "EV1-108", "routeGroup": "วังจันทร์", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6600786", "name": "สามารถ สายสุวรรณ", "phone": "085-835-1406", "dayOff": "จันทร์", "shift": "07:00 - 15:00"}, {"pos": "2", "code": "6700350", "name": "ธนเดช ดีเส็ง", "phone": "085-835-1925", "dayOff": "จันทร์", "shift": "15:00 - 23:00"}, {"pos": "3", "code": "6700237", "name": "ขวัญชัย วงษา", "phone": "085-835-2067", "dayOff": "จันทร์", "shift": "23:00 - 07:00"}]}, {"truckNo": "EV1-097", "routeGroup": "วังจันทร์", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6600303", "name": "วิศรุษ จันทร์คุณ", "phone": "085-835-1874", "dayOff": "อาทิตย์", "shift": "07:00 - 15:00"}, {"pos": "2", "code": "610895", "name": "สุนทร เจริญยิ่ง", "phone": "085-835-7133", "dayOff": "อาทิตย์", "shift": "15:00 - 23:00"}, {"pos": "3", "code": "6600833", "name": "จำนันท์ เอี่ยมสอาด", "phone": "085-835-7303", "dayOff": "อาทิตย์", "shift": "23:00 - 07:00"}]}, {"truckNo": "EV1-095", "routeGroup": "วังจันทร์", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6700497", "name": "ดุสิต สมทรัพย์", "phone": "085-835-6336", "dayOff": "พุธ", "shift": "08:00 - 16:00"}, {"pos": "2", "code": "6700480", "name": "อุดม ปะทุมชู", "phone": "085-835-7880", "dayOff": "พุธ", "shift": "16:00 - 24:00"}, {"pos": "3", "code": "6600657", "name": "สิทธิวุฒิ ขันทอง", "phone": "085-835-3918", "dayOff": "พุธ", "shift": "24:00 - 08:00"}]}, {"truckNo": "EV1-111", "routeGroup": "วังจันทร์", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6900050", "name": "ออมสิน ศรีเจริญ", "phone": "064-010-2638", "dayOff": "พฤหัสบดี", "shift": "01:00 - 09:00"}, {"pos": "2", "code": "6900054", "name": "อนุวัต เที่ยวกลาง", "phone": "091-879-8765", "dayOff": "พฤหัสบดี", "shift": "17:00 - 01:00"}, {"pos": "3", "code": "6900055", "name": "อดิเรก อิ่มกลาง", "phone": "098-165-1583", "dayOff": "พฤหัสบดี", "shift": "09:00 - 17:00"}]}, {"truckNo": "EV1-099", "routeGroup": "วังจันทร์", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6600744", "name": "นพกาญจ์ คำเลิศ", "phone": "085-835-6151", "dayOff": "ศุกร์", "shift": "07:00 - 15:00"}, {"pos": "2", "code": "6800077", "name": "นิภาภรณ์ นันตื้อ", "phone": "085-835-0489", "dayOff": "ศุกร์", "shift": "15:00 - 23:00"}, {"pos": "3", "code": "6600206", "name": "ปรีชญา วงษ์พิมพ์ศรี", "phone": "085-835-6568", "dayOff": "ศุกร์", "shift": "23:00 - 07:00"}]}, {"truckNo": "EV1-116", "routeGroup": "ปักธงชัย", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "560620", "name": "กฤษฎา ตรีเมฆ", "phone": "085-835-7122", "dayOff": "ศุกร์", "shift": "08:00 - 16:00"}, {"pos": "2", "code": "591603", "name": "ประสิทธิ์ สายไทย", "phone": "085-835-7320", "dayOff": "ศุกร์", "shift": "16:00 - 24:00"}, {"pos": "3", "code": "610068", "name": "นิพน เพิ่มทรัพย์", "phone": "085-835-6468", "dayOff": "ศุกร์", "shift": "24:00 - 08:00"}]}, {"truckNo": "EV1-102", "routeGroup": "ปักธงชัย", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "630398", "name": "ธวัช มูลราช", "phone": "085-835-6265", "dayOff": "อาทิตย์", "shift": "09:00 - 17:00"}, {"pos": "2", "code": "620492", "name": "ศัลยวิทย์ ดำงาม", "phone": "085-835-7058", "dayOff": "อาทิตย์", "shift": "17:00 - 01:00"}, {"pos": "3", "code": "6600644", "name": "สาคร มลาเหลือง", "phone": "085-835-5454", "dayOff": "อาทิตย์", "shift": "01:00 - 09:00"}]}, {"truckNo": "EV1-113", "routeGroup": "ปักธงชัย", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "630393", "name": "วิรัตน์ ปริวันตา", "phone": "085-835-7316", "dayOff": "จันทร์", "shift": "09:00 - 17:00"}, {"pos": "2", "code": "6600716", "name": "อาคม ทองประเสริฐ", "phone": "085-835-1288", "dayOff": "จันทร์", "shift": "17:00 - 01:00"}, {"pos": "3", "code": "592262", "name": "พูนสิน สีหามาตย์", "phone": "085-835-7052", "dayOff": "จันทร์", "shift": "01:00 - 09:00"}]}, {"truckNo": "EV1-117", "routeGroup": "ปักธงชัย", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "592309", "name": "อรรถพน  ทัศดอน", "phone": "085-835-7108", "dayOff": "อาทิตย์", "shift": "06:00 - 14:00"}, {"pos": "2", "code": "6900115", "name": "ประจักษ์ อ่อนศรี", "phone": "083-443-7674", "dayOff": "อาทิตย์", "shift": "14:00 - 22:00"}, {"pos": "3", "code": "6900112", "name": "อำนาจ จอหมวด", "phone": "080-276-2742", "dayOff": "อาทิตย์", "shift": "22:00 - 06:00"}]}, {"truckNo": "EV1-090", "routeGroup": "นครหลวง", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6700283", "name": "เจริญโชค กิมสาตร์", "phone": "085-835-2195", "dayOff": "ศุกร์", "shift": "10:00 - 18:00"}, {"pos": "2", "code": "6800139", "name": "ประกายศักดิ์ ศรีภูมิ", "phone": "085-835-6243", "dayOff": "ศุกร์", "shift": "18:00 - 02:00"}, {"pos": "3", "code": "6700495", "name": "วรโชติ จันทร์สว่าง", "phone": "085-835-2225", "dayOff": "ศุกร์", "shift": "02:00 - 10:00"}]}, {"truckNo": "EV1-107", "routeGroup": "นครหลวง", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6800429", "name": "ดาว ดวงเด่นฉาย", "phone": "085-835-6912", "dayOff": "เสาร์", "shift": "10:00 - 18:00"}, {"pos": "2", "code": "6800427", "name": "ตะวัน แผลงเดช", "phone": "085-835-6067", "dayOff": "เสาร์", "shift": "18:00 - 02:00"}, {"pos": "3", "code": "6800212", "name": "พงษ์ศักดิ์ โสดาวิชิต", "phone": "085-835-4252", "dayOff": "เสาร์", "shift": "02:00 - 10:00"}]}, {"truckNo": "EV1-115", "routeGroup": "นครหลวง", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6600805", "name": "สุรเดช แสงอิ่ม", "phone": "085-835-1733", "dayOff": "อาทิตย์", "shift": "11:00 - 19:00"}, {"pos": "2", "code": "6600856", "name": "ณัฐยากุล ขุนหาญ", "phone": "085-835-1481", "dayOff": "อาทิตย์", "shift": "19:00 - 03:00"}, {"pos": "3", "code": "6700228", "name": "สุวัฒน์ ยีรัมย์", "phone": "085-835-2063", "dayOff": "อาทิตย์", "shift": "03:00 - 11:00"}]}, {"truckNo": "EV1-091", "routeGroup": "นครหลวง", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6900124", "name": "สุทธิการ โพธิอรุณกร", "phone": "083-324-6674", "dayOff": "จันทร์", "shift": "06:00 - 14:00"}, {"pos": "2", "code": "6900103", "name": "วราวุธ นาคสวัสดิ์", "phone": "080-767-3575", "dayOff": "จันทร์", "shift": "14:00 - 22:00"}, {"pos": "3", "code": "6900088", "name": "เฌอณัฎจิกา ครุจินหวิ่น", "phone": "095-317-3817", "dayOff": "จันทร์", "shift": "22:00 - 06:00"}]}, {"truckNo": "EV1-100", "routeGroup": "นครหลวง", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6900092", "name": "วิลัยทอง คำภิภาค", "phone": "096-976-6384", "dayOff": "อาทิตย์", "shift": "08:00 - 16:00"}, {"pos": "2", "code": "620526", "name": "ศศิธร อ้วนสา", "phone": "085-835-6412", "dayOff": "อาทิตย์", "shift": "16:00 - 24:00"}, {"pos": "3", "code": "6600264", "name": "สุนิสา นิรารมย์", "phone": "085-835-3072", "dayOff": "อาทิตย์", "shift": "24:00 - 08:00"}]}, {"truckNo": "EV1-093", "routeGroup": "IP5", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6700383", "name": "สมร เขียวพรมมา", "phone": "085-835-8604", "dayOff": "ศุกร์", "shift": "09:00 - 17:00"}, {"pos": "2", "code": "6600633", "name": "ทองลี บุญหลาย", "phone": "085-835-0096", "dayOff": "ศุกร์", "shift": "17:00 - 01:00"}, {"pos": "3", "code": "6700476", "name": "อัฏฎาง นาวาพนม", "phone": "085-835-4325", "dayOff": "ศุกร์", "shift": "01:00 - 09:00"}]}, {"truckNo": "EV1-109", "routeGroup": "IP5", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6700256", "name": "ธุวานนท์ มะปะโพธิ์", "phone": "085-835-2936", "dayOff": "อาทิตย์", "shift": "04:00 - 12:00"}, {"pos": "2", "code": "6600600", "name": "สุภาพ คำมงคุณ", "phone": "085-835-6504", "dayOff": "อาทิตย์", "shift": "12:00 - 20:00"}, {"pos": "3", "code": "6700305", "name": "วรวุฒิ สุขประเสริฐ", "phone": "085-835-1744", "dayOff": "อาทิตย์", "shift": "20:00 - 04:00"}]}, {"truckNo": "EV1-105", "routeGroup": "IP5", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6800125", "name": "พัทธพล ไชยราช", "phone": "085-835-8268", "dayOff": "อาทิตย์", "shift": "13:00 - 21:00"}, {"pos": "2", "code": "6800066", "name": "วิรัตน์ เขื่อนสุวรรณ์", "phone": "085-835-6727", "dayOff": "อาทิตย์", "shift": "21:00 - 05:00"}, {"pos": "3", "code": "6800135", "name": "วรชิต แซ่ลี้", "phone": "085-835-5946", "dayOff": "อาทิตย์", "shift": "05:00 - 13:00"}]}, {"truckNo": "EV1-094", "routeGroup": "IP5", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6700502", "name": "ชัยทัต เวชประสิทธิ์สุข", "phone": "085-835-7796", "dayOff": "จันทร์", "shift": "04:00 - 12:00"}, {"pos": "2", "code": "6800138", "name": "พิทยา สีมาต", "phone": "085-835-6137", "dayOff": "จันทร์", "shift": "12:00 - 20:00"}, {"pos": "3", "code": "6800438", "name": "สุพรรณ มานะกรูด", "phone": "085-835-1354", "dayOff": "จันทร์", "shift": "20:00 - 04:00"}]}, {"truckNo": "EV1-114", "routeGroup": "IP5", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6700358", "name": "มานนต์ แก้วใส", "phone": "085-835-3623", "dayOff": "อังคาร", "shift": "13:00 - 21:00"}, {"pos": "2", "code": "6600638", "name": "สุรศักดิ์ แสนเขื่อน", "phone": "085-835-3634", "dayOff": "อังคาร", "shift": "21:00 - 05:00"}, {"pos": "3", "code": "6800060", "name": "วัศพล ต้นพิมพ์", "phone": "085-835-3524", "dayOff": "อังคาร", "shift": "05:00 - 13:00"}]}, {"truckNo": "EV1-098", "routeGroup": "IP5", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6600597", "name": "นพดล จรทะผา", "phone": "085-835-1459", "dayOff": "เสาร์", "shift": "06:00 - 14:00"}, {"pos": "2", "code": "6600618", "name": "สมบัติ ทองวรรณ", "phone": "085-835-5846", "dayOff": "เสาร์", "shift": "14:00 - 22:00"}, {"pos": "3", "code": "6700545", "name": "อาทิตย์ วงศิลป", "phone": "085-835-6558", "dayOff": "เสาร์", "shift": "22:00 - 06:00"}]}, {"truckNo": "EV1-103", "routeGroup": "Model-888", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6900154", "name": "ประกอบ สืบสวน", "phone": "098-034-1773", "dayOff": "เสาร์", "shift": "06:00 - 14:00"}, {"pos": "2", "code": "6900141", "name": "นาย สุรศักดิ์ วงษ์ภูร", "phone": "082-247-5838", "dayOff": "เสาร์", "shift": "14:00 - 22:00"}, {"pos": "3", "code": "6900159", "name": "เอกราช บุญสะอาด", "phone": "098-861-8177", "dayOff": "เสาร์", "shift": "22:00 - 06:00"}]}, {"truckNo": "EV1-119", "routeGroup": "Model-888", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6900195", "name": "นายกิตติศักดิ์ ด่านวิหาร", "phone": "093-489-9310", "dayOff": "เสาร์", "shift": "10:00 - 18:00"}, {"pos": "2", "code": "6900167", "name": "นายธนวัฒน์ หมั่นพล", "phone": "093-674-4995", "dayOff": "เสาร์", "shift": "18:00 - 02:00"}, {"pos": "3", "code": "6900178", "name": "นายพัชระ ภาหวิน", "phone": "081-178-9230", "dayOff": "เสาร์", "shift": "02:00 - 10:00"}]}, {"truckNo": "EV1-104", "routeGroup": "Model-888", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6900168", "name": "นายกิตติศักดิ์ ริยะเทน", "phone": "099-493-6562", "dayOff": "อังคาร", "shift": "06:00 - 14:00"}, {"pos": "2", "code": "6700587", "name": "ธนพล มาคุ้ม", "phone": "085-835-3844", "dayOff": "อังคาร", "shift": "14:00 - 22:00"}, {"pos": "3", "code": "6900194", "name": "นายทับเที่ยง รอดพ้น", "phone": "096-172-1134", "dayOff": "อังคาร", "shift": "22:00 - 06:00"}]}, {"truckNo": "EV1-092", "routeGroup": "Model-888", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6900196", "name": "นายธีระพล โพธิ์ศรี", "phone": "093-513-8215", "dayOff": "พุธ", "shift": "11:00 - 19:00"}, {"pos": "2", "code": "6900188", "name": "นายชัยวัฒน์ พัฒนโพธิ์", "phone": "097-939-6320", "dayOff": "พุธ", "shift": "19:00 - 03:00"}, {"pos": "3", "code": "6900198", "name": "นายสกล กองสุข", "phone": "081-176-5017", "dayOff": "พุธ", "shift": "03:00 - 11:00"}]}, {"truckNo": "EV1-106", "routeGroup": "Model-888", "product": "เชื้อเพลิงชีวมวล", "type": "model", "drivers": [{"pos": "1", "code": "6900199", "name": "นส.วรรณเพ็ญ บุตรเจริญ", "phone": "061-965-7087", "dayOff": "พฤหัสบดี", "shift": "11:00 - 19:00"}, {"pos": "2", "code": "6900200", "name": "นส.เสาวคนธ์ ชมวิลาศ", "phone": "063-240-9866", "dayOff": "พฤหัสบดี", "shift": "19:00 - 03:00"}, {"pos": "3", "code": "6600325", "name": "สุภาพร ดีสิงห์", "phone": "085-835-4618", "dayOff": "พฤหัสบดี", "shift": "03:00 - 11:00"}]}, {"truckNo": "EV2-001", "routeGroup": "เปลือกไม้หยาบ", "product": "เชื้อเพลิงชีวมวล", "type": "twelve", "drivers": [{"pos": "1", "code": "630386", "name": "มารุต อินเคน", "phone": "085-835-6492", "dayOff": "อาทิตย์", "shift": "07:00 - 19:00"}]}, {"truckNo": "EV2-002", "routeGroup": "เปลือกไม้หยาบ", "product": "เชื้อเพลิงชีวมวล", "type": "twelve", "drivers": [{"pos": "1", "code": "6700544", "name": "สุนทร เยาวนารถ", "phone": "085-835-6455", "dayOff": "อาทิตย์", "shift": "07:00 - 19:00"}]}, {"truckNo": "EV1-033", "routeGroup": "รถทำ VT", "product": "เชื้อเพลิงชีวมวล", "type": "vt", "drivers": []}, {"truckNo": "EV1-039", "routeGroup": "รถทำ VT", "product": "เชื้อเพลิงชีวมวล", "type": "vt", "drivers": []}, {"truckNo": "EV1-096", "routeGroup": "สำรอง", "product": "เชื้อเพลิงชีวมวล", "type": "spare", "drivers": []}, {"truckNo": "EV1-101", "routeGroup": "สำรอง", "product": "เชื้อเพลิงชีวมวล", "type": "spare", "drivers": []}, {"truckNo": "EV1-120", "routeGroup": "WJ", "product": "เชื้อเพลิงชีวมวล", "type": "twelve", "drivers": []}];
@@ -288,6 +290,27 @@ const PROD_DEFAULT={
   'เปลือกไม้หยาบ':['ศาลาลำดวน','โรงไฟฟ้า NPS (304)'],
   'รากไม้ยูคาสับ':['ปางสีดา','โรงไฟฟ้า NPS (304)']
 };
+/* ============ ประเภทงาน 4 กลุ่ม ============
+   long = ใช้เวลาเดินทาง 3 ชม. (สายยาว) · ไม่ long = 1 ชม. (สายสั้น)   */
+const JOBTYPES=[
+  {k:'main', s:'หลัก_BU4',     f:'งานหลัก_BU4',              long:true },
+  {k:'vt',   s:'VT_BU4',       f:'งาน VT_BU4',               long:false},
+  {k:'oth_l',s:'BU อื่น·ยาว',  f:'งาน BU อื่นๆ (สายยาว)',    long:true },
+  {k:'oth_s',s:'BU อื่น·สั้น', f:'งาน BU อื่นๆ (สายสั้น)',   long:false}
+];
+const JT={}; JOBTYPES.forEach(t=>JT[t.k]=t);
+function jt(k){return JT[k]||JT.main;}
+function jtLabel(k){return jt(k).s;}
+function jtFull(k){return jt(k).f;}
+function jtLong(k){return jt(k).long;}
+function jtBadge(k){return '<span class="jtype '+esc(k||'main')+'">'+esc(jtLabel(k))+'</span>';}
+/* เปลี่ยนประเภทตามระยะทาง โดยคงกลุ่ม BU เดิมไว้ */
+function jtByDistance(cur,km){
+  const other=(cur==='oth_l'||cur==='oth_s');
+  if(km==='' || km===null || isNaN(km))return cur||'main';
+  return other ? (km<=100?'oth_s':'oth_l') : (km<=100?'vt':'main');
+}
+
 /* ============ ทะเบียนเส้นทางกลาง (หน้า 5) ============
    fleet:routes = [{id, product, origin, dest, distance, type}]
    ทุกหน้าที่ต้องใช้รายชื่อสินค้า/ต้นทาง/ปลายทาง ดึงจากที่นี่ที่เดียว */
@@ -365,16 +388,24 @@ const API_TOKEN='54O7NXcm4720HQb8ZGiqMBoH';            /* <<< ใส่ให้
 let backendURL=BACKEND_URL_DEFAULT;
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function dbKey(k){return 'fleetdb:'+k;}
 const store={
   async get(k){
-    if(backendURL){try{const r=await fetch(backendURL+'?key='+encodeURIComponent(k));const d=await r.json();return d?d.value:null;}catch(e){return mem[k]??null;}}
-    if(window.storage){try{const r=await window.storage.get(k,false);return r?r.value:null;}catch(e){return mem[k]??null;}}
+    if(backendURL){
+      try{const r=await fetch(backendURL+'?key='+encodeURIComponent(k)+tk());const d=await r.json();
+        if(d&&!d.error)return d.value;}catch(e){}
+    }
+    const local=lsGet(dbKey(k));          /* เก็บในเครื่องจริง ๆ ด้วย localStorage */
+    if(local!==null&&local!==undefined)return local;
     return mem[k]??null;
   },
   async set(k,v){
     mem[k]=v;
-    if(backendURL){try{await fetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({key:k,value:v})});return;}catch(e){return;}}
-    if(window.storage){try{await window.storage.set(k,v,false);return;}catch(e){mem[k]=v;return;}}
+    try{lsSet(dbKey(k),v);}catch(e){}     /* บันทึกในเครื่องเสมอ ใช้เป็นสำรองถ้าเน็ตหลุด */
+    if(backendURL){
+      try{await fetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({key:k,value:v,tk:API_TOKEN})});}catch(e){}
+    }
   }
 };
 
@@ -443,7 +474,7 @@ function normDay(d){
 
 let config=null,curDate=todayStr(),day=null,tab='roster';
 let filter='all',search='',editMode=false,pendingDispatch=null,adminName='',editBuf=null,boardFilter='all';
-let sumProdOpen={main:true,vt:true};   /* ตารางที่ 2: ยุบ/ขยาย แยกรายกลุ่ม */
+let sumProdOpen={main:true,vt:true,oth_l:true,oth_s:true};   /* ตารางที่ 2: ยุบ/ขยาย แยกรายกลุ่ม */
 let roundSort={key:'truck',dir:1};   /* ตารางที่ 4: คอลัมน์ที่ใช้เรียง */
 let routeSearch='';                  /* หน้า 5: ค้นหาเส้นทาง */
 
@@ -776,7 +807,7 @@ function rollRow(r){
     <td><span class="tag" style="color:var(--${sc});background:var(--${sc}-bg)">กะ${esc(d.pos)}</span></td>
     <td><div class="drv">${esc(d.name)}</div><div class="cno">${d.code?('รหัส '+esc(d.code)):''}${(d.code&&d.phone)?' · ':''}${d.phone?esc(d.phone):''}</div></td>
     <td>${statusCell}</td>
-    <td><div class="stampcell">${hmField(av,'data-arrive="'+esc(t.truckNo)+'" data-pos="'+d.pos+'"')}<button data-arrnow="${esc(t.truckNo)}" data-pos="${d.pos}">จับเวลา</button></div></td>
+    <td>${hmField(av,'data-arrive="'+esc(t.truckNo)+'" data-pos="'+d.pos+'"')}</td>
     <td>${(cur==='absent'||cur==='leave')
       ? '<span class="cno">— จ่ายแผนไม่ได้ ('+(cur==='absent'?'ขาด':'ลา')+')</span>'
       : '<button class="planlink" data-plan="'+esc(t.truckNo)+'" data-pos="'+d.pos+'">จ่ายแผน →</button>'}</td>
@@ -846,7 +877,7 @@ function renderDispatch(){
     <td class="mono">${esc(j.mainTruck||j.truck||'')}</td>
     <td><input class="actualin" data-actual="${j.id}" value="${esc(j.actualTruck||j.mainTruck||j.truck||'')}"></td>
     <td class="mono" style="text-align:center">${esc(j.trip||'')}</td>
-    <td><span class="jtype ${j.type}">${j.type==='main'?'สายหลัก':'VT'}</span></td>
+    <td>${jtBadge(j.type)}</td>
     ${arriveCell(j)}
     <td>${hmField(j.depart,'data-depart="'+j.id+'"','departin')}</td>
     <td><input class="noteinp" data-note="${j.id}" value="${esc(j.note||'')}" placeholder="หมายเหตุ…"></td>
@@ -869,8 +900,8 @@ function renderDispatch(){
 }
 function dispatchFormHTML(){
   const truckOpts=config.map(t=>`<option value="${esc(t.truckNo)}">${esc(t.truckNo)} — ${esc(t.routeGroup)}</option>`).join('');
-  const grp=(lab,t)=>{const ps=routes.filter(r=>r.type===t);return ps.length?('<optgroup label="'+lab+'">'+ps.map(r=>`<option value="${esc(r.id)}">${esc(r.product)}${r.origin?(' — '+esc(r.origin)):''}</option>`).join('')+'</optgroup>'):'';};
-  const routeOpts=grp('งานหลัก','main')+grp('งานรอง (VT)','vt')+'<option value="__custom">+ ระบุเอง…</option>';
+  const grp=t=>{const ps=routes.filter(r=>(r.type||'main')===t.k);return ps.length?('<optgroup label="'+esc(t.f)+'">'+ps.map(r=>`<option value="${esc(r.id)}">${esc(r.product)}${r.origin?(' — '+esc(r.origin)):''}</option>`).join('')+'</optgroup>'):'';};
+  const routeOpts=JOBTYPES.map(grp).join('')+'<option value="__custom">+ ระบุเอง…</option>';
   const oOpts=uniqField('origin').map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')+'<option value="__custom">+ ระบุเอง…</option>';
   const dOpts=uniqField('dest').map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')+'<option value="__custom">+ ระบุเอง…</option>';
   return `<div class="modal-card">
@@ -887,7 +918,7 @@ function dispatchFormHTML(){
       <div class="field"><label>ปลายทาง</label><select id="j_dest">${dOpts}</select></div>
       <div class="field" id="j_dest_custom_wrap" style="display:none"><label>ระบุปลายทางเอง</label><input id="j_dest_custom"></div>
       <div class="field"><label>ระยะทาง (กม.) — match อัตโนมัติ</label><input id="j_distance" class="mono" inputmode="numeric"></div>
-      <div class="field"><label>ประเภทงาน (auto)</label><select id="j_type"><option value="main">สายหลัก (&gt;100 กม.)</option><option value="vt">VT สายสั้น (≤100 กม.)</option></select></div>
+      <div class="field"><label>ประเภทงาน (auto)</label><select id="j_type">${JOBTYPES.map(x=>`<option value="${x.k}">${esc(x.f)}</option>`).join('')}</select></div>
       <div class="field"><label>เบอร์รถที่วิ่งจริง (แก้ได้)</label><input id="j_actual" class="mono" placeholder="ค่าเริ่ม = เบอร์รถหลัก"></div>
       <div class="field"><label>เที่ยววิ่งงาน</label><input id="j_trip" class="mono" inputmode="numeric" value="1"></div>
     </div>
@@ -899,7 +930,7 @@ function effDest(){const s=document.getElementById('j_dest');return s.value==='_
 function recalcDist(){
   const km=matchDistance(effOrigin(),effDest());
   const di=document.getElementById('j_distance');if(di)di.value=km;
-  const ty=document.getElementById('j_type');if(ty)ty.value=(km!==''&&km>100)?'main':(km!==''?'vt':ty.value);
+  const ty=document.getElementById('j_type');if(ty&&km!=='')ty.value=jtByDistance(ty.value,+km);
 }
 function openModal(truck,pos){
   const m=document.getElementById('modal');m.innerHTML=dispatchFormHTML();m.style.display='flex';
@@ -1017,7 +1048,7 @@ function openJobDetail(id){
       <button class="modal-x" id="closeModal">✕</button></div>
     <div class="dgrid">
       ${row('วันที่','<span class="mono">'+esc(j.date||curDate)+'</span>')}
-      ${row('สินค้า','<span class="dbig">'+esc(j.product||'-')+'</span> <span class="jtype '+j.type+'">'+(j.type==='main'?'สายหลัก':'งานรอง VT')+'</span>')}
+      ${row('สินค้า','<span class="dbig">'+esc(j.product||'-')+'</span> <span class="jtype '+j.type+'">'+esc(jtFull(j.type))+'</span>')}
       ${row('เส้นทาง',esc(j.origin||'-')+' <span class="cno">→</span> '+esc(j.dest||'-'))}
       ${row('ระยะทาง',j.distance?('<span class="mono">'+esc(j.distance)+'</span> กม.'):'<span class="cno">-</span>')}
     </div>
@@ -1067,9 +1098,8 @@ function jobStatus(j){
 const CHARGER_COUNT = 3;                 /* จำนวนตู้ชาร์จต่อต้นทาง */
 function travelMin(j){
   const km = parseFloat(j.distance);
-  if(!isNaN(km) && km <= 100) return 60;
-  if(j.type === 'vt') return 60;
-  return 180;
+  if(!isNaN(km) && km <= 100) return 60;      /* ระยะไม่เกิน 100 กม. = สายสั้น */
+  return jtLong(j.type) ? 180 : 60;           /* ที่เหลือดูจากกลุ่มประเภทงาน */
 }
 function addMin(hm, mins){
   if(!hm) return null;
@@ -1170,7 +1200,7 @@ function renderBoard(){
       <td class="mono" style="text-align:center">${idx}</td>
       <td class="mono">${esc(j.date||curDate)}</td>
       <td><div>${esc(j.driver||'-')}</div><div class="cno">${esc(j.product||'')}${j.trip?(' · เที่ยว '+esc(j.trip)):''}</div></td>
-      <td class="truck"><span class="plate">${esc(j.actualTruck||j.mainTruck||j.truck||'')}</span> <span class="jtype ${j.type}">${j.type==='main'?'สายหลัก':'VT'}</span></td>
+      <td class="truck"><span class="plate">${esc(j.actualTruck||j.mainTruck||j.truck||'')}</span> ${jtBadge(j.type)}</td>
       <td class="mono">${j.depart?esc(j.depart)+' <span class="cno">น.</span>':'<span class="cno">—</span>'}</td>
       <td>${etaCell}</td>
       <td><span class="badge ${c}">${l}</span></td>
@@ -1227,24 +1257,22 @@ function renderPlan(){
     <td><input class="rin" data-rt="origin" data-id="${r.id}" value="${esc(r.origin)}" list="dlOrigin" placeholder="ต้นทาง"></td>
     <td><input class="rin" data-rt="dest" data-id="${r.id}" value="${esc(r.dest)}" list="dlDest" placeholder="ปลายทาง"></td>
     <td><input class="rin mono" data-rt="distance" data-id="${r.id}" value="${esc(r.distance)}" inputmode="numeric" style="width:78px;text-align:center"></td>
-    <td><select class="rin" data-rt="type" data-id="${r.id}" style="width:112px">
-        <option value="main"${r.type==='main'?' selected':''}>งานหลัก</option>
-        <option value="vt"${r.type==='vt'?' selected':''}>งานรอง (VT)</option></select></td>
+    <td><select class="rin" data-rt="type" data-id="${r.id}" style="width:186px">
+        ${JOBTYPES.map(x=>`<option value="${x.k}"${r.type===x.k?' selected':''}>${esc(x.f)}</option>`).join('')}</select></td>
     <td style="text-align:center"><button class="del" data-rtdel="${r.id}" title="ลบเส้นทางนี้">✕</button></td>
   </tr>`).join('');
-  const nMain=routes.filter(r=>r.type==='main').length, nVt=routes.filter(r=>r.type==='vt').length;
+  const cnt=k=>routes.filter(r=>(r.type||'main')===k).length;
   document.getElementById('view').innerHTML=`
     <datalist id="dlOrigin">${uniqField('origin').map(o=>`<option value="${esc(o)}">`).join('')}</datalist>
     <datalist id="dlDest">${uniqField('dest').map(o=>`<option value="${esc(o)}">`).join('')}</datalist>
     <section class="summary" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
       <div class="stat hero"><div class="lab">เส้นทางทั้งหมด</div><div class="val mono">${routes.length}</div></div>
-      <div class="stat"><div class="lab">งานหลัก</div><div class="val mono">${nMain}</div></div>
-      <div class="stat"><div class="lab">งานรอง (VT)</div><div class="val mono">${nVt}</div></div>
+      ${JOBTYPES.map(x=>`<div class="stat"><div class="lab">${esc(x.f)}</div><div class="val mono">${cnt(x.k)}</div></div>`).join('')}
       <div class="stat"><div class="lab">ต้นทาง / ปลายทาง</div><div class="val mono">${uniqField('origin').length} / ${uniqField('dest').length}</div></div>
     </section>
     <div class="hint">หน้านี้คือ <b>ทะเบียนกลางของแผนงานเส้นทาง</b> — ฟอร์ม “จ่ายแผน” ในหน้า 1 และ 2 จะดึงรายชื่อสินค้า/ต้นทาง/ปลายทาง/ระยะทาง จากที่นี่ทั้งหมด
       · แก้ในช่องได้เลย ระบบบันทึกให้อัตโนมัติและแชร์ให้ CC ทุกเครื่อง
-      · ระยะทาง ≤ 100 กม. ระบบจะตั้งเป็นงานรองให้เอง (แก้ทับได้)</div>
+      · ใส่ระยะทางแล้วระบบจะปรับสายยาว/สายสั้นให้เอง โดยคงกลุ่ม BU เดิมไว้ (แก้ทับได้)</div>
     <div class="toolbar">
       <input type="search" id="routeSearch" placeholder="ค้นหา สินค้า / ต้นทาง / ปลายทาง…" value="${esc(routeSearch)}">
       <button class="btn primary" id="addRoute">＋ เพิ่มเส้นทางใหม่</button>
@@ -1322,14 +1350,14 @@ function tableAttend(){
 /* ===== ตารางที่ 2: งานหลักรายสินค้า / งานรอง เทียบแผนที่ CC กรอก ===== */
 function tablePlanVsActual(){
   /* นับงานจริงแยกตามกลุ่มและสินค้า */
-  const act={main:{},vt:{}};
+  const act={}; JOBTYPES.forEach(x=>act[x.k]={});
   for(const j of day.jobs){
-    const g=(j.type==='vt')?'vt':'main';
+    const g=JT[j.type]?j.type:'main';
     const p=j.product||'(ไม่ระบุสินค้า)';
     act[g][p]=(act[g][p]||0)+1;
   }
   const pv=k=>{const v=day.plan[k];return (v===undefined||v===null||v==='')?'':v;};
-  const GRP=[['main','งานหลัก','main'],['vt','งานรอง (VT)','vt']];
+  const GRP=JOBTYPES.map(x=>[x.k,x.f,x.k]);
   let gPlan=0,gAct=0,html='';
 
   GRP.forEach(([g,lab,cls])=>{
@@ -1367,13 +1395,13 @@ function tablePlanVsActual(){
 
   const gd=gAct-gPlan;
   return `<div class="card">
-    <div class="cardhead"><h2>2 · ปริมาณงานเทียบแผน (แยกกลุ่ม งานหลัก / งานรอง)</h2></div>
+    <div class="cardhead"><h2>2 · ปริมาณงานเทียบแผน (แยกตามประเภทงาน 4 กลุ่ม)</h2></div>
     <div class="hint">รายชื่อสินค้าในแต่ละกลุ่มมาจาก <b>ทะเบียนเส้นทางหน้า 5</b> · เพิ่มรายการเข้ากลุ่มได้จากช่องท้ายกลุ่ม · กรอกแผนในช่องสีเหลือง ระบบบันทึกและแชร์ให้ CC ทุกเครื่องอัตโนมัติ</div>
     <div class="tablewrap sbox"><table style="min-width:660px"><thead><tr>
       ${thS('sum2','product','สินค้า / เส้นทาง')}${thS('sum2','plan','แผน (เที่ยว)','center')}${thS('sum2','actual','วิ่งจริง','center')}${thS('sum2','diff','ผลต่าง','center')}${thS('sum2','pct','% ของแผน','center')}
     </tr></thead><tbody>${html}
       <tr style="background:var(--nav);color:#fff">
-        <td style="font-weight:600;color:#fff">รวมทั้งหมด (งานหลัก + งานรอง)</td>
+        <td style="font-weight:600;color:#fff">รวมทั้งหมด (ทุกประเภทงาน)</td>
         <td class="mono" style="text-align:center;font-weight:600">${gPlan||'-'}</td>
         <td class="mono" style="text-align:center;font-weight:600;font-size:15px">${gAct}</td>
         <td class="mono" style="text-align:center;font-weight:600;color:${gd<0?'#ffb3aa':'#7fd6a8'}">${(gd>0?'+':'')+gd}</td>
@@ -1423,23 +1451,29 @@ function roundsData(){
   const per = {};
   for(const j of day.jobs){
     const no = j.mainTruck || j.truck || '(ไม่ระบุ)';
-    const p = per[no] = per[no] || {main:0,vt:0,hrs:[],closed:0};
-    if(j.type === 'vt') p.vt++; else p.main++;
+    const p = per[no] = per[no] || {main:0,vt:0,oth:0,hrs:[],closed:0};
+    p.byType=p.byType||{}; const gk=JT[j.type]?j.type:'main';
+    p.byType[gk]=(p.byType[gk]||0)+1;
+    if(gk==='vt') p.vt++; else if(gk==='main') p.main++; else p.oth=(p.oth||0)+1;
     const b = workBreakdown(j);
     if(b.closed){ p.closed++; p.hrs.push(b.total); }
   }
   /* ---- เตรียมข้อมูลเป็นแถว ๆ ก่อน เพื่อให้เรียงได้ ---- */
-  const data = config
+  /* รถที่มีงานแต่ไม่อยู่ในตารางกะ (เช่น อัปตารางกะใหม่แล้วรถหายไป) ต้องไม่ตกหล่น */
+  const known={}; config.forEach(t=>known[t.truckNo]=1);
+  const ghosts=Object.keys(per).filter(no=>!known[no])
+    .map(no=>({truckNo:no,routeGroup:'(ไม่อยู่ในตารางกะ)',drivers:[]}));
+  const data = config.concat(ghosts)
     .filter(t => per[t.truckNo] || (t.drivers||[]).length >= TARGET_ROUNDS)
     .map(t=>{
-      const p = per[t.truckNo] || {main:0,vt:0,hrs:[],closed:0};
+      const p = per[t.truckNo] || {main:0,vt:0,oth:0,hrs:[],closed:0};
       const crew = (t.drivers||[]).length;
       let came = 0;
       for(const d of (t.drivers||[])){ const v = attOf(t.truckNo)[d.pos]||''; if(v==='present'||v==='ot') came++; }
-      const rounds = p.main + p.vt;
+      const rounds = p.main + p.vt + (p.oth||0);
       const target = Math.min(TARGET_ROUNDS, crew || TARGET_ROUNDS);
       return { truck:t.truckNo, route:t.routeGroup||'', came:came, crew:crew,
-               rounds:rounds, main:p.main, vt:p.vt, target:target, ok:rounds>=target,
+               rounds:rounds, main:p.main, vt:p.vt, oth:p.oth||0, target:target, ok:rounds>=target,
                avg: p.hrs.length ? Math.round(p.hrs.reduce((a,b)=>a+b,0)/p.hrs.length*10)/10 : null };
     });
 
@@ -1472,6 +1506,7 @@ function tableRounds(){
       <td class="mono" style="text-align:center;font-size:15px;font-weight:600">${r.rounds}</td>
       <td class="mono" style="text-align:center">${r.main}</td>
       <td class="mono" style="text-align:center">${r.vt||'-'}</td>
+      <td class="mono" style="text-align:center">${r.oth||'-'}</td>
       <td class="mono" style="text-align:center">${r.target}</td>
       <td class="mono" style="text-align:center">${r.avg!==null?r.avg+' ชม.':'<span class="cno">-</span>'}</td>
       <td style="text-align:center">${r.ok?'<span class="badge b-done">ครบ</span>':`<span class="badge b-wait">ขาด ${r.target-r.rounds} รอบ</span>`}</td>
@@ -1479,7 +1514,7 @@ function tableRounds(){
 
   /* ---- หัวตารางกดเรียงได้ ---- */
   const TH = [['truck','เบอร์รถ','left'],['route','ต้นทาง','left'],['came','คนขับมา','center'],
-              ['rounds','รอบที่วิ่งได้','center'],['main','งานหลัก','center'],['vt','VT','center'],
+              ['rounds','รอบที่วิ่งได้','center'],['main','หลัก_BU4','center'],['vt','VT_BU4','center'],['oth','BU อื่น','center'],
               ['target','เป้า','center'],['avg','เฉลี่ย/รอบ','center'],['ok','สถานะ','center']];
   const head = TH.map(([k,lab,al])=>{
     const on = roundSort.key===k;
@@ -1500,7 +1535,7 @@ function tableRounds(){
       <span class="cno" style="margin-left:auto">รวม ${data.length} คัน</span>
     </div>
     <div class="tablewrap sbox5"><table style="min-width:800px"><thead><tr>${head}</tr></thead>
-    <tbody>${rows||'<tr><td colspan="9" class="empty-note">ยังไม่มีข้อมูล</td></tr>'}</tbody></table></div></div>`;
+    <tbody>${rows||'<tr><td colspan="10" class="empty-note">ยังไม่มีข้อมูล</td></tr>'}</tbody></table></div></div>`;
 }
 
 function scrollSumToNow(){
@@ -1512,10 +1547,11 @@ function scrollSumToNow(){
 }
 function renderSummary(){
   const k = kpis();
-  let mainTotal = 0, vtTotal = 0, closedTotal = 0;
+  let closedTotal = 0;
+  const byType={}; JOBTYPES.forEach(x=>byType[x.k]=0);
   const runTrucks = {};
   day.jobs.forEach(j=>{
-    if(j.type==='vt') vtTotal++; else mainTotal++;      /* นับตามแผนที่จ่าย ไม่ลดเมื่อปิดงาน */
+    byType[JT[j.type]?j.type:'main']++;                 /* นับตามแผนที่จ่าย ไม่ลดเมื่อปิดงาน */
     if(j.closed) closedTotal++;
     else runTrucks[j.actualTruck||j.mainTruck||j.truck]=1;
   });
@@ -1525,8 +1561,7 @@ function renderSummary(){
   document.getElementById('view').innerHTML=`
     <section class="summary">
       <div class="stat hero"><div class="lab">พจส. มาทำงาน</div><div class="val mono">${k.actual}<small> / ${k.scheduled}</small></div><div class="bar" style="width:${k.scheduled?Math.min(100,k.actual/k.scheduled*100):0}%"></div></div>
-      <div class="stat"><div class="lab">เที่ยวงานหลัก (ตามแผนที่จ่าย)</div><div class="val mono">${mainTotal}</div></div>
-      <div class="stat"><div class="lab">เที่ยวงานรอง VT (ตามแผนที่จ่าย)</div><div class="val mono">${vtTotal}</div></div>
+      ${JOBTYPES.map(x=>`<div class="stat"><div class="lab">เที่ยว ${esc(x.f)}</div><div class="val mono">${byType[x.k]}</div></div>`).join('')}
       <div class="stat ot"><div class="lab">กำลังวิ่งงาน (คัน)</div><div class="val mono">${runningTrucks}</div></div>
       <div class="stat go"><div class="lab">ปิดงานแล้ว (เที่ยว)</div><div class="val mono">${closedTotal}</div></div>
       <div class="stat miss"><div class="lab">ขาด / ลา</div><div class="val mono">${k.absent} / ${k.leave}</div></div>
@@ -1729,8 +1764,6 @@ document.getElementById('view').addEventListener('click',e=>{
   if(att){const no=att.dataset.att,p=att.dataset.pos,v=att.dataset.val;day.attend[no]=day.attend[no]||{};day.attend[no][p]=day.attend[no][p]===v?'':v;day.attendBy[no]=day.attendBy[no]||{};day.attendBy[no][p]=adminName;saveDay();renderRoster();return;}
   const ot=e.target.closest('[data-ot]');
   if(ot){const no=ot.dataset.ot,p=ot.dataset.pos;day.attend[no]=day.attend[no]||{};day.attend[no][p]=day.attend[no][p]==='ot'?'':'ot';day.attendBy[no]=day.attendBy[no]||{};day.attendBy[no][p]=adminName;saveDay();renderRoster();return;}
-  const an=e.target.closest('[data-arrnow]');
-  if(an){setArrive(an.dataset.arrnow,an.dataset.pos,nowHM());return;}
   if(e.target.closest('#editBtn')){editMode=true;editBuf=JSON.parse(JSON.stringify(config));renderRoster();return;}
   if(e.target.closest('#saveEdit')){
     config=editBuf;editBuf=null;editMode=false;flag('saving');
@@ -1803,7 +1836,14 @@ document.getElementById('view').addEventListener('input',e=>{
     const r=routes.find(x=>x.id===e.target.dataset.id);if(!r)return;
     const f=e.target.dataset.rt;
     r[f]=(f==='distance')?String(e.target.value).replace(/[^0-9]/g,''):e.target.value;
-    if(f==='distance'&&r.distance)r.type=(+r.distance<=100)?'vt':'main';
+    if(f==='distance'){
+      if(f==='distance')e.target.value=r.distance;
+      if(r.distance){
+        r.type=jtByDistance(r.type,+r.distance);
+        const sel=document.querySelector('[data-rt="type"][data-id="'+r.id+'"]');
+        if(sel)sel.value=r.type;           /* อัปเดตในช่องเลย ไม่วาดตารางใหม่ ให้แถวอยู่ที่เดิม */
+      }
+    }
     scheduleRoutesSave();return;
   }
   if(e.target.id==='planSpeed'){planSpeed=parseInt(e.target.value)||65;return;}
@@ -1879,8 +1919,15 @@ document.getElementById('view').addEventListener('change',e=>{
     return;
   }
   if(e.target.id==='fileInput'&&e.target.files[0])importFile(e.target.files[0]);
-  if(e.target.dataset&&e.target.dataset.rt==='type'){renderPlan();return;}
-  if(e.target.dataset&&e.target.dataset.rt==='distance'){renderPlan();return;}
+  if(e.target.dataset&&e.target.dataset.rt!==undefined){
+    const r=routes.find(x=>x.id===e.target.dataset.id);
+    if(r){
+      const f=e.target.dataset.rt;
+      r[f]=(f==='distance')?String(e.target.value).replace(/[^0-9]/g,''):e.target.value;
+      scheduleRoutesSave();
+    }
+    return;
+  }
   if(e.target.dataset&&e.target.dataset.arrive!==undefined){
     const no=e.target.dataset.arrive,p=e.target.dataset.pos;
     const nv=normHM(e.target.value);
@@ -1908,7 +1955,7 @@ function exportExcel(){
   for(const t of config)for(const d of (t.drivers||[])){const off=isOff(t,d,curDate);const cur=attOf(t.truckNo)[d.pos]||'';const status=cur==='ot'?'มา OT (วันหยุด)':(off?'วันหยุด':ST[cur]);const av=(day.arrive[t.truckNo]||{})[d.pos]||'';const by=(day.attendBy[t.truckNo]||{})[d.pos]||'';att.push([t.truckNo,t.routeGroup,d.pos,d.name,status,av,by,d.dayOff,shiftOf(d,curDate),d.shift2?(d.shift2+' ตั้งแต่ '+(d.shiftFrom||'-')):'']);}
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(att),'เช็กคนขับ');
   const jb=[['วันที่','ลำดับ','ชื่อสินค้า','ต้นทาง','ปลายทาง','รหัส พจส.','ชื่อ พจส.','เบอร์รถหลัก','เบอร์รถที่วิ่งจริง','เที่ยว','ประเภทงาน','เวลามาจริง','เวลาออก','ผู้จ่ายงาน','เวลาชาร์จ','ชาร์จเสร็จ','เวลากลับ','เวลาปิดงาน','รวมเวลาทำงาน (ชม.)','สาเหตุเกิน 8 ชม.','หมายเหตุ']];
-  day.jobs.forEach((j,i)=>jb.push([j.date||curDate,i+1,j.product,j.origin,j.dest,j.code||'',j.driver,j.mainTruck||j.truck,j.actualTruck||j.mainTruck||j.truck,j.trip||'',j.type==='main'?'สายหลัก':'VT',jobArrive(j),j.depart,j.by||'',j.chargeStart,j.chargeEnd,j.ret,j.closed||'',workHoursText(j),j.overNote||'',j.note||'']));
+  day.jobs.forEach((j,i)=>jb.push([j.date||curDate,i+1,j.product,j.origin,j.dest,j.code||'',j.driver,j.mainTruck||j.truck,j.actualTruck||j.mainTruck||j.truck,j.trip||'',jtFull(j.type),jobArrive(j),j.depart,j.by||'',j.chargeStart,j.chargeEnd,j.ret,j.closed||'',workHoursText(j),j.overNote||'',j.note||'']));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(jb),'จ่ายงาน');
   XLSX.writeFile(wb,'รายงานงานขนส่ง-'+curDate+'.xlsx');
 }
