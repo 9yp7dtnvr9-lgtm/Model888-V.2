@@ -304,6 +304,20 @@ function jtLabel(k){return jt(k).s;}
 function jtFull(k){return jt(k).f;}
 function jtLong(k){return jt(k).long;}
 function jtBadge(k){return '<span class="jtype '+esc(k||'main')+'">'+esc(jtLabel(k))+'</span>';}
+/* ประเภทงานของ "งานที่จ่ายแล้ว" อ้างอิงทะเบียนหน้า 5 เสมอ
+   เทียบ สินค้า -> ต้นทาง -> ปลายทาง ถ้าไม่เจอค่อยใช้ค่าที่บันทึกตอนจ่ายงาน */
+function jobType(j){
+  if(!j)return 'main';
+  const p=(j.product||'').trim(),o=(j.origin||'').trim(),d=(j.dest||'').trim();
+  let r=null;
+  if(p){
+    r=routes.find(x=>(x.product||'').trim()===p&&(x.origin||'').trim()===o&&(x.dest||'').trim()===d)
+    ||routes.find(x=>(x.product||'').trim()===p&&(x.origin||'').trim()===o)
+    ||routes.find(x=>(x.product||'').trim()===p);
+  }
+  if(r&&JT[r.type||'main'])return r.type||'main';
+  return JT[j.type]?j.type:'main';
+}
 /* เปลี่ยนประเภทตามระยะทาง โดยคงกลุ่ม BU เดิมไว้ */
 function jtByDistance(cur,km){
   const other=(cur==='oth_l'||cur==='oth_s');
@@ -335,9 +349,9 @@ async function loadRoutes(){
   routes=seedRoutes();
   try{await saveRoutes();}catch(e){}
 }
-async function saveRoutes(){await store.set('fleet:routes',JSON.stringify(routes));}
+async function saveRoutes(){return await store.set('fleet:routes',JSON.stringify(routes));}
 let rsT=null;
-function scheduleRoutesSave(){flag('saving');clearTimeout(rsT);rsT=setTimeout(async()=>{await saveRoutes();flag('ok');},400);}
+function scheduleRoutesSave(){flag('saving');clearTimeout(rsT);rsT=setTimeout(async()=>{const ok=await saveRoutes();flag(ok?'ok':'err');},400);}
 function routeProducts(type){
   const out=[];
   routes.forEach(r=>{if(r.product&&(!type||r.type===type)&&out.indexOf(r.product)<0)out.push(r.product);});
@@ -388,6 +402,7 @@ const API_TOKEN='54O7NXcm4720HQb8ZGiqMBoH';            /* <<< ใส่ให้
 let backendURL=BACKEND_URL_DEFAULT;
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+let lastWriteErr='';
 function dbKey(k){return 'fleetdb:'+k;}
 const store={
   async get(k){
@@ -402,10 +417,14 @@ const store={
   async set(k,v){
     mem[k]=v;
     try{lsSet(dbKey(k),v);}catch(e){}     /* บันทึกในเครื่องเสมอ ใช้เป็นสำรองถ้าเน็ตหลุด */
-    if(backendURL){
-      try{await fetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body:JSON.stringify({key:k,value:v,tk:API_TOKEN})});}catch(e){}
-    }
+    if(!backendURL)return true;
+    try{
+      const r=await fetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({key:k,value:v,tk:API_TOKEN})});
+      const d=await r.json();
+      if(d&&d.error){lastWriteErr=String(d.error);return false;}
+      return true;
+    }catch(e){lastWriteErr='ต่อระบบกลางไม่ได้';return false;}
   }
 };
 
@@ -563,7 +582,7 @@ async function saveConfig(){
   else rosterVersions.push({id:'v'+Date.now(),from:'2000-01-01',name:'ตารางกะเริ่มต้น',
         roster:config,savedAt:new Date().toISOString(),by:adminName||''});
   if(!activeVerId&&rosterVersions.length)activeVerId=rosterVersions[rosterVersions.length-1].id;
-  await saveRosters();
+  return await saveRosters();
 }
 let cs=null;function scheduleConfigSave(){flag('saving');clearTimeout(cs);cs=setTimeout(async()=>{await saveConfig();flag('ok');},400);}
 /* ============ ตารางกะแบบมีเวอร์ชัน ============
@@ -588,8 +607,10 @@ function activeVerName(){
 }
 async function saveRosters(){
   rosterRev=String(Date.now());
-  await store.set('fleet:rosters',JSON.stringify(rosterVersions));
-  await store.set('fleet:rosters:rev',rosterRev);
+  const a=await store.set('fleet:rosters',JSON.stringify(rosterVersions));
+  const b=await store.set('fleet:rosters:rev',rosterRev);
+  if(!(a&&b))flag('err');
+  return a&&b;
 }
 async function loadConfig(){
   let raw=null;
@@ -721,8 +742,19 @@ function shiftDuration(shift){
 function startLabel(shift){if(!shift)return '-';const m=String(shift).match(/(\d{1,2}:\d{2})/);return m?m[1]:'-';}
 function shiftCls(pos){return pos==='1'?'m':pos==='2'?'a':'n';}
 
+/* จำตำแหน่งที่เลื่อนอยู่ (ทั้งหน้าเว็บและทุกตารางที่เลื่อนได้) แล้วคืนค่าหลังวาดใหม่
+   -> แก้ข้อมูลกลางตารางแล้วบรรทัดค้างอยู่ที่เดิม ไม่เด้งขึ้นบนสุด */
+function keepScroll(){
+  const y=window.scrollY||window.pageYOffset||0;
+  const tops=[...document.querySelectorAll('#view .tablewrap')].map(b=>b.scrollTop);
+  return function(){
+    const boxes=[...document.querySelectorAll('#view .tablewrap')];
+    boxes.forEach((b,i)=>{if(tops[i]!==undefined)b.scrollTop=tops[i];});
+    if(y)window.scrollTo(0,y);
+  };
+}
 function renderRoster(){
-  const prev=document.querySelector('.tablewrap.scroll');const prevTop=prev?prev.scrollTop:null;
+  const restore=keepScroll();
   const toolbar=editMode
     ? `<div class="toolbar"><span class="cno">✎ โหมดแก้ไขรายชื่อ/เบอร์รถ — แก้เสร็จแล้วกด “บันทึกการเปลี่ยนแปลง” เพื่อยืนยัน</span><div style="flex:1"></div><button class="btn" id="cancelEdit">ยกเลิก</button><button class="btn primary" id="saveEdit">✓ บันทึกการเปลี่ยนแปลง</button></div>`
     : `<div class="toolbar">
@@ -736,13 +768,13 @@ function renderRoster(){
       ${sortActive('roster')?'<button class="btn" id="clearSort">↩ กลับไปจัดกลุ่มตามชั่วโมง</button>':''}
       <button class="btn" id="editBtn">✎ แก้ไขรายชื่อ/เบอร์รถ</button>
       <button class="btn" id="importBtn">⬆ อัปโหลดตารางกะใหม่</button>
-      <button class="btn" id="verBtn" title="ชุดตารางกะและวันเริ่มมีผล">🗓 ชุดตารางกะ (${rosterVersions.length})</button>
+      <button class="btn" id="verBtn" title="กดเพื่อดู/แก้วันเริ่มมีผลของแต่ละชุด">🗓 ใช้ชุด: ${esc(activeVerName())} <span class="cno">· ทั้งหมด ${rosterVersions.length}</span></button>
       <button class="btn" id="csvBtn">⬇ ส่งออก Excel</button>
       <button class="btn" id="printBtn">🖨 พิมพ์</button>
       <input type="file" id="fileInput" accept=".xlsx" style="display:none">
     </div>`;
   document.getElementById('view').innerHTML=summaryBar()+toolbar+`<div id="rosterArea">${editMode?editorTable():rollCallTable()}</div>`;
-  if(prevTop!=null){const sc=document.querySelector('.tablewrap.scroll');if(sc)sc.scrollTop=prevTop;}
+  restore();
 }
 function scrollToCurrentHour(){
   const sc=document.querySelector('.tablewrap.scroll');if(!sc)return;
@@ -858,12 +890,15 @@ function arriveCell(j){
     ? '<td class="mono" style="white-space:nowrap">'+esc(v)+' <span class="cno">\u0e19.</span></td>'
     : '<td style="text-align:center"><span class="cno" title="\u0e22\u0e31\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e04\u0e35\u0e22\u0e4c\u0e40\u0e27\u0e25\u0e32\u0e21\u0e32\u0e08\u0e23\u0e34\u0e07\u0e17\u0e35\u0e48\u0e2b\u0e19\u0e49\u0e32 1">\u2014</span></td>';
 }
+let dispFirst=true, sumFirst=true;
 function renderDispatch(){
+  const hadBox=!!document.querySelector('#view .tablewrap');
+  const restore=keepScroll();
   const list=sortBy('dispatch',day.jobs.map((j,i)=>({j,i})),{
     date:x=>x.j.date||curDate, seq:x=>x.i+1, product:x=>x.j.product||'',
     origin:x=>x.j.origin||'', dest:x=>x.j.dest||'', code:x=>x.j.code||'',
     driver:x=>x.j.driver||'', mtruck:x=>x.j.mainTruck||x.j.truck||'',
-    atruck:x=>x.j.actualTruck||'', trip:x=>+x.j.trip||0, type:x=>x.j.type||'',
+    atruck:x=>x.j.actualTruck||'', trip:x=>+x.j.trip||0, type:x=>jtFull(jobType(x.j)),
     arrive:x=>jobArrive(x.j)||'~', depart:x=>x.j.depart||'~', by:x=>x.j.by||''
   });
   const rows=list.map(({j,i})=>`<tr class="jrow" data-jobrow="${j.id}" title="กดเพื่อดูรายละเอียดแผนงานเที่ยวนี้">
@@ -877,7 +912,7 @@ function renderDispatch(){
     <td class="mono">${esc(j.mainTruck||j.truck||'')}</td>
     <td><input class="actualin" data-actual="${j.id}" value="${esc(j.actualTruck||j.mainTruck||j.truck||'')}"></td>
     <td class="mono" style="text-align:center">${esc(j.trip||'')}</td>
-    <td>${jtBadge(j.type)}</td>
+    <td>${jtBadge(jobType(j))}</td>
     ${arriveCell(j)}
     <td>${hmField(j.depart,'data-depart="'+j.id+'"','departin')}</td>
     <td><input class="noteinp" data-note="${j.id}" value="${esc(j.note||'')}" placeholder="หมายเหตุ…"></td>
@@ -897,13 +932,17 @@ function renderDispatch(){
       </tr></thead>
       <tbody>${rows||'<tr><td colspan="16" class="empty-note">ยังไม่มีงานที่จ่าย — กด “จ่ายแผน” จากแท็บ 1 หรือปุ่ม “จ่ายงานใหม่”</td></tr>'}</tbody>
     </table></div>`;
+  const box=document.querySelector('#view .tablewrap');
+  if(box){
+    if(dispFirst||!hadBox){box.scrollTop=box.scrollHeight;dispFirst=false;}   /* เปิดหน้ามา = เห็นรายการล่าสุด */
+    else restore();                                                           /* แก้ข้อมูลแล้วบรรทัดอยู่ที่เดิม */
+  }
 }
 function dispatchFormHTML(){
   const truckOpts=config.map(t=>`<option value="${esc(t.truckNo)}">${esc(t.truckNo)} — ${esc(t.routeGroup)}</option>`).join('');
-  const grp=t=>{const ps=routes.filter(r=>(r.type||'main')===t.k);return ps.length?('<optgroup label="'+esc(t.f)+'">'+ps.map(r=>`<option value="${esc(r.id)}">${esc(r.product)}${r.origin?(' — '+esc(r.origin)):''}</option>`).join('')+'</optgroup>'):'';};
-  const routeOpts=JOBTYPES.map(grp).join('')+'<option value="__custom">+ ระบุเอง…</option>';
-  const oOpts=uniqField('origin').map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')+'<option value="__custom">+ ระบุเอง…</option>';
-  const dOpts=uniqField('dest').map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')+'<option value="__custom">+ ระบุเอง…</option>';
+  const grp=t=>{const ps=[...new Set(routes.filter(r=>(r.type||'main')===t.k&&r.product).map(r=>r.product))];
+    return ps.length?('<optgroup label="'+esc(t.f)+'">'+ps.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('')+'</optgroup>'):'';};
+  const routeOpts=JOBTYPES.map(grp).join('');
   return `<div class="modal-card">
     <div class="modal-head"><h2>จ่ายแผนงาน</h2><button class="modal-x" id="closeModal">✕</button></div>
     <div class="formgrid">
@@ -912,25 +951,45 @@ function dispatchFormHTML(){
       <div class="field"><label>กะ / คนขับ</label><select id="j_shift"></select></div>
       <div class="field"><label>รหัส / ชื่อ พจส.</label><input id="j_drvinfo" readonly></div>
       <div class="field"><label>สินค้า / เส้นทาง</label><select id="j_route">${routeOpts}</select></div>
-      <div class="field" id="j_route_custom_wrap" style="display:none"><label>ระบุสินค้าเอง</label><input id="j_route_custom"></div>
-      <div class="field"><label>ต้นทาง</label><select id="j_origin">${oOpts}</select></div>
-      <div class="field" id="j_origin_custom_wrap" style="display:none"><label>ระบุต้นทางเอง</label><input id="j_origin_custom"></div>
-      <div class="field"><label>ปลายทาง</label><select id="j_dest">${dOpts}</select></div>
-      <div class="field" id="j_dest_custom_wrap" style="display:none"><label>ระบุปลายทางเอง</label><input id="j_dest_custom"></div>
-      <div class="field"><label>ระยะทาง (กม.) — match อัตโนมัติ</label><input id="j_distance" class="mono" inputmode="numeric"></div>
-      <div class="field"><label>ประเภทงาน (auto)</label><select id="j_type">${JOBTYPES.map(x=>`<option value="${x.k}">${esc(x.f)}</option>`).join('')}</select></div>
+      <div class="field"><label>ต้นทาง</label><select id="j_origin"></select></div>
+      <div class="field"><label>ปลายทาง</label><select id="j_dest"></select></div>
+      <div class="field"><label>ระยะทาง (กม.) — จากทะเบียนหน้า 5</label><input id="j_distance" class="mono" readonly></div>
+      <div class="field"><label>ประเภทงาน — จากทะเบียนหน้า 5</label><input id="j_typetxt" readonly><input type="hidden" id="j_type" value="main"></div>
       <div class="field"><label>เบอร์รถที่วิ่งจริง (แก้ได้)</label><input id="j_actual" class="mono" placeholder="ค่าเริ่ม = เบอร์รถหลัก"></div>
       <div class="field"><label>เที่ยววิ่งงาน</label><input id="j_trip" class="mono" inputmode="numeric" value="1"></div>
     </div>
-    <div class="modal-actions"><button class="btn" id="cancelJob">ยกเลิก</button><button class="btn primary" id="saveJob">บันทึกการจ่ายงาน</button></div>
+    <div class="hint" style="margin-top:12px">รายการทั้งหมดมาจาก <b>ทะเบียนเส้นทาง หน้า 5</b> · ถ้าไม่มีเส้นทางที่ต้องการ ให้ไปเพิ่มที่หน้า 5 ก่อน แล้วกลับมาจ่ายงานใหม่</div>
+    <div class="modal-actions"><button class="btn" id="cancelJob">ยกเลิก</button><button class="btn" id="goPlan">→ ไปหน้า 5 เพิ่มเส้นทาง</button><button class="btn primary" id="saveJob">บันทึกการจ่ายงาน</button></div>
   </div>`;
 }
-function effOrigin(){const s=document.getElementById('j_origin');return s.value==='__custom'?(document.getElementById('j_origin_custom').value||''):s.value;}
-function effDest(){const s=document.getElementById('j_dest');return s.value==='__custom'?(document.getElementById('j_dest_custom').value||''):s.value;}
+function effOrigin(){const s=document.getElementById('j_origin');return s?s.value:'';}
+function effDest(){const s=document.getElementById('j_dest');return s?s.value:'';}
+/* เลือกสินค้า -> ตัวเลือกต้นทางเฉพาะของสินค้านั้น */
+function fillOrigins(keep){
+  const p=document.getElementById('j_route').value;
+  const os=[...new Set(routes.filter(r=>r.product===p).map(r=>r.origin||''))];
+  const sel=document.getElementById('j_origin');
+  sel.innerHTML=os.map(o=>`<option value="${esc(o)}">${esc(o||'(ไม่ระบุ)')}</option>`).join('');
+  if(keep&&os.indexOf(keep)>=0)sel.value=keep;
+  fillDests();
+}
+/* เลือกต้นทาง -> ตัวเลือกปลายทางเฉพาะคู่นั้น */
+function fillDests(keep){
+  const p=document.getElementById('j_route').value,o=document.getElementById('j_origin').value;
+  const ds=[...new Set(routes.filter(r=>r.product===p&&(r.origin||'')===o).map(r=>r.dest||''))];
+  const sel=document.getElementById('j_dest');
+  sel.innerHTML=ds.map(x=>`<option value="${esc(x)}">${esc(x||'(ไม่ระบุ)')}</option>`).join('');
+  if(keep&&ds.indexOf(keep)>=0)sel.value=keep;
+  recalcDist();
+}
+/* ระยะทาง + ประเภทงาน ล็อกตามทะเบียนหน้า 5 */
 function recalcDist(){
-  const km=matchDistance(effOrigin(),effDest());
-  const di=document.getElementById('j_distance');if(di)di.value=km;
-  const ty=document.getElementById('j_type');if(ty&&km!=='')ty.value=jtByDistance(ty.value,+km);
+  const p=document.getElementById('j_route').value,o=effOrigin(),d=effDest();
+  const r=routes.find(x=>x.product===p&&(x.origin||'')===o&&(x.dest||'')===d)
+        ||routes.find(x=>x.product===p);
+  const di=document.getElementById('j_distance');if(di)di.value=r?(r.distance||''):'';
+  const ty=document.getElementById('j_type');if(ty)ty.value=r?(r.type||'main'):'main';
+  const tt=document.getElementById('j_typetxt');if(tt)tt.value=jtFull(r?r.type:'main');
 }
 function openModal(truck,pos){
   const m=document.getElementById('modal');m.innerHTML=dispatchFormHTML();m.style.display='flex';
@@ -938,7 +997,7 @@ function openModal(truck,pos){
   if(truck&&[...ts.options].some(o=>o.value===truck))ts.value=truck;
   fillShift();
   if(pos){const ss=document.getElementById('j_shift');if(ss&&[...ss.options].some(o=>o.value===pos))ss.value=pos;}
-  preselectRoute();fillRoute();recalcDist();syncActual();syncDriverInfo();syncTrip();
+  preselectRoute();fillOrigins();syncActual();syncDriverInfo();syncTrip();
 }
 function closeModal(){const m=document.getElementById('modal');m.style.display='none';m.innerHTML='';}
 function updateAdminChip(){const el=document.getElementById('adminChip');if(!el)return;el.innerHTML=adminName?`👤 ${esc(adminName)} <button class="linkish" id="changeAdmin">เปลี่ยน</button>`:`<button class="loginbtn" id="loginBtn">เข้าสู่ระบบ</button>`;}
@@ -980,9 +1039,7 @@ function syncTrip(){const no=document.getElementById('j_truck').value;const n=da
 function saveJob(){
   const g=id=>document.getElementById(id);
   const no=g('j_truck').value,t=truckByNo(no),pos=g('j_shift').value,d=driverAt(t,pos);
-  const rv=g('j_route').value;let product;
-  if(rv==='__custom')product=g('j_route_custom').value.trim();
-  else{const rd=routes.find(x=>x.id===rv);product=rd?rd.product:'';}
+  const product=(g('j_route').value||'').trim();
   const origin=effOrigin().trim(),dest=effDest().trim(),dist=g('j_distance').value.trim(),actual=g('j_actual').value.trim(),trip=g('j_trip').value.trim();
   const miss=[];
   if(!d||d.name==='(ยังไม่กำหนดคนขับ)')miss.push('คนขับ (รถนี้ยังไม่มีคนขับในตารางกะ)');
@@ -1008,26 +1065,9 @@ function fillShift(){
 function preselectRoute(){
   const no=document.getElementById('j_truck').value;const t=truckByNo(no);if(!t)return;
   const g=(t.routeGroup||'').replace('WJ','วังจันทร์');
+  const sel=document.getElementById('j_route');
   const hit=routes.find(r=>g&&r.product&&r.product.indexOf(g)>=0);
-  if(hit)document.getElementById('j_route').value=hit.id;
-}
-function setSelectOrCustom(id,val){
-  const s=document.getElementById(id);const cw=document.getElementById(id+'_custom_wrap');
-  if(!s)return;
-  if(val&&[...s.options].some(o=>o.value===val)){s.value=val;if(cw)cw.style.display='none';}
-  else if(val){s.value='__custom';if(cw)cw.style.display='block';const ci=document.getElementById(id+'_custom');if(ci)ci.value=val;}
-}
-function fillRoute(){
-  const sel=document.getElementById('j_route');const v=sel.value;
-  const cw=document.getElementById('j_route_custom_wrap');
-  if(v==='__custom'){cw.style.display='block';return;}
-  cw.style.display='none';
-  const r=routes.find(x=>x.id===v);if(!r)return;
-  setSelectOrCustom('j_origin',r.origin||'');
-  setSelectOrCustom('j_dest',r.dest||'');
-  const di=document.getElementById('j_distance');if(di&&r.distance)di.value=r.distance;
-  const ty=document.getElementById('j_type');if(ty&&r.type)ty.value=r.type;
-  if(!r.distance)recalcDist();
+  if(hit&&[...sel.options].some(o=>o.value===hit.product))sel.value=hit.product;
 }
 
 /* ---------- หน้าต่างรายละเอียดแผนงานรายเที่ยว (กดจากแถวในหน้า 2) ---------- */
@@ -1048,7 +1088,7 @@ function openJobDetail(id){
       <button class="modal-x" id="closeModal">✕</button></div>
     <div class="dgrid">
       ${row('วันที่','<span class="mono">'+esc(j.date||curDate)+'</span>')}
-      ${row('สินค้า','<span class="dbig">'+esc(j.product||'-')+'</span> <span class="jtype '+j.type+'">'+esc(jtFull(j.type))+'</span>')}
+      ${row('สินค้า','<span class="dbig">'+esc(j.product||'-')+'</span> <span class="jtype \'+esc(jobType(j))+\'">\'+esc(jtFull(jobType(j)))+\'</span>')}
       ${row('เส้นทาง',esc(j.origin||'-')+' <span class="cno">→</span> '+esc(j.dest||'-'))}
       ${row('ระยะทาง',j.distance?('<span class="mono">'+esc(j.distance)+'</span> กม.'):'<span class="cno">-</span>')}
     </div>
@@ -1087,19 +1127,12 @@ function openJobDetail(id){
 }
 
 /* ---------- TAB 3: live board ---------- */
-function jobStatus(j){
-  if(j.ret)return['done','b-done','กลับถึงแล้ว'];
-  if(j.chargeEnd)return['charged','b-charged','ชาร์จเสร็จ'];
-  if(j.chargeStart)return['charge','b-charge','กำลังชาร์จ'];
-  if(j.depart)return['run','b-run','ออกวิ่ง'];
-  return['wait','b-wait','รอออก'];
-}
 /* --- กฎเวลาเดินทาง: สายหลัก 3 ชม. / สายรอง หรือ <=100 กม. 1 ชม. --- */
 const CHARGER_COUNT = 3;                 /* จำนวนตู้ชาร์จต่อต้นทาง */
 function travelMin(j){
   const km = parseFloat(j.distance);
   if(!isNaN(km) && km <= 100) return 60;      /* ระยะไม่เกิน 100 กม. = สายสั้น */
-  return jtLong(j.type) ? 180 : 60;           /* ที่เหลือดูจากกลุ่มประเภทงาน */
+  return jtLong(jobType(j)) ? 180 : 60;           /* ที่เหลือดูจากกลุ่มประเภทงาน */
 }
 function addMin(hm, mins){
   if(!hm) return null;
@@ -1115,14 +1148,13 @@ function hm2min(hm){
   return (isNaN(h)||isNaN(m)) ? null : h*60+m;
 }
 /* สถานะจากเวลาคาดการณ์เทียบเวลาปัจจุบัน */
+/* สถานะดูจากช่องเวลาที่ CC กรอกจริงเท่านั้น (ไม่อิงเวลาคาดการณ์) */
 function runStatus(j){
-  if(j.closed) return ['closed','b-done','ปิดงานแล้ว'];
-  if(j.ret)    return ['back','b-charged','กลับถึงแล้ว'];
-  const dm = hm2min(j.depart);
-  if(dm === null) return ['wait','b-wait','รอออก'];
-  const now = hm2min(nowHM());
-  const elapsed = (now >= dm) ? (now - dm) : (now + 1440 - dm);
-  return elapsed < travelMin(j) ? ['run','b-run','กำลังเดินทาง'] : ['done','b-run','ถึงต้นทางแล้ว'];
+  if(j.closed)      return ['closed','b-done','ปิดงานแล้ว'];
+  if(j.ret)         return ['back','b-charged','กำลังเดินทางกลับ'];
+  if(j.chargeStart) return ['charge','b-charge','กำลังชาร์จ'];
+  if(j.depart)      return ['run','b-run','กำลังเดินทาง'];
+  return ['wait','b-wait','รอออก'];
 }
 /* รวมเวลาทำงาน: เวลาออก -> เวลาปิดงาน (ข้ามเที่ยงคืนได้) */
 function workHours(j){
@@ -1166,9 +1198,10 @@ function chargerPlan(jobs){
 }
 
 function renderBoard(){
+  const restore=keepScroll();
   const jobs = day.jobs;
   const plan = chargerPlan(jobs);
-  const cnt = { wait:0, run:0, done:0, back:0, closed:0 };
+  const cnt = { wait:0, run:0, charge:0, back:0, closed:0 };
   jobs.forEach(j=>{ cnt[runStatus(j)[0]]++; });
 
   const box = (bf,lab,n,cls)=>`<div class="stat boardbox ${cls} ${boardFilter===bf?'sel':''}" data-bf="${bf}"><div class="lab">${lab}</div><div class="val mono">${n}</div></div>`;
@@ -1200,7 +1233,7 @@ function renderBoard(){
       <td class="mono" style="text-align:center">${idx}</td>
       <td class="mono">${esc(j.date||curDate)}</td>
       <td><div>${esc(j.driver||'-')}</div><div class="cno">${esc(j.product||'')}${j.trip?(' · เที่ยว '+esc(j.trip)):''}</div></td>
-      <td class="truck"><span class="plate">${esc(j.actualTruck||j.mainTruck||j.truck||'')}</span> ${jtBadge(j.type)}</td>
+      <td class="truck"><span class="plate">${esc(j.actualTruck||j.mainTruck||j.truck||'')}</span> ${jtBadge(jobType(j))}</td>
       <td class="mono">${j.depart?esc(j.depart)+' <span class="cno">น.</span>':'<span class="cno">—</span>'}</td>
       <td>${etaCell}</td>
       <td><span class="badge ${c}">${l}</span></td>
@@ -1225,22 +1258,25 @@ function renderBoard(){
     <section class="summary" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
       <div class="stat hero"><div class="lab">งานที่จ่ายวันนี้</div><div class="val mono">${jobs.length}</div></div>
       ${box('wait','รอออก',cnt.wait,'')}
-      ${box('run','กำลังเดินทาง',cnt.run+cnt.done,'go')}
-      ${box('back','กลับถึงแล้ว',cnt.back,'chd')}
+      ${box('run','กำลังเดินทาง',cnt.run,'go')}
+      ${box('charge','กำลังชาร์จ',cnt.charge,'chg')}
+      ${box('back','กำลังเดินทางกลับ',cnt.back,'chd')}
       ${box('closed','ปิดงานแล้ว',cnt.closed,'dn')}
     </section>
-    <div class="hint">เวลาถึงต้นทางเป็น <b>ค่าคาดการณ์</b> จากเวลาออกในหน้า 2 (สายหลัก +3 ชม. · สายรอง/ไม่เกิน 100 กม. +1 ชม.) · <b>เวลาชาร์จ / เวลากลับ / เวลาปิดงาน</b> ให้ CC กดปุ่ม “จับเวลา” หรือแก้เวลาเอง · รวมเวลาทำงาน = เวลาออก → เวลาปิดงาน</div>
+    <div class="hint">เวลาถึงต้นทางเป็น <b>ค่าคาดการณ์</b> ไว้เทียบเฉย ๆ (สายยาว +3 ชม. · สายสั้น +1 ชม.) <b>ไม่มีผลกับสถานะ</b> · สถานะเปลี่ยนตามช่องเวลาที่กรอกจริงเท่านั้น · <b>เวลาชาร์จ / เวลากลับ / เวลาปิดงาน</b> ให้ CC กดปุ่ม “จับเวลา” หรือแก้เวลาเอง · รวมเวลาทำงาน = เวลาออก → เวลาปิดงาน</div>
     <div class="toolbar"><span class="cno">กดกล่องด้านบนเพื่อกรองเฉพาะสถานะนั้น (กดซ้ำเพื่อดูทั้งหมด) · แก้เวลาออกได้ที่หน้า 2</span>
       ${boardFilter!=='all'?'<button class="btn" id="clearBf">✕ ล้างตัวกรอง</button>':''}</div>
     <div class="tablewrap sbox10"><table style="min-width:1620px">
       <thead><tr>${thS('board','seq','ลำดับ','center')}${thS('board','date','วันที่')}${thS('board','driver','ชื่อ พจส.')}${thS('board','truck','เบอร์รถ')}${thS('board','depart','เวลาออก')}${thS('board','eta','เวลาถึงต้นทาง (คาดการณ์)')}${thS('board','status','สถานะ','center')}${thS('board','charger','แผนชาร์จ','center')}${thS('board','cs','เวลาชาร์จ')}${thS('board','ret','เวลากลับ')}${thS('board','closed','เวลาปิดงาน')}${thS('board','hours','รวมเวลาทำงาน','center')}<th>สาเหตุเกิน 8 ชม.</th></tr></thead>
       <tbody>${shown.length?rows:'<tr><td colspan="13" class="empty-note">'+(jobs.length?'ไม่มีงานในสถานะนี้':'ยังไม่มีงานที่จ่าย — ไปที่หน้า 2 เพื่อจ่ายงาน')+'</td></tr>'}</tbody>
     </table></div>`;
+  restore();
 }
 
 /* ---------- TAB 4: planning (placeholder) ---------- */
 let routeSort={key:'type',dir:1};
 function renderPlan(){
+  const restore=keepScroll();
   const q=(routeSearch||'').toLowerCase();
   let data=routes.filter(r=>!q||((r.product||'')+' '+(r.origin||'')+' '+(r.dest||'')).toLowerCase().indexOf(q)>=0);
   const dir=routeSort.dir;
@@ -1281,6 +1317,7 @@ function renderPlan(){
       <thead><tr>${head}<th style="width:44px"></th></tr></thead>
       <tbody>${rows||'<tr><td colspan="6" class="empty-note">ยังไม่มีเส้นทาง — กด “เพิ่มเส้นทางใหม่”</td></tr>'}</tbody>
     </table></div>`;
+  restore();
 }
 
 /* ---------- TAB 5: summary ---------- */
@@ -1352,7 +1389,7 @@ function tablePlanVsActual(){
   /* นับงานจริงแยกตามกลุ่มและสินค้า */
   const act={}; JOBTYPES.forEach(x=>act[x.k]={});
   for(const j of day.jobs){
-    const g=JT[j.type]?j.type:'main';
+    const g=jobType(j);
     const p=j.product||'(ไม่ระบุสินค้า)';
     act[g][p]=(act[g][p]||0)+1;
   }
@@ -1374,7 +1411,8 @@ function tablePlanVsActual(){
       const diff=a-plan, pct=plan?Math.round(a/plan*100):null;
       const inReg=routes.some(r=>r.product===p&&r.type===g);
       rows+=`<tr>
-        <td style="padding-left:22px">${esc(p)}${inReg?'':' <span class="tag" title="ยังไม่มีในทะเบียนหน้า 5">นอกทะเบียน</span>'}</td>
+        <td style="padding-left:22px">${esc(p)}${inReg?'':' <span class="tag" title="ยังไม่มีในทะเบียนหน้า 5">นอกทะเบียน</span>'}
+          ${inReg?`<button class="del" data-delprod="${esc(p)}" data-grp2="${g}" title="ลบรายการนี้ออกจากกลุ่ม" style="float:right">✕</button>`:''}</td>
         <td style="text-align:center"><input class="planin mono" inputmode="numeric" data-planprod="${esc(p)}" value="${esc(pv(p))}" placeholder="-"></td>
         <td class="mono" style="text-align:center;font-weight:600">${a}</td>
         <td class="mono" style="text-align:center;color:${diff<0?'var(--absent)':'var(--present)'}">${(plan||a)?((diff>0?'+':'')+diff):'-'}</td>
@@ -1396,7 +1434,7 @@ function tablePlanVsActual(){
   const gd=gAct-gPlan;
   return `<div class="card">
     <div class="cardhead"><h2>2 · ปริมาณงานเทียบแผน (แยกตามประเภทงาน 4 กลุ่ม)</h2></div>
-    <div class="hint">รายชื่อสินค้าในแต่ละกลุ่มมาจาก <b>ทะเบียนเส้นทางหน้า 5</b> · เพิ่มรายการเข้ากลุ่มได้จากช่องท้ายกลุ่ม · กรอกแผนในช่องสีเหลือง ระบบบันทึกและแชร์ให้ CC ทุกเครื่องอัตโนมัติ</div>
+    <div class="hint">รายชื่อสินค้าในแต่ละกลุ่มมาจาก <b>ทะเบียนเส้นทางหน้า 5</b> · เพิ่มรายการเข้ากลุ่มได้จากช่องท้ายกลุ่ม · ลบรายการด้วยปุ่ม ✕ ท้ายชื่อสินค้า · กรอกแผนในช่องสีเหลือง ระบบบันทึกและแชร์ให้ CC ทุกเครื่องอัตโนมัติ</div>
     <div class="tablewrap sbox"><table style="min-width:660px"><thead><tr>
       ${thS('sum2','product','สินค้า / เส้นทาง')}${thS('sum2','plan','แผน (เที่ยว)','center')}${thS('sum2','actual','วิ่งจริง','center')}${thS('sum2','diff','ผลต่าง','center')}${thS('sum2','pct','% ของแผน','center')}
     </tr></thead><tbody>${html}
@@ -1452,7 +1490,7 @@ function roundsData(){
   for(const j of day.jobs){
     const no = j.mainTruck || j.truck || '(ไม่ระบุ)';
     const p = per[no] = per[no] || {main:0,vt:0,oth:0,hrs:[],closed:0};
-    p.byType=p.byType||{}; const gk=JT[j.type]?j.type:'main';
+    p.byType=p.byType||{}; const gk=jobType(j);
     p.byType[gk]=(p.byType[gk]||0)+1;
     if(gk==='vt') p.vt++; else if(gk==='main') p.main++; else p.oth=(p.oth||0)+1;
     const b = workBreakdown(j);
@@ -1546,12 +1584,13 @@ function scrollSumToNow(){
   box.scrollTop += row.getBoundingClientRect().top - box.getBoundingClientRect().top - hh - 4;
 }
 function renderSummary(){
+  const restore=keepScroll();
   const k = kpis();
   let closedTotal = 0;
   const byType={}; JOBTYPES.forEach(x=>byType[x.k]=0);
   const runTrucks = {};
   day.jobs.forEach(j=>{
-    byType[JT[j.type]?j.type:'main']++;                 /* นับตามแผนที่จ่าย ไม่ลดเมื่อปิดงาน */
+    byType[jobType(j)]++;                 /* นับตามแผนที่จ่าย ไม่ลดเมื่อปิดงาน */
     if(j.closed) closedTotal++;
     else runTrucks[j.actualTruck||j.mainTruck||j.truck]=1;
   });
@@ -1573,7 +1612,7 @@ function renderSummary(){
     ${tablePlanVsActual()}
     ${tableWorkTime()}
     ${tableRounds()}`;
-  scrollSumToNow();
+  if(sumFirst){scrollSumToNow();sumFirst=false;}else restore();
 }
 
 /* ================= ระบบแจ้งเตือน Alarm / Alert =================
@@ -1727,12 +1766,24 @@ function render(){
 }
 
 /* ---------- events (delegated) ---------- */
-document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(b){tab=b.dataset.tab;render();if(tab==='roster')scrollToCurrentHour();}});
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(b){tab=b.dataset.tab;if(tab==='dispatch')dispFirst=true;if(tab==='summary')sumFirst=true;render();if(tab==='roster')scrollToCurrentHour();}});
 document.getElementById('dateInput').addEventListener('change',async e=>{curDate=e.target.value||todayStr();applyRosterForDate();await loadDay();closeWidget('alarm');closeWidget('alert');loadNotify();tickAlarms();render();if(tab==='roster')scrollToCurrentHour();});
 
 document.getElementById('view').addEventListener('click',e=>{
   const tg=e.target.closest('[data-grp]');
   if(tg){const g=tg.dataset.grp;sumProdOpen[g]=!sumProdOpen[g];lsSet('fleet:sumprod',JSON.stringify(sumProdOpen));renderSummary();return;}
+  const dp=e.target.closest('[data-delprod]');
+  if(dp){
+    const p=dp.dataset.delprod,g=dp.dataset.grp2;
+    const used=day.jobs.filter(j=>(j.product||'')===p).length;
+    const msg='ลบ "'+p+'" ออกจากทะเบียนเส้นทาง (หน้า 5)?'
+      +(used?('\n\nวันนี้มีงานที่ใช้สินค้านี้อยู่ '+used+' เที่ยว งานเดิมจะไม่ถูกลบ แต่จะขึ้นป้าย “นอกทะเบียน”'):'');
+    if(!confirm(msg))return;
+    routes=routes.filter(r=>!(r.product===p&&(r.type||'main')===g));
+    if(day.plan&&day.plan[p]!==undefined){day.plan[p]='';saveDay();}
+    scheduleRoutesSave();renderSummary();
+    return;
+  }
   const ga=e.target.closest('[data-addgrp]');
   if(ga){
     const g=ga.dataset.addgrp;
@@ -1767,8 +1818,12 @@ document.getElementById('view').addEventListener('click',e=>{
   if(e.target.closest('#editBtn')){editMode=true;editBuf=JSON.parse(JSON.stringify(config));renderRoster();return;}
   if(e.target.closest('#saveEdit')){
     config=editBuf;editBuf=null;editMode=false;flag('saving');
-    saveConfig().then(()=>{flag('ok');renderRoster();
-      alert('บันทึกแล้ว — มีผลกับชุด “'+activeVerName()+'” ทันที และ CC เครื่องอื่นจะเห็นภายใน 1 นาที');
+    saveConfig().then(okSave=>{
+      renderRoster();
+      if(okSave){flag('ok');alert('บันทึกแล้ว — มีผลกับชุด “'+activeVerName()+'” ทันที และ CC เครื่องอื่นจะเห็นภายใน 1 นาที');}
+      else{flag('err');alert('⚠ บันทึกขึ้นระบบกลางไม่สำเร็จ'+(lastWriteErr?(' ('+lastWriteErr+')'):'')
+        +'\n\nการแก้ไขถูกเก็บไว้ในเครื่องนี้ชั่วคราว แต่จะถูกทับด้วยข้อมูลเก่าเมื่อรีเฟรช'
+        +'\n\nตรวจ: กด ⚙ ตั้งค่าระบบกลาง แล้วกด 🔍 ทดสอบการเชื่อมต่อ');}
     });
     renderRoster();return;}
   if(e.target.closest('#cancelEdit')){editBuf=null;editMode=false;renderRoster();return;}
@@ -1884,18 +1939,18 @@ document.getElementById('modal').addEventListener('click',e=>{
       saveRosters().then(()=>{applyRosterForDate();openVersionDialog();render();});
     }return;}
   if(e.target.closest('#goBoard')){closeModal();tab='board';render();return;}
+  if(e.target.closest('#goPlan')){closeModal();tab='plan';render();return;}
   if(e.target.closest('#cancelJob')||e.target.closest('#closeModal')||e.target.id==='modal'){closeModal();return;}
 });
 document.getElementById('adminChip').addEventListener('click',e=>{if(e.target.closest('#changeAdmin')||e.target.closest('#loginBtn'))openLogin();});
 document.getElementById('refreshBtn').addEventListener('click',async()=>{flag('saving');await loadConfig();await loadRoutes();await loadDay();flag('ok');render();if(tab==='roster')scrollToCurrentHour();});
 document.getElementById('settingsBtn').addEventListener('click',()=>openLogin());
-function odChange(id){const s=document.getElementById(id);const cw=document.getElementById(id+'_custom_wrap');if(cw)cw.style.display=s.value==='__custom'?'block':'none';recalcDist();}
 document.getElementById('modal').addEventListener('input',e=>{
-  if(e.target.id==='j_truck'){fillShift();preselectRoute();fillRoute();syncActual();syncDriverInfo();syncTrip();return;}
+  if(e.target.id==='j_truck'){fillShift();preselectRoute();fillOrigins();syncActual();syncDriverInfo();syncTrip();return;}
   if(e.target.id==='j_shift'){syncDriverInfo();return;}
-  if(e.target.id==='j_route'){fillRoute();return;}
-  if(e.target.id==='j_origin'||e.target.id==='j_dest'){odChange(e.target.id);return;}
-  if(e.target.id==='j_origin_custom'||e.target.id==='j_dest_custom'){recalcDist();return;}
+  if(e.target.id==='j_route'){fillOrigins();return;}
+  if(e.target.id==='j_origin'){fillDests();return;}
+  if(e.target.id==='j_dest'){recalcDist();return;}
   if(e.target.id==='j_actual'||e.target.id==='j_trip'){e.target.dataset.touched='1';return;}
 });
 document.getElementById('modal').addEventListener('change',e=>{
@@ -1904,10 +1959,11 @@ document.getElementById('modal').addEventListener('change',e=>{
     const v=rosterVersions.find(x=>x.id===e.target.dataset.verfrom);
     if(v&&e.target.value){v.from=e.target.value;saveRosters().then(()=>{applyRosterForDate();openVersionDialog();render();});}
     return;}
-  if(e.target.id==='j_truck'){fillShift();preselectRoute();fillRoute();syncActual();syncDriverInfo();syncTrip();return;}
+  if(e.target.id==='j_truck'){fillShift();preselectRoute();fillOrigins();syncActual();syncDriverInfo();syncTrip();return;}
   if(e.target.id==='j_shift'){syncDriverInfo();return;}
-  if(e.target.id==='j_route'){fillRoute();return;}
-  if(e.target.id==='j_origin'||e.target.id==='j_dest'){odChange(e.target.id);return;}
+  if(e.target.id==='j_route'){fillOrigins();return;}
+  if(e.target.id==='j_origin'){fillDests();return;}
+  if(e.target.id==='j_dest'){recalcDist();return;}
 });
 document.getElementById('view').addEventListener('change',e=>{
   if(e.target.dataset&&e.target.dataset.planprod!==undefined){renderSummary();return;}
@@ -1955,7 +2011,7 @@ function exportExcel(){
   for(const t of config)for(const d of (t.drivers||[])){const off=isOff(t,d,curDate);const cur=attOf(t.truckNo)[d.pos]||'';const status=cur==='ot'?'มา OT (วันหยุด)':(off?'วันหยุด':ST[cur]);const av=(day.arrive[t.truckNo]||{})[d.pos]||'';const by=(day.attendBy[t.truckNo]||{})[d.pos]||'';att.push([t.truckNo,t.routeGroup,d.pos,d.name,status,av,by,d.dayOff,shiftOf(d,curDate),d.shift2?(d.shift2+' ตั้งแต่ '+(d.shiftFrom||'-')):'']);}
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(att),'เช็กคนขับ');
   const jb=[['วันที่','ลำดับ','ชื่อสินค้า','ต้นทาง','ปลายทาง','รหัส พจส.','ชื่อ พจส.','เบอร์รถหลัก','เบอร์รถที่วิ่งจริง','เที่ยว','ประเภทงาน','เวลามาจริง','เวลาออก','ผู้จ่ายงาน','เวลาชาร์จ','ชาร์จเสร็จ','เวลากลับ','เวลาปิดงาน','รวมเวลาทำงาน (ชม.)','สาเหตุเกิน 8 ชม.','หมายเหตุ']];
-  day.jobs.forEach((j,i)=>jb.push([j.date||curDate,i+1,j.product,j.origin,j.dest,j.code||'',j.driver,j.mainTruck||j.truck,j.actualTruck||j.mainTruck||j.truck,j.trip||'',jtFull(j.type),jobArrive(j),j.depart,j.by||'',j.chargeStart,j.chargeEnd,j.ret,j.closed||'',workHoursText(j),j.overNote||'',j.note||'']));
+  day.jobs.forEach((j,i)=>jb.push([j.date||curDate,i+1,j.product,j.origin,j.dest,j.code||'',j.driver,j.mainTruck||j.truck,j.actualTruck||j.mainTruck||j.truck,j.trip||'',jtFull(jobType(j)),jobArrive(j),j.depart,j.by||'',j.chargeStart,j.chargeEnd,j.ret,j.closed||'',workHoursText(j),j.overNote||'',j.note||'']));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(jb),'จ่ายงาน');
   XLSX.writeFile(wb,'รายงานงานขนส่ง-'+curDate+'.xlsx');
 }
@@ -2076,9 +2132,18 @@ async function applyImport(){
   if(dup&&!confirm('มีตารางกะที่เริ่มวันที่ '+from+' อยู่แล้ว ("'+dup.name+'") ต้องการแทนที่ไหม?'))return;
   if(dup)rosterVersions=rosterVersions.filter(v=>v.from!==from);
   rosterVersions.push({id:'v'+Date.now(),from,name:nm,roster:R.roster,savedAt:new Date().toISOString(),by:adminName||''});
-  flag('saving');await saveRosters();flag('ok');
+  flag('saving');const okSave=await saveRosters();flag(okSave?'ok':'err');
   applyRosterForDate();pendingWb=null;closeModal();render();
-  alert('เพิ่มตารางกะ "'+nm+'" เริ่มมีผล '+from+' แล้ว\n\nวันที่ดูอยู่ตอนนี้ ('+curDate+') ใช้ชุด: '+activeVerName());
+  if(!okSave){
+    alert('⚠ อัปโหลดขึ้นระบบกลางไม่สำเร็จ'+(lastWriteErr?(' ('+lastWriteErr+')'):'')
+      +'\n\nตารางกะใหม่อยู่ในเครื่องนี้ชั่วคราว แต่จะถูกทับด้วยของเก่าเมื่อรีเฟรช'
+      +'\n\nตรวจ: กด ⚙ ตั้งค่าระบบกลาง แล้วกด 🔍 ทดสอบการเชื่อมต่อ');
+    return;
+  }
+  const late=(from>curDate);
+  alert('เพิ่มตารางกะ "'+nm+'" เริ่มมีผล '+from+' แล้ว'
+    +'\n\nวันที่ดูอยู่ตอนนี้ ('+curDate+') ใช้ชุด: '+activeVerName()
+    +(late?('\n\n⚠ วันเริ่มมีผลยังไม่ถึง จึงยังไม่เห็นการเปลี่ยนแปลงในวันนี้'):''));
 }
 /* ---- จัดการชุดตารางกะ ---- */
 function openVersionDialog(){
