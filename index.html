@@ -187,6 +187,9 @@
   a.tel{color:var(--n);text-decoration:none;font-variant-numeric:tabular-nums}
   a.tel:hover{text-decoration:underline}
   .wfoot{padding:10px 15px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+  .wdel{padding:0 2px;font-size:15px;line-height:1;opacity:.55}
+  .wdel:hover{opacity:1}
+  #alertBox .wdel{color:#fff}
   .wclose{margin-left:auto;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:9px;padding:7px 16px;font-family:inherit;font-size:13.5px;cursor:pointer;font-weight:500}
   #alertBox .wclose{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.45);color:#fff}
   .offbadge{font-size:11px;color:var(--off);background:var(--off-bg);border:1px solid #e6cdb4;border-radius:6px;padding:2px 7px;display:inline-block;margin-top:5px}
@@ -240,7 +243,6 @@
   <button class="hicon alert" id="alertBtn" title="พจส. ยังไม่รายงานตัว (Alert)" style="display:none">🔔<span class="hbadge" id="alertCount">0</span></button>
   <div class="datebox"><label>วันที่</label><input type="date" id="dateInput"></div>
   <button class="btn" id="refreshBtn" style="background:var(--nav2);color:#dfe7f1;border-color:var(--nav2)">⟳ ดึงข้อมูลล่าสุด</button>
-  <button class="btn" id="settingsBtn" style="background:var(--nav2);color:#dfe7f1;border-color:var(--nav2)">⚙ ตั้งค่าระบบกลาง</button>
   <div class="adminchip" id="adminChip"></div>
   <div class="saveflag" id="saveFlag">● พร้อม</div>
 </header>
@@ -431,7 +433,7 @@ const store={
 /* ---- ซิงก์ข้อมูลรายวันร่วมกันหลายเครื่อง ----
    ส่งข้อมูลไปให้ Apps Script "ผสาน" กับของที่อยู่บน Sheet
    จึง CC หลายคนคีย์พร้อมกันแล้วงานไม่หาย */
-let lastSyncTxt='',dirty=false;
+let lastSyncTxt='',dirty=false,editGen=0,saveBusy=false,lastTypeAt=0;
 function tk(){return API_TOKEN?('&tk='+encodeURIComponent(API_TOKEN)):'';}
 async function dayFetch(ds){
   if(!backendURL)return null;
@@ -561,18 +563,26 @@ function driverAt(t,pos){return (t.drivers||[]).find(d=>d.pos===String(pos));}
 let st=null;
 function flag(s){const e=document.getElementById('saveFlag');if(!e)return;if(s==='saving'){e.textContent='● กำลังบันทึก…';e.className='saveflag saving';}else if(s==='err'){e.textContent='● ต่อระบบกลางไม่ได้';e.className='saveflag saving';}else{e.textContent=backendURL?(lastSyncTxt?('● ซิงก์ '+lastSyncTxt):'● บันทึกแล้ว'):'● เก็บในเครื่อง';e.className='saveflag';}}
 function saveDay(){
-  flag('saving');dirty=true;clearTimeout(st);
+  flag('saving');dirty=true;editGen++;clearTimeout(st);
   st=setTimeout(async()=>{
-    const ds=curDate;
+    const ds=curDate, gen=editGen;
     mem['fleet:day:'+ds]=JSON.stringify(day);
     if(backendURL){
+      saveBusy=true;
       const merged=await dayMerge(ds,day);
+      saveBusy=false;
+      /* ถ้ามีการแก้ใหม่ระหว่างรอคำตอบ อย่าเอาผลเก่ามาทับ */
+      if(gen!==editGen){flag('saving');return;}
       if(merged&&ds===curDate){
-        try{const o=JSON.parse(merged);if(o&&typeof o==='object'){normDay(o);day=o;}}catch(e){}
+        try{const o=JSON.parse(merged);
+          if(o&&typeof o==='object'&&(o._rev||0)>=(day._rev||0)){normDay(o);day=o;}
+        }catch(e){}
         lastSyncTxt=nowHM();dirty=false;flag('ok');
       }else{flag('err');}
     }else{
-      await store.set('fleet:day:'+ds,JSON.stringify(day));dirty=false;flag('ok');
+      await store.set('fleet:day:'+ds,JSON.stringify(day));
+      if(gen===editGen)dirty=false;
+      flag('ok');
     }
   },250);
 }
@@ -1000,11 +1010,11 @@ function openModal(truck,pos){
   preselectRoute();fillOrigins();syncActual();syncDriverInfo();syncTrip();
 }
 function closeModal(){const m=document.getElementById('modal');m.style.display='none';m.innerHTML='';}
-function updateAdminChip(){const el=document.getElementById('adminChip');if(!el)return;el.innerHTML=adminName?`👤 ${esc(adminName)} <button class="linkish" id="changeAdmin">เปลี่ยน</button>`:`<button class="loginbtn" id="loginBtn">เข้าสู่ระบบ</button>`;}
+function updateAdminChip(){const el=document.getElementById('adminChip');if(!el)return;el.innerHTML=adminName?`👤 ${esc(adminName)} <button class="linkish" id="changeAdmin" title="เปลี่ยนชื่อผู้บันทึก / ตั้งค่า URL ระบบกลาง">⚙ ตั้งค่า</button>`:`<button class="loginbtn" id="loginBtn">เข้าสู่ระบบ</button>`;}
 function openLogin(){
   const m=document.getElementById('modal');
   m.innerHTML=`<div class="modal-card" style="max-width:480px">
-    <div class="modal-head"><h2>เข้าสู่ระบบ — ผู้บันทึก (CC)</h2>${adminName?'<button class="modal-x" id="closeModal">✕</button>':''}</div>
+    <div class="modal-head"><h2>ตั้งค่า — ผู้บันทึก (CC) และระบบกลาง</h2>${adminName?'<button class="modal-x" id="closeModal">✕</button>':''}</div>
     <div class="field"><label>ชื่อผู้บันทึก (CC)</label><input id="login_name" value="${esc(adminName)}" placeholder="เช่น CC สมชาย (กะเช้า)"></div>
     <div class="field" style="margin-top:12px"><label>URL ระบบกลาง (Google Apps Script) — ต้องใส่เพื่อแชร์ข้อมูลกับ CC เครื่องอื่น</label><input id="login_url" value="${esc(backendURL)}" placeholder="https://script.google.com/macros/s/.../exec"></div>
     <div class="hint" style="margin-top:10px;font-size:12.5px">
@@ -1628,8 +1638,9 @@ const ALARM_LEAD   = 30;      /* แจ้งเตือนล่วงหน�
 const ALERT_GRACE  = 10;      /* ถึงเวลาแล้วเกินกี่นาทีถือว่าไม่รายงานตัว */
 const ALERT_WINDOW = 180;     /* ไม่ย้อนแจ้งเตือน/ตีขาด ย้อนหลังเกินกี่นาที */
 const WIDGET_MS    = 60000;   /* วิดเจทเด้งค้างไว้ 1 นาที */
+const AUTO_CLOSE_SHIFT = true;  /* จบกะแล้วยังไม่มีใครเช็ก ให้ปิดยอดเป็น "ขาด" อัตโนมัติ (false = ให้ CC ใส่เองทั้งหมด) */
 
-let alarmList=[], alertList=[], alarmSeen={}, alertSeen={};
+let alarmList=[], alertList=[], alarmSeen={}, alertSeen={}, sweptSeen={};
 let alarmTimer=null, alertTimer=null, tickTimer=null;
 
 function nowMin(){const d=new Date();return d.getHours()*60+d.getMinutes();}
@@ -1650,12 +1661,13 @@ window.addEventListener('orientationchange',fitTabs);
 function nKey(kind,what){return 'fleet:'+kind+what+':'+curDate;}
 function loadNotify(){
   const rd=(k,dflt)=>{try{return JSON.parse(lsGet(k)||'null')||dflt;}catch(e){return dflt;}};
-  alarmSeen=rd(nKey('alarm','seen'),{}); alertSeen=rd(nKey('alert','seen'),{});
+  alarmSeen=rd(nKey('alarm','seen'),{}); alertSeen=rd(nKey('alert','seen'),{}); sweptSeen=rd(nKey('swept','seen'),{});
   alarmList=rd(nKey('alarm','list'),[]); alertList=rd(nKey('alert','list'),[]);
   updateBells();
 }
 function saveNotify(){
   lsSet(nKey('alarm','seen'),JSON.stringify(alarmSeen)); lsSet(nKey('alert','seen'),JSON.stringify(alertSeen));
+  lsSet(nKey('swept','seen'),JSON.stringify(sweptSeen));
   lsSet(nKey('alarm','list'),JSON.stringify(alarmList)); lsSet(nKey('alert','list'),JSON.stringify(alertList));
 }
 function driverItem(t,d){
@@ -1677,41 +1689,37 @@ function tickAlarms(){
       if(lead>0 && lead<=ALARM_LEAD && !alarmSeen[k]){
         alarmSeen[k]=1; alarmList.push(driverItem(t,d)); na++;
       }
+      /* เลยเวลาเข้ากะ -> เตือนอย่างเดียว ไม่เปลี่ยนสถานะให้ CC เป็นคนใส่เอง */
+      if(over>=ALERT_GRACE && over<=ALERT_WINDOW && !alertSeen[k]){
+        alertSeen[k]=1; alertList.push(driverItem(t,d)); nl++;
+      }
       /* จบกะแล้วยังไม่มีใครเช็ก -> ปิดยอดเป็น "ขาด" เงียบ ๆ ไม่เด้งวิดเจท
-         (เลยเวลาเลิกกะแล้ว การเตือนให้โทรตามไม่มีประโยชน์อีก)          */
+         (ใช้ flag คนละตัวกับ Alert เพื่อให้คนที่เคยถูกเตือนแล้วยังถูกปิดยอดตอนจบกะ) */
       const dur=shiftDuration(shiftOf(d,curDate));
-      if(dur!==null && now>=sm && (now-sm)>=dur && !alertSeen[k]){
-        alertSeen[k]=1; swept++;
+      if(AUTO_CLOSE_SHIFT && dur!==null && now>=sm && (now-sm)>=dur && !sweptSeen[k]){
+        sweptSeen[k]=1; swept++;
         day.attend[t.truckNo]=day.attend[t.truckNo]||{};
         day.attend[t.truckNo][d.pos]='absent';
         day.attendBy[t.truckNo]=day.attendBy[t.truckNo]||{};
         day.attendBy[t.truckNo][d.pos]='ระบบ (จบกะแล้วไม่มีการเช็ก)';
-        marked=true;
-        continue;
-      }
-      if(over>=ALERT_GRACE && over<=ALERT_WINDOW && !alertSeen[k]){
-        alertSeen[k]=1; alertList.push(driverItem(t,d)); nl++;
-        day.attend[t.truckNo]=day.attend[t.truckNo]||{};
-        day.attend[t.truckNo][d.pos]='absent';
-        day.attendBy[t.truckNo]=day.attendBy[t.truckNo]||{};
-        day.attendBy[t.truckNo][d.pos]='ระบบแจ้งเตือน (อัตโนมัติ)';
         marked=true;
       }
     }
   }
   if(marked){saveDay(); if(tab==='roster')renderRoster();}
   if(swept)console.warn('ปิดยอดอัตโนมัติ (จบกะแล้วไม่มีการเช็ก): '+swept+' คน');
-  if(na||nl)saveNotify();
+  if(na||nl||swept)saveNotify();
   if(na)showAlarm();
   if(nl)showAlert();
   updateBells();
 }
-function widgetRows(list){
+function widgetRows(list,kind){
   const show=list.slice(-8).reverse();
   let h=show.map(x=>`<div class="wrow">
     <div class="nm">${esc(x.name)}<span class="wsub">รหัส ${esc(x.code||'-')} · รถ ${esc(x.truck)} กะ${esc(x.pos)}${x.route?(' · '+esc(x.route)):''}</span></div>
     <div><a class="tel" href="tel:${esc((x.phone||'').replace(/[^0-9+]/g,''))}">${esc(x.phone||'-')}</a></div>
-    <div class="tm">${esc(x.start)}</div></div>`).join('');
+    <div class="tm">${esc(x.start)}</div>
+    <button class="del wdel" data-wdel="${esc(x.key)}" title="เอาชื่อนี้ออกจากรายการ">✕</button></div>`).join('');
   if(list.length>show.length)h+=`<div class="wrow"><span class="wsub">และอีก ${list.length-show.length} คน (ดูทั้งหมดในหน้า 1)</span></div>`;
   return h;
 }
@@ -1719,7 +1727,7 @@ function showAlarm(){
   if(!alarmList.length)return;
   const b=document.getElementById('alarmBox');
   b.innerHTML=`<div class="wtop"><span style="font-size:21px">⏰</span><span class="ttl">ติดตาม พจส.</span><span class="cno">${alarmList.length} คน</span></div>
-    <div class="wlist">${widgetRows(alarmList)}</div>
+    <div class="wlist">${widgetRows(alarmList,'alarm')}</div>
     <div class="wfoot"><span>เตือนล่วงหน้า ${ALARM_LEAD} นาที ก่อนเวลาเข้ากะ · กดเบอร์เพื่อโทร</span><button class="wclose" data-wclose="alarm">ปิด</button></div>`;
   b.style.display='block';
   clearTimeout(alarmTimer); alarmTimer=setTimeout(()=>closeWidget('alarm'),WIDGET_MS);
@@ -1728,10 +1736,19 @@ function showAlert(){
   if(!alertList.length)return;
   const b=document.getElementById('alertBox');
   b.innerHTML=`<div class="wtop"><span style="font-size:20px">🔔</span><span class="ttl">พจส. ยังไม่รายงานตัว</span><span style="font-size:12px">${alertList.length} คน</span></div>
-    <div class="wlist">${widgetRows(alertList)}</div>
-    <div class="wfoot"><span>เกินเวลาเข้ากะ ${ALERT_GRACE} นาที · ระบบตั้งสถานะ “ขาด” ให้แล้ว แก้เป็น “สาย” ได้ที่หน้า 1</span><button class="wclose" data-wclose="alert">ปิด</button></div>`;
+    <div class="wlist">${widgetRows(alertList,'alert')}</div>
+    <div class="wfoot"><span>เกินเวลาเข้ากะ ${ALERT_GRACE} นาที · <b>ยังไม่เปลี่ยนสถานะให้</b> กรุณาเช็กแล้วบันทึก มา / สาย / ขาด / ลา ที่หน้า 1</span><button class="wclose" data-wclose="alert">ปิด</button></div>`;
   b.style.display='block';
   clearTimeout(alertTimer); alertTimer=setTimeout(()=>closeWidget('alert'),WIDGET_MS);
+}
+function removeNotify(kind,key){
+  if(kind==='alarm')alarmList=alarmList.filter(x=>x.key!==key);
+  else               alertList=alertList.filter(x=>x.key!==key);
+  saveNotify();
+  const list=(kind==='alarm')?alarmList:alertList;
+  if(!list.length)closeWidget(kind);
+  else if(kind==='alarm')showAlarm(); else showAlert();
+  updateBells();
 }
 function closeWidget(kind){
   const b=document.getElementById(kind==='alarm'?'alarmBox':'alertBox');
@@ -1757,8 +1774,14 @@ function startAlarms(){
 }
 document.getElementById('alarmBtn').addEventListener('click',()=>showAlarm());
 document.getElementById('alertBtn').addEventListener('click',()=>showAlert());
-document.getElementById('alarmBox').addEventListener('click',e=>{if(e.target.closest('[data-wclose]'))closeWidget('alarm');});
-document.getElementById('alertBox').addEventListener('click',e=>{if(e.target.closest('[data-wclose]'))closeWidget('alert');});
+document.getElementById('alarmBox').addEventListener('click',e=>{
+  if(e.target.closest('[data-wclose]')){closeWidget('alarm');return;}
+  const x=e.target.closest('[data-wdel]');if(x)removeNotify('alarm',x.dataset.wdel);
+});
+document.getElementById('alertBox').addEventListener('click',e=>{
+  if(e.target.closest('[data-wclose]')){closeWidget('alert');return;}
+  const x=e.target.closest('[data-wdel]');if(x)removeNotify('alert',x.dataset.wdel);
+});
 
 /* ---------- router ---------- */
 function render(){
@@ -1949,7 +1972,6 @@ document.getElementById('modal').addEventListener('click',e=>{
 });
 document.getElementById('adminChip').addEventListener('click',e=>{if(e.target.closest('#changeAdmin')||e.target.closest('#loginBtn'))openLogin();});
 document.getElementById('refreshBtn').addEventListener('click',async()=>{flag('saving');await loadConfig();await loadRoutes();await loadDay();flag('ok');render();if(tab==='roster')scrollToCurrentHour();});
-document.getElementById('settingsBtn').addEventListener('click',()=>openLogin());
 document.getElementById('modal').addEventListener('input',e=>{
   if(e.target.id==='j_truck'){fillShift();preselectRoute();fillOrigins();syncActual();syncDriverInfo();syncTrip();return;}
   if(e.target.id==='j_shift'){syncDriverInfo();return;}
@@ -2174,20 +2196,33 @@ function openVersionDialog(){
 
 /* ---- auto refresh: ดึงงานที่ CC คนอื่นคีย์เข้ามาแสดงเอง ---- */
 let pollTimer=null, pollN=0;
-function busyTyping(){const a=document.activeElement;if(!a)return false;const t=(a.tagName||'').toLowerCase();return t==='input'||t==='select'||t==='textarea';}
+/* ถือว่า "กำลังพิมพ์" เฉพาะตอนที่เพิ่งพิมพ์จริงภายใน 8 วินาที
+   (เดิมแค่เคอร์เซอร์ค้างในช่องก็หยุดซิงก์ถาวร ทำให้ข้อมูลเครื่องอื่นไม่เข้ามา
+    และของเก่าในเครื่องนี้ถูกส่งไปทับของใหม่) */
+function busyTyping(){
+  const a=document.activeElement;
+  if(!a)return false;
+  const t=(a.tagName||'').toLowerCase();
+  if(t!=='input'&&t!=='select'&&t!=='textarea')return false;
+  return (Date.now()-lastTypeAt)<8000;
+}
+document.addEventListener('input',()=>{lastTypeAt=Date.now();},true);
+document.addEventListener('keydown',()=>{lastTypeAt=Date.now();},true);
 async function pollDay(){
   if(!backendURL||day==null)return;
-  if(document.hidden||editMode||dirty||busyTyping())return;
+  if(document.hidden||editMode||dirty||saveBusy||busyTyping())return;
   const m=document.getElementById('modal');
   if(m&&m.style.display==='flex')return;
-  const ds=curDate,raw=await dayFetch(ds);
+  const ds=curDate, gen=editGen, raw=await dayFetch(ds);
   if(raw===null){flag('err');return;}
   lastSyncTxt=nowHM();
-  if(ds!==curDate||dirty)return;
+  /* ทิ้งคำตอบที่ล้าสมัย: เปลี่ยนวันที่ / มีการแก้ระหว่างรอ / กำลังบันทึกอยู่ */
+  if(ds!==curDate||dirty||saveBusy||gen!==editGen)return;
   if(raw){
     try{
       const o=JSON.parse(raw);
-      if(o&&(o._rev||0)!==(day._rev||0)){normDay(o);day=o;render();}
+      /* รับเฉพาะข้อมูลที่ "ใหม่กว่า" ของในเครื่องเท่านั้น กันของเก่าทับของใหม่ */
+      if(o&&(o._rev||0)>(day._rev||0)){normDay(o);day=o;render();}
     }catch(e){}
   }
   flag('ok');
