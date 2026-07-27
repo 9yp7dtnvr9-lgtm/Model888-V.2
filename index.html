@@ -1395,7 +1395,25 @@ function tableAttend(){
 }
 
 /* ===== ตารางที่ 2: งานหลักรายสินค้า / งานรอง เทียบแผนที่ CC กรอก ===== */
+let planMigDate='';
+/* ย้ายแผนงานเดิมที่เก็บด้วยชื่อสินค้าอย่างเดียว -> คีย์ "กลุ่ม|สินค้า" (ทำครั้งเดียวต่อวัน) */
+function migratePlanKeys(){
+  if(!day||!isPlain(day.plan))return false;
+  let changed=false;
+  Object.keys(day.plan).forEach(k=>{
+    if(k.indexOf('|')>=0)return;                       /* คีย์ใหม่แล้ว */
+    const val=day.plan[k];
+    if(val===''||val===undefined||val===null){return;}
+    const g=(k==='__vt')?'vt':(()=>{const r=routes.find(x=>x.product===k);return r?(r.type||'main'):'main';})();
+    const nk=g+'|'+(k==='__vt'?'':k);
+    if(k!=='__vt'&&(day.plan[nk]===undefined||day.plan[nk]==='')){day.plan[nk]=val;}
+    day.plan[k]='';                                    /* เคลียร์คีย์เก่า (ใช้ '' เพื่อให้ส่งถึงเครื่องอื่นด้วย) */
+    changed=true;
+  });
+  return changed;
+}
 function tablePlanVsActual(){
+  if(planMigDate!==curDate){planMigDate=curDate;if(migratePlanKeys())saveDay();}
   /* นับงานจริงแยกตามกลุ่มและสินค้า */
   const act={}; JOBTYPES.forEach(x=>act[x.k]={});
   for(const j of day.jobs){
@@ -1403,7 +1421,8 @@ function tablePlanVsActual(){
     const p=j.product||'(ไม่ระบุสินค้า)';
     act[g][p]=(act[g][p]||0)+1;
   }
-  const pv=k=>{const v=day.plan[k];return (v===undefined||v===null||v==='')?'':v;};
+  const pk=(g,p)=>g+'|'+p;                       /* คีย์ใหม่: แยกตามกลุ่ม */
+  const pv=(g,p)=>{const v=day.plan[pk(g,p)];return (v===undefined||v===null||v==='')?'':v;};
   const GRP=JOBTYPES.map(x=>[x.k,x.f,x.k]);
   let gPlan=0,gAct=0,html='';
 
@@ -1412,10 +1431,10 @@ function tablePlanVsActual(){
     const prods=routeProducts(g).slice();
     Object.keys(act[g]).forEach(p=>{if(prods.indexOf(p)<0)prods.push(p);});
     let sp=0,sa=0,rows='';
-    const sortedP=sortBy('sum2',prods.map(p=>({p,plan:Number(pv(p))||0,a:act[g][p]||0})),
+    const sortedP=sortBy('sum2',prods.map(p=>({p,plan:Number(pv(g,p))||0,a:act[g][p]||0})),
       {product:x=>x.p,plan:x=>x.plan,actual:x=>x.a,diff:x=>x.a-x.plan,pct:x=>x.plan?x.a/x.plan:0}).map(x=>x.p);
     sortedP.forEach(p=>{
-      const plan=Number(pv(p))||0, a=act[g][p]||0;
+      const plan=Number(pv(g,p))||0, a=act[g][p]||0;
       sp+=plan; sa+=a;
       if(!sumProdOpen[g])return;
       const diff=a-plan, pct=plan?Math.round(a/plan*100):null;
@@ -1423,7 +1442,7 @@ function tablePlanVsActual(){
       rows+=`<tr>
         <td style="padding-left:22px">${esc(p)}${inReg?'':' <span class="tag" title="ยังไม่มีในทะเบียนหน้า 5">นอกทะเบียน</span>'}
           ${inReg?`<button class="del" data-delprod="${esc(p)}" data-grp2="${g}" title="ลบรายการนี้ออกจากกลุ่ม" style="float:right">✕</button>`:''}</td>
-        <td style="text-align:center"><input class="planin mono" inputmode="numeric" data-planprod="${esc(p)}" value="${esc(pv(p))}" placeholder="-"></td>
+        <td style="text-align:center"><input class="planin mono" inputmode="numeric" data-planprod="${esc(pk(g,p))}" value="${esc(pv(g,p))}" placeholder="-"></td>
         <td class="mono" style="text-align:center;font-weight:600">${a}</td>
         <td class="mono" style="text-align:center;color:${diff<0?'var(--absent)':'var(--present)'}">${(plan||a)?((diff>0?'+':'')+diff):'-'}</td>
         <td class="mono" style="text-align:center">${pct!==null?(pct+'%'):'<span class="cno">-</span>'}</td></tr>`;
@@ -1449,7 +1468,7 @@ function tablePlanVsActual(){
   const gd=gAct-gPlan;
   return `<div class="card">
     <div class="cardhead"><h2>2 · ปริมาณงานเทียบแผน (แยกตามประเภทงาน 4 กลุ่ม)</h2></div>
-    <div class="hint">รายชื่อสินค้าในแต่ละกลุ่มมาจาก <b>ทะเบียนเส้นทางหน้า 5</b> · เพิ่มรายการเข้ากลุ่มได้จากช่องท้ายกลุ่ม · ลบรายการด้วยปุ่ม ✕ ท้ายชื่อสินค้า · กรอกแผนในช่องสีเหลือง ระบบบันทึกและแชร์ให้ CC ทุกเครื่องอัตโนมัติ</div>
+    <div class="hint">สรุปแยกเป็น 4 กลุ่มประเภทงานก่อน แล้วจึงแยกรายสินค้าในแต่ละกลุ่ม · <b>สินค้าชื่อเดียวกันที่อยู่คนละกลุ่ม จะนับแยกกัน ไม่ปนกัน</b> · รายชื่อมาจาก <b>ทะเบียนเส้นทางหน้า 5</b> · เพิ่มรายการเข้ากลุ่มได้จากช่องท้ายกลุ่ม · ลบรายการด้วยปุ่ม ✕ ท้ายชื่อสินค้า · กรอกแผนในช่องสีเหลือง ระบบบันทึกและแชร์ให้ CC ทุกเครื่องอัตโนมัติ</div>
     <div class="tablewrap sbox"><table style="min-width:660px"><thead><tr>
       ${thS('sum2','product','สินค้า / เส้นทาง')}${thS('sum2','plan','แผน (เที่ยว)','center')}${thS('sum2','actual','วิ่งจริง','center')}${thS('sum2','diff','ผลต่าง','center')}${thS('sum2','pct','% ของแผน','center')}
     </tr></thead><tbody>${html}
@@ -1808,7 +1827,7 @@ document.getElementById('view').addEventListener('click',e=>{
       +(used?('\n\nวันนี้มีงานที่ใช้สินค้านี้อยู่ '+used+' เที่ยว งานเดิมจะไม่ถูกลบ แต่จะขึ้นป้าย “นอกทะเบียน”'):'');
     if(!confirm(msg))return;
     routes=routes.filter(r=>!(r.product===p&&(r.type||'main')===g));
-    if(day.plan&&day.plan[p]!==undefined){day.plan[p]='';saveDay();}
+    if(day.plan&&day.plan[g+'|'+p]!==undefined){day.plan[g+'|'+p]='';saveDay();}
     scheduleRoutesSave();renderSummary();
     return;
   }
