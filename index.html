@@ -490,7 +490,7 @@ function validConfig(c){
 function isPlain(o){return o&&typeof o==='object'&&!Array.isArray(o);}
 function normDay(d){
   if(!isPlain(d))d={};
-  ['attend','running','arrive','attendBy','plan'].forEach(k=>{if(!isPlain(d[k]))d[k]={};});
+  ['attend','running','arrive','attendBy','plan','dnote'].forEach(k=>{if(!isPlain(d[k]))d[k]={};});
   if(!Array.isArray(d.jobs))d.jobs=[];
   if(!Array.isArray(d.deleted))d.deleted=[];
   d.jobs=d.jobs.filter(j=>j&&typeof j==='object'&&j.id!==undefined);
@@ -590,7 +590,7 @@ function sortBy(tbl,arr,getters){
 }
 function sortActive(tbl){const st=tsort[tbl];return !!(st&&st.key);}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
-function blankDay(){return {attend:{},running:{},jobs:[],seq:0,arrive:{},attendBy:{},plan:{},deleted:[],_rev:0};}
+function blankDay(){return {attend:{},running:{},jobs:[],seq:0,arrive:{},attendBy:{},plan:{},dnote:{},deleted:[],_rev:0};}
 function truckByNo(no){return config.find(t=>t.truckNo===no);}
 function driverAt(t,pos){return (t.drivers||[]).find(d=>d.pos===String(pos));}
 
@@ -860,7 +860,8 @@ function rollCallTable(){
       pos:r=>+r.d.pos||0,
       name:r=>r.d.name||'',
       status:r=>ST[attOf(r.t.truckNo)[r.d.pos]||'']||'9',
-      arrive:r=>((day.arrive[r.t.truckNo]||{})[r.d.pos]||'~')
+      arrive:r=>((day.arrive[r.t.truckNo]||{})[r.d.pos]||'~'),
+      dnote:r=>((day.dnote[r.t.truckNo]||{})[r.d.pos]||'~')
     });
     for(const r of sorted)body+=rollRow(r);
   }else{
@@ -868,13 +869,13 @@ function rollCallTable(){
     const hours=Object.keys(groups).map(Number).sort((a,b)=>a-b);
     for(const h of hours){
       const label=h<0?'ไม่ระบุเวลา':(String(h).padStart(2,'0')+':00 น.');
-      body+=`<tr class="grouphdr"><td colspan="7">🕐 ${label} — ${groups[h].length} คนรายงานตัว</td></tr>`;
+      body+=`<tr class="grouphdr"><td colspan="8">🕐 ${label} — ${groups[h].length} คนรายงานตัว</td></tr>`;
       for(const r of groups[h])body+=rollRow(r);
     }
   }
   return `<div class="tablewrap scroll"><table>
-    <thead><tr>${thS('roster','start','เข้ากะ')}${thS('roster','truck','เบอร์รถ / ต้นทาง')}${thS('roster','pos','กะ')}${thS('roster','name','พจส.')}${thS('roster','status','สถานะ')}${thS('roster','arrive','เวลามาจริง')}<th>จ่ายแผน</th></tr></thead>
-    <tbody>${body||'<tr><td colspan="7" class="empty-note">ไม่พบรายการ</td></tr>'}</tbody></table></div>`;
+    <thead><tr>${thS('roster','start','เข้ากะ')}${thS('roster','truck','เบอร์รถ / ต้นทาง')}${thS('roster','pos','กะ')}${thS('roster','name','พจส.')}${thS('roster','status','สถานะ')}${thS('roster','arrive','เวลามาจริง')}<th>จ่ายแผน</th>${thS('roster','dnote','หมายเหตุ')}</tr></thead>
+    <tbody>${body||'<tr><td colspan="8" class="empty-note">ไม่พบรายการ</td></tr>'}</tbody></table></div>`;
 }
 function rollRow(r){
   const t=r.t,d=r.d,off=isOff(t,d,curDate),cur=attOf(t.truckNo)[d.pos]||'',sc=shiftCls(d.pos);
@@ -895,11 +896,15 @@ function rollRow(r){
           : ' · <span title="วันนี้คือวัน'+esc(dayName(curDate))+'" style="color:'+(off?'var(--off)':'var(--muted)')+'">หยุด '+esc(dayOffLabel(d))+'</span>')}</div></td>
     <td>${statusCell}</td>
     <td>${hmField(av,'data-arrive="'+esc(t.truckNo)+'" data-pos="'+d.pos+'"')}</td>
-    <td>${(cur==='absent'||cur==='leave')
-      ? '<span class="cno">— จ่ายแผนไม่ได้ ('+(cur==='absent'?'ขาด':'ลา')+')</span>'
-      : (nDone
-          ? '<button class="planlink done" disabled title="จ่ายไปแล้ว '+nDone+' เที่ยว — ถ้าต้องจ่ายเที่ยวถัดไป ให้ไปจ่ายที่หน้า 2 รายละเอียดงาน">จ่ายแล้ว'+(nDone>1?(' '+nDone+' เที่ยว'):'')+'</button>'
-          : '<button class="planlink" data-plan="'+esc(t.truckNo)+'" data-pos="'+d.pos+'">จ่ายแผน →</button>')}</td>
+    <td>${(()=>{
+      /* จ่ายไปแล้ว -> ล็อกปุ่มไว้ให้เห็นสถานะ (แม้เป็นวันหยุด) */
+      if(nDone)return '<button class="planlink done" disabled title="จ่ายไปแล้ว '+nDone+' เที่ยว — ถ้าต้องจ่ายเที่ยวถัดไป ให้ไปจ่ายที่หน้า 2 รายละเอียดงาน">จ่ายแล้ว'+(nDone>1?(' '+nDone+' เที่ยว'):'')+'</button>';
+      /* ขาด / ลา / วันหยุด (ที่ยังไม่กดมาทำ OT) -> จ่ายงานไม่ได้ */
+      const blocked = (cur==='absent') ? 'ขาด' : (cur==='leave') ? 'ลา' : ((off&&cur!=='ot') ? 'วันหยุด' : '');
+      if(blocked)return '<span class="cno">— จ่ายแผนไม่ได้ ('+blocked+')</span>';
+      return '<button class="planlink" data-plan="'+esc(t.truckNo)+'" data-pos="'+d.pos+'">จ่ายแผน →</button>';
+    })()}</td>
+    <td><input class="noteinp" style="width:150px" data-dnote="${esc(t.truckNo)}" data-pos="${d.pos}" value="${esc((day.dnote[t.truckNo]||{})[d.pos]||'')}" placeholder="หมายเหตุ…"></td>
   </tr>`;
 }
 
@@ -928,7 +933,7 @@ function editorTable(){
       </tr>`;
     });
   });
-  return `<div class="hint">แก้ชื่อ/เบอร์โทร/เวลากะ/วันหยุด/เบอร์รถ ได้เลย · ช่อง <b>เปลี่ยนเป็น + ตั้งแต่วันที่</b> ใช้ตอนสลับเวลากะรายคัน (เว้นว่าง = ไม่เปลี่ยน) · บันทึกอัตโนมัติ · เพิ่มคนขับให้รถที่ยังว่าง (สำรอง/VT/12:12) ได้ · ค่าที่แก้จะถูกทับเมื่ออัปโหลดไฟล์กะใหม่</div>
+  return `
     <div style="margin-bottom:10px"><button class="btn primary" id="addTruck">＋ เพิ่มรถใหม่</button></div>
     <div class="tablewrap scroll"><table><thead><tr><th>กะ</th><th>ชื่อ พจส.</th><th>เบอร์โทร</th><th>เวลากะ</th><th>เปลี่ยนเป็น</th><th>ตั้งแต่วันที่</th><th>วันหยุด</th><th>ลบ</th></tr></thead>
     <tbody>${body}</tbody></table></div>`;
@@ -1356,7 +1361,6 @@ function renderBoard(){
       ${box('back','กำลังเดินทางกลับ',cnt.back,'chd')}
       ${box('closed','ปิดงานแล้ว',cnt.closed,'dn')}
     </section>
-    <div class="hint">เวลาถึงต้นทางเป็น <b>ค่าคาดการณ์</b> ไว้เทียบเฉย ๆ (สายยาว +3 ชม. · สายสั้น +1 ชม.) <b>ไม่มีผลกับสถานะ</b> · สถานะเปลี่ยนตามช่องเวลาที่กรอกจริงเท่านั้น · <b>เวลาชาร์จ / เวลากลับ / เวลาปิดงาน</b> ให้ CC กดปุ่ม “จับเวลา” หรือแก้เวลาเอง · รวมเวลาทำงาน = เวลาออก → เวลาปิดงาน</div>
     <div class="toolbar"><span class="cno">กดกล่องด้านบนเพื่อกรองเฉพาะสถานะนั้น (กดซ้ำเพื่อดูทั้งหมด) · แก้เวลาออกได้ที่หน้า 2</span>
       ${boardFilter!=='all'?'<button class="btn" id="clearBf">✕ ล้างตัวกรอง</button>':''}</div>
     <div class="tablewrap sbox10"><table style="min-width:1620px">
@@ -1399,9 +1403,6 @@ function renderPlan(){
       ${JOBTYPES.map(x=>`<div class="stat"><div class="lab">${esc(x.f)}</div><div class="val mono">${cnt(x.k)}</div></div>`).join('')}
       <div class="stat"><div class="lab">ต้นทาง / ปลายทาง</div><div class="val mono">${uniqField('origin').length} / ${uniqField('dest').length}</div></div>
     </section>
-    <div class="hint">หน้านี้คือ <b>ทะเบียนกลางของแผนงานเส้นทาง</b> — ฟอร์ม “จ่ายแผน” ในหน้า 1 และ 2 จะดึงรายชื่อสินค้า/ต้นทาง/ปลายทาง/ระยะทาง จากที่นี่ทั้งหมด
-      · แก้ในช่องได้เลย ระบบบันทึกให้อัตโนมัติและแชร์ให้ CC ทุกเครื่อง
-      · ใส่ระยะทางแล้วระบบจะปรับสายยาว/สายสั้นให้เอง โดยคงกลุ่ม BU เดิมไว้ (แก้ทับได้)</div>
     <div class="toolbar">
       <input type="search" id="routeSearch" placeholder="ค้นหา สินค้า / ต้นทาง / ปลายทาง…" value="${esc(routeSearch)}">
       <button class="btn primary" id="addRoute">＋ เพิ่มเส้นทางใหม่</button>
@@ -1488,7 +1489,6 @@ function tableAttend(){
     <td class="mono" style="text-align:center;font-weight:600;color:${tdif<0?'#ffb3aa':'#7fd6a8'}">${(tdif>0?'+':'')+tdif}</td>
   </tr>`;
   return `<div class="card"><h2>1 · พจส. มาทำงานเทียบแผน รายชั่วโมง</h2>
-    <div class="hint">แผนมาจากเวลาเข้ากะในตารางกะ (ไม่นับวันหยุด) · มาจริงมาจากการเช็กในหน้า 1 · แถวเหลืองคือแผนล่วงหน้า 1 ชม. ยังไม่ถึงเวลา · <b>ตารางแสดง 5 บรรทัด เลื่อนดูชั่วโมงอื่นได้</b> · แถวบนสุดคือคนที่ยังไม่ได้ใส่เวลากะ (ถ้ามี) · <b>แถวล่างสุด “รวมทั้งวัน” นับครบทุกกะรวมที่ยังไม่ถึงเวลา</b> จึงตรงกับการ์ดหน้า 1</div>
     <div class="tablewrap sbox5" id="t1box"><table style="min-width:820px"><thead><tr>
       ${thS('sum1','hour','เวลาเข้ากะ')}${thS('sum1','plan','แผน (คน)','center')}${thS('sum1','actual','มาจริง','center')}
       ${thS('sum1','late','สาย','center')}${thS('sum1','absent','ขาด','center')}${thS('sum1','leave','ลา','center')}${thS('sum1','unchecked','ยังไม่เช็ก','center')}
@@ -1570,7 +1570,6 @@ function tablePlanVsActual(){
   const gd=gAct-gPlan;
   return `<div class="card">
     <div class="cardhead"><h2>2 · ปริมาณงานเทียบแผน (แยกตามประเภทงาน 4 กลุ่ม)</h2></div>
-    <div class="hint">สรุปแยกเป็น 4 กลุ่มประเภทงานก่อน แล้วจึงแยกรายสินค้าในแต่ละกลุ่ม · <b>สินค้าชื่อเดียวกันที่อยู่คนละกลุ่ม จะนับแยกกัน ไม่ปนกัน</b> · รายชื่อมาจาก <b>ทะเบียนเส้นทางหน้า 5</b> · เพิ่มรายการเข้ากลุ่มได้จากช่องท้ายกลุ่ม · ลบรายการด้วยปุ่ม ✕ ท้ายชื่อสินค้า · กรอกแผนในช่องสีเหลือง ระบบบันทึกและแชร์ให้ CC ทุกเครื่องอัตโนมัติ</div>
     <div class="tablewrap sbox"><table style="min-width:660px"><thead><tr>
       ${thS('sum2','product','สินค้า / เส้นทาง')}${thS('sum2','plan','แผน (เที่ยว)','center')}${thS('sum2','actual','วิ่งจริง','center')}${thS('sum2','diff','ผลต่าง','center')}${thS('sum2','pct','% ของแผน','center')}
     </tr></thead><tbody>${html}
@@ -1601,7 +1600,6 @@ function tableWorkTime(){
       + over.map(j=>esc((j.actualTruck||j.mainTruck||j.truck)+' '+(j.driver||'')+' ('+workBreakdown(j).total+' ชม.)')).join(' · ') + '</div>'
     : '';
   return `<div class="card"><h2>3 · เวลาการทำงานต่อเที่ยว (เกณฑ์ 8 ชม./กะ)</h2>
-    <div class="hint">นับจากเที่ยวที่ปิดงานแล้วเท่านั้น · เวลาต่อเที่ยว = เวลาออก → เวลาปิดงาน (จากหน้า 3)</div>
     <div class="tablewrap sbox"><table style="min-width:560px"><thead><tr>
       <th>เกณฑ์</th><th style="text-align:center">จำนวนเที่ยว</th><th style="text-align:center">สัดส่วน</th><th style="width:180px">กราฟ</th>
     </tr></thead><tbody>
@@ -1698,7 +1696,6 @@ function tableRounds(){
   const chip=(lab,val,cls)=>`<span class="rchip ${cls||''}">${lab} <b>${val}</b> คัน</span>`;
   return `<div class="card">
     <div class="cardhead"><h2>4 · จำนวนรอบต่อคัน (1 คัน = 3 กะ = เป้า ${TARGET_ROUNDS} รอบ/วัน)</h2></div>
-    <div class="hint">นับตามเบอร์รถหลักที่รับงาน (ถ้าสับไปวิ่งรถสำรอง รอบยังนับให้คันที่รับงาน) · กดหัวตารางเพื่อเรียงข้อมูล</div>
     <div class="roundsum">
       ${chip('ครบ '+TARGET_ROUNDS+' รอบขึ้นไป',cHit,'ok')}
       ${chip('น้อยกว่า '+TARGET_ROUNDS+' รอบ',cLess,'warn')}
@@ -2051,6 +2048,11 @@ document.getElementById('view').addEventListener('input',e=>{
     scheduleRoutesSave();return;
   }
   if(e.target.id==='planSpeed'){planSpeed=parseInt(e.target.value)||65;return;}
+  if(e.target.dataset&&e.target.dataset.dnote!==undefined){
+    const no=e.target.dataset.dnote,p=e.target.dataset.pos;
+    day.dnote[no]=day.dnote[no]||{};day.dnote[no][p]=e.target.value;
+    saveDay();return;
+  }
   if(e.target.dataset&&e.target.dataset.actual!==undefined){const j=day.jobs.find(x=>String(x.id)===e.target.dataset.actual);if(j){j.actualTruck=e.target.value;saveDay();}return;}
   if(e.target.dataset&&e.target.dataset.over!==undefined){
     const j=day.jobs.find(x=>String(x.id)===e.target.dataset.over);if(j){j.overNote=e.target.value;saveDay();}return;}
@@ -2170,9 +2172,9 @@ document.getElementById('view').addEventListener('change',e=>{
 /* ---------- Excel export ---------- */
 function exportExcel(){
   const wb=XLSX.utils.book_new();
-  const att=[['เบอร์รถ','ต้นทาง','กะ','คนขับ','สถานะ','เวลามาจริง','ผู้บันทึก','วันหยุด','เวลากะที่ใช้','เปลี่ยนเป็น']];
+  const att=[['เบอร์รถ','ต้นทาง','กะ','คนขับ','สถานะ','เวลามาจริง','ผู้บันทึก','วันหยุด','เวลากะที่ใช้','เปลี่ยนเป็น','หมายเหตุ']];
   const ST={present:'มา',late:'สาย',absent:'ขาด',leave:'ลา',ot:'มา OT (วันหยุด)','':''};
-  for(const t of config)for(const d of (t.drivers||[])){const off=isOff(t,d,curDate);const cur=attOf(t.truckNo)[d.pos]||'';const status=cur==='ot'?'มา OT (วันหยุด)':(off?'วันหยุด':ST[cur]);const av=(day.arrive[t.truckNo]||{})[d.pos]||'';const by=(day.attendBy[t.truckNo]||{})[d.pos]||'';att.push([t.truckNo,t.routeGroup,d.pos,d.name,status,av,by,dayOffLabel(d)||d.dayOff,shiftOf(d,curDate),d.shift2?(d.shift2+' ตั้งแต่ '+(d.shiftFrom||'-')):'']);}
+  for(const t of config)for(const d of (t.drivers||[])){const off=isOff(t,d,curDate);const cur=attOf(t.truckNo)[d.pos]||'';const status=cur==='ot'?'มา OT (วันหยุด)':(off?'วันหยุด':ST[cur]);const av=(day.arrive[t.truckNo]||{})[d.pos]||'';const by=(day.attendBy[t.truckNo]||{})[d.pos]||'';att.push([t.truckNo,t.routeGroup,d.pos,d.name,status,av,by,dayOffLabel(d)||d.dayOff,shiftOf(d,curDate),d.shift2?(d.shift2+' ตั้งแต่ '+(d.shiftFrom||'-')):'',(day.dnote[t.truckNo]||{})[d.pos]||'']);}
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(att),'เช็กคนขับ');
   const jb=[['วันที่','ลำดับ','ชื่อสินค้า','ต้นทาง','ปลายทาง','รหัส พจส.','ชื่อ พจส.','เบอร์รถหลัก','เบอร์รถที่วิ่งจริง','เที่ยว','ประเภทงาน','เวลามาจริง','เวลาออก','ผู้จ่ายงาน','เวลาชาร์จ','ชาร์จเสร็จ','เวลากลับ','เวลาปิดงาน','รวมเวลาทำงาน (ชม.)','สาเหตุเกิน 8 ชม.','หมายเหตุ']];
   day.jobs.forEach((j,i)=>jb.push([j.date||curDate,i+1,j.product,j.origin,j.dest,j.code||'',j.driver,j.mainTruck||j.truck,j.actualTruck||j.mainTruck||j.truck,j.trip||'',jtFull(jobType(j)),jobArrive(j),j.depart,j.by||'',j.chargeStart,j.chargeEnd,j.ret,j.closed||'',workHoursText(j),j.overNote||'',j.note||'']));
