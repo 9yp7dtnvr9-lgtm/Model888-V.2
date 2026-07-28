@@ -102,6 +102,9 @@
   .planlink.done{border-color:var(--line);background:#f1f4f8;color:var(--muted);font-weight:400;cursor:default}
   .planlink.done:hover{background:#f1f4f8;color:var(--muted);border-color:var(--line)}
   .actualin{border:1px solid var(--accent2);border-radius:7px;padding:4px 7px;font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:12px;background:#fffdf3;width:92px}
+  .jsel{border:1px solid var(--line);border-radius:7px;padding:5px 6px;font-family:inherit;font-size:12.5px;background:#fff;max-width:168px}
+  .jsel:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
+  .jsel:hover{border-color:#bcc4d2}
   .noteinp{border:1px solid var(--line);border-radius:7px;padding:4px 7px;font-family:inherit;font-size:12px;background:#fff;width:150px}
   .noteinp:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
   .departin{border:1px solid var(--accent2);border-radius:7px;padding:4px 6px;font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:12px;background:#fffdf3}
@@ -945,6 +948,42 @@ function arriveCell(j){
     : '<td style="text-align:center"><span class="cno" title="\u0e22\u0e31\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e04\u0e35\u0e22\u0e4c\u0e40\u0e27\u0e25\u0e32\u0e21\u0e32\u0e08\u0e23\u0e34\u0e07\u0e17\u0e35\u0e48\u0e2b\u0e19\u0e49\u0e32 1">\u2014</span></td>';
 }
 let dispFirst=true, sumFirst=true;
+/* ---- แก้รายละเอียดงานที่จ่ายไปแล้ว (สินค้า/ต้นทาง/ปลายทาง) ----
+   ตัวเลือกมาจากทะเบียนหน้า 5 เท่านั้น · แก้แล้วระยะทางกับประเภทงานตามให้เอง
+   ซึ่งทำให้ เวลาถึงต้นทาง หน้า 3 · การจัดกลุ่มหน้า 4 · ไฟล์ Excel เปลี่ยนตามทั้งหมด */
+function applyRouteToJob(j){
+  const P=(j.product||'').trim(),O=(j.origin||'').trim(),D=(j.dest||'').trim();
+  const r=routes.find(x=>(x.product||'').trim()===P&&(x.origin||'').trim()===O&&(x.dest||'').trim()===D)
+       ||routes.find(x=>(x.product||'').trim()===P&&(x.origin||'').trim()===O)
+       ||routes.find(x=>(x.product||'').trim()===P);
+  if(r){
+    if(r.distance)j.distance=String(r.distance);
+    if(r.type)j.type=r.type;
+  }
+}
+function jopt(v,cur,lab){return '<option value="'+esc(v)+'"'+(String(v)===String(cur)?' selected':'')+'>'+esc(lab||v||'(ไม่ระบุ)')+'</option>';}
+function jselProduct(j){
+  const cur=j.product||'';
+  let h='';
+  if(cur&&!routes.some(r=>r.product===cur))h+=jopt(cur,cur,cur+' (นอกทะเบียน)');
+  JOBTYPES.forEach(t=>{
+    const ps=[...new Set(routes.filter(r=>(r.type||'main')===t.k&&r.product).map(r=>r.product))];
+    if(ps.length)h+='<optgroup label="'+esc(t.f)+'">'+ps.map(p=>jopt(p,cur)).join('')+'</optgroup>';
+  });
+  return '<select class="jsel" data-jf="product" data-id="'+j.id+'" title="แก้สินค้า/เส้นทาง">'+h+'</select>';
+}
+function jselOrigin(j){
+  const cur=j.origin||'';
+  const os=[...new Set(routes.filter(r=>r.product===j.product).map(r=>r.origin||''))];
+  if(os.indexOf(cur)<0)os.unshift(cur);
+  return '<select class="jsel" data-jf="origin" data-id="'+j.id+'" title="แก้ต้นทาง">'+os.map(o=>jopt(o,cur)).join('')+'</select>';
+}
+function jselDest(j){
+  const cur=j.dest||'';
+  const ds=[...new Set(routes.filter(r=>r.product===j.product&&(r.origin||'')===(j.origin||'')).map(r=>r.dest||''))];
+  if(ds.indexOf(cur)<0)ds.unshift(cur);
+  return '<select class="jsel" data-jf="dest" data-id="'+j.id+'" title="แก้ปลายทาง">'+ds.map(o=>jopt(o,cur)).join('')+'</select>';
+}
 function renderDispatch(){
   const hadBox=!!document.querySelector('#view .tablewrap');
   const restore=keepScroll();
@@ -958,9 +997,9 @@ function renderDispatch(){
   const rows=list.map(({j,i})=>`<tr class="jrow" data-jobrow="${j.id}" title="กดเพื่อดูรายละเอียดแผนงานเที่ยวนี้">
     <td class="mono">${esc(j.date||curDate)}</td>
     <td class="mono" style="text-align:center">${i+1}</td>
-    <td>${esc(j.product||'')}</td>
-    <td>${esc(j.origin||'')}</td>
-    <td>${esc(j.dest||'')}</td>
+    <td>${jselProduct(j)}</td>
+    <td>${jselOrigin(j)}</td>
+    <td>${jselDest(j)}</td>
     <td class="mono">${esc(j.code||'')}</td>
     <td>${esc(j.driver||'')}</td>
     <td class="mono">${esc(j.mainTruck||j.truck||'')}</td>
@@ -980,7 +1019,7 @@ function renderDispatch(){
       <div style="flex:1"></div>
       <button class="btn" id="csvBtn">⬇ ส่งออก Excel</button>
     </div>
-    <div class="tablewrap sbox10"><table style="min-width:1360px">
+    <div class="tablewrap sbox10"><table style="min-width:1620px">
       <thead><tr>
         ${thS('dispatch','date','วันที่')}${thS('dispatch','seq','ลำดับ','center')}${thS('dispatch','product','ชื่อสินค้า')}${thS('dispatch','origin','ต้นทาง')}${thS('dispatch','dest','ปลายทาง')}${thS('dispatch','code','รหัส พจส.')}${thS('dispatch','driver','ชื่อ พจส.')}${thS('dispatch','mtruck','เบอร์รถหลัก')}${thS('dispatch','atruck','เบอร์รถที่วิ่งจริง')}${thS('dispatch','trip','เที่ยว','center')}${thS('dispatch','type','ประเภทงาน')}${thS('dispatch','arrive','เวลามาจริง')}${thS('dispatch','depart','เวลาออก')}<th>หมายเหตุ</th>${thS('dispatch','by','ผู้บันทึก (CC)')}<th></th>
       </tr></thead>
@@ -2075,6 +2114,22 @@ document.getElementById('modal').addEventListener('change',e=>{
   if(e.target.id==='j_dest'){recalcDist();return;}
 });
 document.getElementById('view').addEventListener('change',e=>{
+  if(e.target.dataset&&e.target.dataset.jf){
+    const j=day.jobs.find(x=>String(x.id)===String(e.target.dataset.id));
+    if(!j)return;
+    const f=e.target.dataset.jf;
+    j[f]=e.target.value;
+    if(f==='product'){                       /* เปลี่ยนสินค้า -> ตั้งต้นทาง/ปลายทางของเส้นทางนั้นให้ */
+      const r=routes.find(x=>x.product===j.product);
+      if(r){j.origin=r.origin||'';j.dest=r.dest||'';}
+    }else if(f==='origin'){                  /* เปลี่ยนต้นทาง -> เลือกปลายทางที่คู่กัน */
+      const r=routes.find(x=>x.product===j.product&&(x.origin||'')===(j.origin||''));
+      if(r)j.dest=r.dest||'';
+    }
+    applyRouteToJob(j);
+    saveDay();renderDispatch();
+    return;
+  }
   if(e.target.dataset&&e.target.dataset.planprod!==undefined){renderSummary();return;}
   if(e.target.dataset&&e.target.dataset.depart!==undefined){
     const j=day.jobs.find(x=>String(x.id)===e.target.dataset.depart);
