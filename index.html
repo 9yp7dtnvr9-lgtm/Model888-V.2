@@ -99,6 +99,8 @@
   .arrivein:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
   .planlink{border:1px solid var(--accent);background:var(--present-bg);color:var(--accent);border-radius:8px;padding:6px 11px;font-family:inherit;font-size:13px;cursor:pointer;white-space:nowrap;font-weight:500}
   .planlink:hover{background:var(--accent);color:#fff}
+  .planlink.done{border-color:var(--line);background:#f1f4f8;color:var(--muted);font-weight:400;cursor:default}
+  .planlink.done:hover{background:#f1f4f8;color:var(--muted);border-color:var(--line)}
   .actualin{border:1px solid var(--accent2);border-radius:7px;padding:4px 7px;font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:12px;background:#fffdf3;width:92px}
   .noteinp{border:1px solid var(--line);border-radius:7px;padding:4px 7px;font-family:inherit;font-size:12px;background:#fff;width:150px}
   .noteinp:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
@@ -502,6 +504,36 @@ let routeSearch='';                  /* หน้า 5: ค้นหาเส้
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function nowHM(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 function dayName(ds){return DAYS[new Date(ds+'T00:00:00').getDay()];}
+/* ---- อ่านค่า "วันหยุด" ให้ได้หลายรูปแบบ ----
+   เดิมเทียบตรงตัวอักษร ถ้าไฟล์เขียน "พ." / "วันพุธ" / "พฤหัส" / มีช่องว่างพิเศษจาก Excel จะไม่แมตช์ */
+const DAY_ALIAS=(function(){
+  const m={};
+  [[0,['อาทิตย์','อาทิต','อา','อาทิตย','sun','sunday','su']],
+   [1,['จันทร์','จันทร','จ','mon','monday','mo']],
+   [2,['อังคาร','อังคาน','อัง','อ','tue','tues','tuesday','tu']],
+   [3,['พุธ','พุท','พ','wed','weds','wednesday','we']],
+   [4,['พฤหัสบดี','พฤหัสบดี','พฤหัส','พฤหัด','พฤ','thu','thur','thurs','thursday','th']],
+   [5,['ศุกร์','ศุกร','ศ','fri','friday','fr']],
+   [6,['เสาร์','เสาร','ส','sat','saturday','sa']]
+  ].forEach(([i,ws])=>ws.forEach(w=>{m[w]=i;}));
+  return m;
+})();
+function normDayStr(v){
+  return String(v==null?'':v)
+    .replace(/[\s\u00a0\u200b\u2060]/g,'')   /* ช่องว่างปกติ + non-breaking + zero-width จาก Excel */
+    .replace(/^วัน/,'')
+    .replace(/[.·ฯ]+$/,'')
+    .toLowerCase();
+}
+function dayIdx(v){
+  const k=normDayStr(v);
+  if(!k)return -1;
+  return (DAY_ALIAS[k]!==undefined)?DAY_ALIAS[k]:-1;
+}
+function dayOffLabel(d){          /* ชื่อวันหยุดแบบมาตรฐาน ไว้แสดงผล */
+  const i=dayIdx(d&&d.dayOff);
+  return i>=0?DAYS[i]:'';
+}
 /* ---- เวลาแบบ 24 ชม. ไม่ขึ้นกับภาษาของเบราว์เซอร์ ----
    รับได้ทั้ง 630 / 0630 / 6:30 / 18:5  ->  คืน "06:30" / "18:05"
    คืน ''   = ช่องว่าง        คืน null = รูปแบบไม่ถูกต้อง            */
@@ -650,7 +682,11 @@ async function loadDay(){
 }
 
 /* attendance helpers */
-function isOff(t,d,ds){return d&&d.dayOff&&d.dayOff===dayName(ds);}
+function isOff(t,d,ds){
+  if(!d||!d.dayOff)return false;
+  const i=dayIdx(d.dayOff);
+  return i>=0 && i===new Date(ds+'T00:00:00').getDay();
+}
 function attOf(no){return day.attend[no]||{};}
 /* บันทึกเวลามาจริง แล้วให้ระบบเลือกสถานะ มา / สาย / OT ให้เอง */
 function setArrive(no,p,v){
@@ -771,7 +807,7 @@ function renderRoster(){
       <input type="search" id="search" placeholder="ค้นหา เบอร์รถ / ต้นทาง / ชื่อคนขับ…" value="${esc(search)}">
       <button class="pill ${filter==='all'?'active':''}" data-f="all">ทั้งหมด</button>
       <button class="pill ${filter==='work'?'active':''}" data-f="work">ต้องมาทำงาน</button>
-      <button class="pill ${filter==='off'?'active':''}" data-f="off">วันหยุด</button>
+      <button class="pill ${filter==='off'?'active':''}" data-f="off" title="พจส. ที่หยุดวัน${esc(dayName(curDate))}">วันหยุด (${esc(dayName(curDate))})</button>
       <button class="pill ${filter==='incomplete'?'active':''}" data-f="incomplete">ยังไม่เช็ก</button>
       ${STATUS_FILTERS[filter]?'<button class="btn" data-f="all">✕ ล้างตัวกรอง</button>':''}
       ${sortActive('roster')?'<button class="btn" id="clearSort">↩ กลับไปจัดกลุ่มตามชั่วโมง</button>':''}
@@ -781,6 +817,7 @@ function renderRoster(){
       <button class="btn" id="verBtn" title="กดเพื่อดู/แก้วันเริ่มมีผลของแต่ละชุด">🗓 ใช้ชุด: ${esc(activeVerName())} <span class="cno">· ทั้งหมด ${rosterVersions.length}</span></button>
       <button class="btn" id="csvBtn">⬇ ส่งออก Excel</button>
       <button class="btn" id="printBtn">🖨 พิมพ์</button>
+      <span class="cno" style="margin-left:2px">จ่ายเที่ยวแรกที่หน้านี้ · เที่ยวถัดไปจ่ายที่หน้า 2</span>
       <input type="file" id="fileInput" accept=".xlsx" style="display:none">
     </div>`;
   document.getElementById('view').innerHTML=summaryBar()+toolbar+`<div id="rosterArea">${editMode?editorTable():rollCallTable()}</div>`;
@@ -838,21 +875,28 @@ function rollCallTable(){
 }
 function rollRow(r){
   const t=r.t,d=r.d,off=isOff(t,d,curDate),cur=attOf(t.truckNo)[d.pos]||'',sc=shiftCls(d.pos);
+  const nDone=(day.jobs||[]).filter(j=>String(j.mainTruck||j.truck)===String(t.truckNo)&&String(j.shift)===String(d.pos)).length;
   const av=(day.arrive[t.truckNo]||{})[d.pos]||'';
   let statusCell;
-  if(off&&cur!=='ot')statusCell=`<span class="offbadge">วันหยุด (${esc(d.dayOff)})</span> <button class="otbtn" data-ot="${esc(t.truckNo)}" data-pos="${d.pos}">＋ มาทำ OT</button>`;
+  if(off&&cur!=='ot')statusCell=`<span class="offbadge">วันหยุด (${esc(dayOffLabel(d)||d.dayOff)})</span> <button class="otbtn" data-ot="${esc(t.truckNo)}" data-pos="${d.pos}">＋ มาทำ OT</button>`;
   else if(off&&cur==='ot')statusCell=`<span class="otyes">✓ มา OT</span><button class="otbtn" data-ot="${esc(t.truckNo)}" data-pos="${d.pos}">ยกเลิก</button>`;
   else statusCell=`<div class="stbtns">${[['present','มา'],['late','สาย'],['absent','ขาด'],['leave','ลา']].map(([v,l])=>`<button class="st ${v}${cur===v?' sel':''}" data-att="${esc(t.truckNo)}" data-pos="${d.pos}" data-val="${v}">${l}</button>`).join('')}</div>`;
   return `<tr>
     <td class="mono" style="font-weight:600">${startLabel(shiftOf(d,curDate))}${shiftPending(d,curDate)?`<div class="cno" title="รอถึงรอบวันหยุดก่อนเปลี่ยน">→ ${esc(startLabel(d.shift2))} ${esc(d.shiftFrom)}</div>`:''}</td>
     <td class="truck"><span class="plate">${esc(t.truckNo)}</span><div class="cno">${esc(t.routeGroup)}</div></td>
     <td><span class="tag" style="color:var(--${sc});background:var(--${sc}-bg)">กะ${esc(d.pos)}</span></td>
-    <td><div class="drv">${esc(d.name)}</div><div class="cno">${d.code?('รหัส '+esc(d.code)):''}${(d.code&&d.phone)?' · ':''}${d.phone?esc(d.phone):''}</div></td>
+    <td><div class="drv">${esc(d.name)}</div><div class="cno">${d.code?('รหัส '+esc(d.code)):''}${(d.code&&d.phone)?' · ':''}${d.phone?esc(d.phone):''}${
+      !d.dayOff ? ' · <span style="color:var(--absent)" title="ยังไม่ได้ตั้งวันหยุดในตารางกะ">ยังไม่ตั้งวันหยุด</span>'
+      : (dayIdx(d.dayOff)<0
+          ? ' · <span style="color:var(--absent)" title="ระบบอ่านค่าวันหยุดนี้ไม่ออก จึงไม่นับเป็นวันหยุด — แก้ที่ ✎ แก้ไขรายชื่อ">⚠ วันหยุด &quot;'+esc(d.dayOff)+'&quot; อ่านไม่ออก</span>'
+          : ' · <span title="วันนี้คือวัน'+esc(dayName(curDate))+'" style="color:'+(off?'var(--off)':'var(--muted)')+'">หยุด '+esc(dayOffLabel(d))+'</span>')}</div></td>
     <td>${statusCell}</td>
     <td>${hmField(av,'data-arrive="'+esc(t.truckNo)+'" data-pos="'+d.pos+'"')}</td>
     <td>${(cur==='absent'||cur==='leave')
       ? '<span class="cno">— จ่ายแผนไม่ได้ ('+(cur==='absent'?'ขาด':'ลา')+')</span>'
-      : '<button class="planlink" data-plan="'+esc(t.truckNo)+'" data-pos="'+d.pos+'">จ่ายแผน →</button>'}</td>
+      : (nDone
+          ? '<button class="planlink done" disabled title="จ่ายไปแล้ว '+nDone+' เที่ยว — ถ้าต้องจ่ายเที่ยวถัดไป ให้ไปจ่ายที่หน้า 2 รายละเอียดงาน">จ่ายแล้ว'+(nDone>1?(' '+nDone+' เที่ยว'):'')+'</button>'
+          : '<button class="planlink" data-plan="'+esc(t.truckNo)+'" data-pos="'+d.pos+'">จ่ายแผน →</button>')}</td>
   </tr>`;
 }
 
@@ -1339,8 +1383,7 @@ function hourlyAttend(){
   for(const t of config){
     for(const d of (t.drivers||[])){
       const sm = parseStart(shiftOf(d,curDate));
-      if(sm === null) continue;
-      const row = mk(Math.floor(sm/60));
+      const row = mk(sm === null ? -1 : Math.floor(sm/60));   /* ไม่มีเวลากะ -> เก็บไว้แถวพิเศษ ไม่ตกหล่น */
       const v = attOf(t.truckNo)[d.pos] || '';
       if(isOff(t,d,curDate)){ row.off++; if(v==='ot') row.ot++; continue; }
       row.plan++;
@@ -1360,13 +1403,16 @@ function tableAttend(){
   const lastH = Math.min(23, nowH + 1);          /* แสดงแผนล่วงหน้า 1 ชม. */
   let cp = 0, ca = 0;
   const list=[];
-  for(let h = 0; h <= lastH; h++){
+  const hoursToShow=[];
+  if(b[-1])hoursToShow.push(-1);                 /* แถวคนที่ยังไม่ได้ใส่เวลากะ */
+  for(let x=0;x<=lastH;x++)hoursToShow.push(x);
+  for(const h of hoursToShow){
     const r = b[h] || {plan:0,present:0,ot:0,late:0,absent:0,leave:0,unchecked:0,off:0};
-    const ahead = h > nowH;
+    const ahead = (h>=0) && (h > nowH);
     const actual = r.present;
     if(!ahead){ cp += r.plan; ca += actual; }
     const diff = ca - cp;
-    const hl = String(h).padStart(2,'0') + ':00';
+    const hl = (h<0) ? 'ไม่ระบุเวลากะ' : (String(h).padStart(2,'0') + ':00');
     const cls = ahead ? 'aheadrow' : (h===nowH ? 'nowrow' : '');
     list.push({h,r,ahead,actual,cp,ca,diff,cls,html:`<tr class="${cls}">
       <td class="mono" style="font-weight:600">${hl}${h===nowH?' <span class="tag">ชม.นี้</span>':''}${ahead?' <span class="tag" style="background:var(--m-bg);color:var(--off)">ล่วงหน้า</span>':''}</td>
@@ -1382,11 +1428,28 @@ function tableAttend(){
       <td class="mono" style="text-align:center;font-weight:600;color:${diff<0?'var(--absent)':'var(--present)'}">${ahead?'':(diff>0?'+':'')+diff}</td>
     </tr>`});
   }
-  const rows=sortBy('sum1',list,{hour:x=>x.h,plan:x=>x.r.plan,actual:x=>x.actual,late:x=>x.r.late,
+  let rows=sortBy('sum1',list,{hour:x=>x.h,plan:x=>x.r.plan,actual:x=>x.actual,late:x=>x.r.late,
     absent:x=>x.r.absent,leave:x=>x.r.leave,unchecked:x=>x.r.unchecked,off:x=>x.r.off,
     cp:x=>x.cp,ca:x=>x.ca,diff:x=>x.diff}).map(x=>x.html).join('');
+  /* แถวรวมทั้งวัน — นับทุกชั่วโมงรวมที่ยังไม่ถึงเวลา ให้ตรงกับการ์ดหน้า 1 */
+  const T={plan:0,present:0,late:0,absent:0,leave:0,unchecked:0,off:0,ot:0};
+  Object.keys(b).forEach(k=>{const r=b[k];['plan','present','late','absent','leave','unchecked','off','ot'].forEach(f=>T[f]+=r[f]||0);});
+  const tdif=T.present-T.plan;
+  rows+=`<tr style="background:var(--nav);color:#fff">
+    <td style="font-weight:600;color:#fff">รวมทั้งวัน <span style="font-size:11px;opacity:.75">(ทุกกะ รวมที่ยังไม่ถึงเวลา)</span></td>
+    <td class="mono" style="text-align:center;font-weight:600">${T.plan}</td>
+    <td class="mono" style="text-align:center;font-weight:600">${T.present}${T.ot?` <span class="otyes">+${T.ot} OT</span>`:''}</td>
+    <td class="mono" style="text-align:center">${T.late||'-'}</td>
+    <td class="mono" style="text-align:center">${T.absent||'-'}</td>
+    <td class="mono" style="text-align:center">${T.leave||'-'}</td>
+    <td class="mono" style="text-align:center">${T.unchecked||'-'}</td>
+    <td class="mono" style="text-align:center;font-weight:600">${T.off||'-'}</td>
+    <td class="mono" style="text-align:center">${T.plan}</td>
+    <td class="mono" style="text-align:center">${T.present}</td>
+    <td class="mono" style="text-align:center;font-weight:600;color:${tdif<0?'#ffb3aa':'#7fd6a8'}">${(tdif>0?'+':'')+tdif}</td>
+  </tr>`;
   return `<div class="card"><h2>1 · พจส. มาทำงานเทียบแผน รายชั่วโมง</h2>
-    <div class="hint">แผนมาจากเวลาเข้ากะในตารางกะ (ไม่นับวันหยุด) · มาจริงมาจากการเช็กในหน้า 1 · แถวเหลืองคือแผนล่วงหน้า 1 ชม. ยังไม่ถึงเวลา · <b>ตารางแสดง 5 บรรทัด เลื่อนขึ้นดูชั่วโมงก่อนหน้าได้</b> (ระบบเลื่อนมาที่ชั่วโมงปัจจุบันให้แล้ว)</div>
+    <div class="hint">แผนมาจากเวลาเข้ากะในตารางกะ (ไม่นับวันหยุด) · มาจริงมาจากการเช็กในหน้า 1 · แถวเหลืองคือแผนล่วงหน้า 1 ชม. ยังไม่ถึงเวลา · <b>ตารางแสดง 5 บรรทัด เลื่อนดูชั่วโมงอื่นได้</b> · แถวบนสุดคือคนที่ยังไม่ได้ใส่เวลากะ (ถ้ามี) · <b>แถวล่างสุด “รวมทั้งวัน” นับครบทุกกะรวมที่ยังไม่ถึงเวลา</b> จึงตรงกับการ์ดหน้า 1</div>
     <div class="tablewrap sbox5" id="t1box"><table style="min-width:820px"><thead><tr>
       ${thS('sum1','hour','เวลาเข้ากะ')}${thS('sum1','plan','แผน (คน)','center')}${thS('sum1','actual','มาจริง','center')}
       ${thS('sum1','late','สาย','center')}${thS('sum1','absent','ขาด','center')}${thS('sum1','leave','ลา','center')}${thS('sum1','unchecked','ยังไม่เช็ก','center')}
@@ -2054,7 +2117,7 @@ function exportExcel(){
   const wb=XLSX.utils.book_new();
   const att=[['เบอร์รถ','ต้นทาง','กะ','คนขับ','สถานะ','เวลามาจริง','ผู้บันทึก','วันหยุด','เวลากะที่ใช้','เปลี่ยนเป็น']];
   const ST={present:'มา',late:'สาย',absent:'ขาด',leave:'ลา',ot:'มา OT (วันหยุด)','':''};
-  for(const t of config)for(const d of (t.drivers||[])){const off=isOff(t,d,curDate);const cur=attOf(t.truckNo)[d.pos]||'';const status=cur==='ot'?'มา OT (วันหยุด)':(off?'วันหยุด':ST[cur]);const av=(day.arrive[t.truckNo]||{})[d.pos]||'';const by=(day.attendBy[t.truckNo]||{})[d.pos]||'';att.push([t.truckNo,t.routeGroup,d.pos,d.name,status,av,by,d.dayOff,shiftOf(d,curDate),d.shift2?(d.shift2+' ตั้งแต่ '+(d.shiftFrom||'-')):'']);}
+  for(const t of config)for(const d of (t.drivers||[])){const off=isOff(t,d,curDate);const cur=attOf(t.truckNo)[d.pos]||'';const status=cur==='ot'?'มา OT (วันหยุด)':(off?'วันหยุด':ST[cur]);const av=(day.arrive[t.truckNo]||{})[d.pos]||'';const by=(day.attendBy[t.truckNo]||{})[d.pos]||'';att.push([t.truckNo,t.routeGroup,d.pos,d.name,status,av,by,dayOffLabel(d)||d.dayOff,shiftOf(d,curDate),d.shift2?(d.shift2+' ตั้งแต่ '+(d.shiftFrom||'-')):'']);}
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(att),'เช็กคนขับ');
   const jb=[['วันที่','ลำดับ','ชื่อสินค้า','ต้นทาง','ปลายทาง','รหัส พจส.','ชื่อ พจส.','เบอร์รถหลัก','เบอร์รถที่วิ่งจริง','เที่ยว','ประเภทงาน','เวลามาจริง','เวลาออก','ผู้จ่ายงาน','เวลาชาร์จ','ชาร์จเสร็จ','เวลากลับ','เวลาปิดงาน','รวมเวลาทำงาน (ชม.)','สาเหตุเกิน 8 ชม.','หมายเหตุ']];
   day.jobs.forEach((j,i)=>jb.push([j.date||curDate,i+1,j.product,j.origin,j.dest,j.code||'',j.driver,j.mainTruck||j.truck,j.actualTruck||j.mainTruck||j.truck,j.trip||'',jtFull(jobType(j)),jobArrive(j),j.depart,j.by||'',j.chargeStart,j.chargeEnd,j.ret,j.closed||'',workHoursText(j),j.overNote||'',j.note||'']));
