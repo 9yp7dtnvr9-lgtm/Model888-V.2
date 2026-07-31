@@ -439,6 +439,43 @@ const store={
    ส่งข้อมูลไปให้ Apps Script "ผสาน" กับของที่อยู่บน Sheet
    จึง CC หลายคนคีย์พร้อมกันแล้วงานไม่หาย */
 let lastSyncTxt='',dirty=false,editGen=0,saveBusy=false,lastTypeAt=0;
+
+/* ============ ระบบบันทึกแบบส่งเฉพาะช่องที่แก้ (patch ops) ============
+   เดิมส่งข้อมูลทั้งวันขึ้นไปทับ -> ค่าที่ CC คนอื่นเพิ่งแก้ถูกค่าเก่าในเครื่องเราทับ
+   ตอนนี้ส่งเฉพาะ "ช่องที่เราแก้จริง" เซิร์ฟเวอร์เอาไปทาบบนข้อมูลล่าสุด
+   -> คนละช่อง/คนละคัน/คนละงาน บันทึกพร้อมกันได้ ไม่มีใครหาย            */
+let pendingOps=[];
+const CELL_SEC={attend:1,arrive:1,attendBy:1,dnote:1};
+const FLAT_SEC={plan:1,running:1};
+
+/* นำ op ไปใช้กับข้อมูลในเครื่อง (ตรรกะเดียวกับฝั่งเซิร์ฟเวอร์) */
+function applyOpLocal(doc,op){
+  if(!doc||!op||!op.k)return;
+  if(op.k==='cell'&&CELL_SEC[op.s]){
+    doc[op.s]=doc[op.s]||{};doc[op.s][op.t]=doc[op.s][op.t]||{};doc[op.s][op.t][op.p]=op.v;
+  }else if(op.k==='flat'&&FLAT_SEC[op.s]){
+    doc[op.s]=doc[op.s]||{};doc[op.s][op.key]=op.v;
+  }else if(op.k==='jobset'){
+    const j=(doc.jobs||[]).find(x=>String(x.id)===String(op.id));if(j)j[op.f]=op.v;
+  }else if(op.k==='jobadd'){
+    doc.jobs=doc.jobs||[];
+    if(!doc.jobs.some(x=>String(x.id)===String(op.job.id)))doc.jobs.push(JSON.parse(JSON.stringify(op.job)));
+  }else if(op.k==='jobdel'){
+    doc.deleted=doc.deleted||[];
+    if(doc.deleted.indexOf(String(op.id))<0)doc.deleted.push(String(op.id));
+    doc.jobs=(doc.jobs||[]).filter(x=>String(x.id)!==String(op.id));
+  }else if(op.k==='seq'){doc.seq=Math.max(Number(doc.seq)||0,Number(op.v)||0);}
+}
+function pushOp(op){pendingOps.push(op);applyOpLocal(day,op);}
+
+/* ---- ตัวช่วยแก้ข้อมูล ใช้แทนการเขียน day.xxx ตรง ๆ ---- */
+function setCell(sec,no,p,v){pushOp({k:'cell',s:sec,t:String(no),p:String(p),v:v});}
+function setFlat(sec,key,v){pushOp({k:'flat',s:sec,key:String(key),v:v});}
+function setJobField(j,f,v){if(j)pushOp({k:'jobset',id:String(j.id),f:f,v:v});}
+function addJobOp(job){pushOp({k:'jobadd',job:job});pushOp({k:'seq',v:day.seq||0});}
+function delJobOp(id){pushOp({k:'jobdel',id:String(id)});}
+/* บันทึกสถานะ+ผู้บันทึกพร้อมกัน (ใช้บ่อย) */
+function setAttend(no,p,v){setCell('attend',no,p,v);setCell('attendBy',no,p,adminName);}
 function tk(){return API_TOKEN?('&tk='+encodeURIComponent(API_TOKEN)):'';}
 async function dayFetch(ds){
   if(!backendURL)return null;
@@ -448,6 +485,17 @@ async function dayFetch(ds){
     if(d&&d.error)return null;
     return (d&&d.value)?d.value:'';
   }catch(e){return null;}
+}
+/* ส่งเฉพาะรายการที่แก้ ให้เซิร์ฟเวอร์ทาบบนข้อมูลล่าสุด */
+async function dayPatch(ds,ops){
+  if(!backendURL)return null;
+  try{
+    const r=await fetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({patchday:ds,ops:JSON.stringify(ops),tk:API_TOKEN})});
+    const d=await r.json();
+    if(d&&d.error){lastWriteErr=String(d.error);return null;}
+    return (d&&d.value)?d.value:null;
+  }catch(e){lastWriteErr='ต่อระบบกลางไม่ได้';return null;}
 }
 async function dayMerge(ds,obj){
   if(!backendURL)return null;
@@ -603,17 +651,25 @@ function saveDay(){
     const ds=curDate, gen=editGen;
     mem['fleet:day:'+ds]=JSON.stringify(day);
     if(backendURL){
+      if(!pendingOps.length){dirty=false;flag('ok');return;}
+      const sending=pendingOps; pendingOps=[];
       saveBusy=true;
-      const merged=await dayMerge(ds,day);
+      const merged=await dayPatch(ds,sending);
       saveBusy=false;
-      /* ถ้ามีการแก้ใหม่ระหว่างรอคำตอบ อย่าเอาผลเก่ามาทับ */
-      if(gen!==editGen){flag('saving');return;}
       if(merged&&ds===curDate){
         try{const o=JSON.parse(merged);
-          if(o&&typeof o==='object'&&(o._rev||0)>=(day._rev||0)){normDay(o);day=o;}
+          if(o&&typeof o==='object'){
+            normDay(o);day=o;
+            pendingOps.forEach(op=>applyOpLocal(day,op));   /* ที่พิมพ์ระหว่างรอ ยังอยู่ครบ */
+          }
         }catch(e){}
-        lastSyncTxt=nowHM();dirty=false;flag('ok');
-      }else{flag('err');}
+        lastSyncTxt=nowHM();
+        if(!pendingOps.length)dirty=false;
+        flag('ok');
+      }else{
+        pendingOps=sending.concat(pendingOps);              /* ส่งไม่สำเร็จ เก็บไว้ส่งรอบหน้า */
+        flag('err');
+      }
     }else{
       await store.set('fleet:day:'+ds,JSON.stringify(day));
       if(gen===editGen)dirty=false;
@@ -693,15 +749,14 @@ function isOff(t,d,ds){
 function attOf(no){return day.attend[no]||{};}
 /* บันทึกเวลามาจริง แล้วให้ระบบเลือกสถานะ มา / สาย / OT ให้เอง */
 function setArrive(no,p,v){
-  day.arrive[no]=day.arrive[no]||{};day.arrive[no][p]=v;
-  day.attendBy[no]=day.attendBy[no]||{};day.attendBy[no][p]=adminName;
+  setCell('arrive',no,p,v);
+  setCell('attendBy',no,p,adminName);
   if(v){
     const t=truckByNo(no),d=driverAt(t,p),off=isOff(t,d,curDate);
-    day.attend[no]=day.attend[no]||{};
-    const cur=day.attend[no][p]||'';
-    if(off){ if(cur!=='ot')day.attend[no][p]='ot'; }
+    const cur=(day.attend[no]||{})[p]||'';
+    if(off){ if(cur!=='ot')setCell('attend',no,p,'ot'); }
     else if(cur===''||cur==='absent'||cur==='present'||cur==='late'){
-      day.attend[no][p]=isLateArrival(d,v)?'late':'present';
+      setCell('attend',no,p,isLateArrival(d,v)?'late':'present');
     }
   }
   saveDay();renderRoster();
@@ -1150,8 +1205,9 @@ function saveJob(){
   if(!adminName)miss.push('กรุณาเข้าสู่ระบบก่อน (ระบุชื่อผู้บันทึก)');
   if(miss.length){alert('กรุณากรอกให้ครบก่อนบันทึก:\n• '+miss.join('\n• '));return;}
   day.seq++;
-  day.jobs.push({id:uid(),date:curDate,truck:no,mainTruck:no,actualTruck:actual,shift:pos,code:d?(d.code||''):'',driver:d?d.name:'',product,route:product,origin,dest,distance:dist,type:g('j_type').value,trip,depart:'',by:adminName,note:'',chargeStart:'',chargeEnd:'',ret:''});
-  if(!day.running[no])day.running[no]=true;
+  const newJob={id:uid(),date:curDate,truck:no,mainTruck:no,actualTruck:actual,shift:pos,code:d?(d.code||''):'',driver:d?d.name:'',product,route:product,origin,dest,distance:dist,type:g('j_type').value,trip,depart:'',by:adminName,note:'',chargeStart:'',chargeEnd:'',ret:''};
+  addJobOp(newJob);
+  if(!day.running[no])setFlat('running',no,true);
   saveDay();closeModal();tab='dispatch';render();
 }
 function fillShift(){
@@ -1508,8 +1564,8 @@ function migratePlanKeys(){
     if(val===''||val===undefined||val===null){return;}
     const g=(k==='__vt')?'vt':(()=>{const r=routes.find(x=>x.product===k);return r?(r.type||'main'):'main';})();
     const nk=g+'|'+(k==='__vt'?'':k);
-    if(k!=='__vt'&&(day.plan[nk]===undefined||day.plan[nk]==='')){day.plan[nk]=val;}
-    day.plan[k]='';                                    /* เคลียร์คีย์เก่า (ใช้ '' เพื่อให้ส่งถึงเครื่องอื่นด้วย) */
+    if(k!=='__vt'&&(day.plan[nk]===undefined||day.plan[nk]===''))setFlat('plan',nk,val);
+    setFlat('plan',k,'');                              /* เคลียร์คีย์เก่า (ใช้ '' เพื่อให้ส่งถึงเครื่องอื่นด้วย) */
     changed=true;
   });
   return changed;
@@ -1816,10 +1872,8 @@ function tickAlarms(){
       const dur=shiftDuration(shiftOf(d,curDate));
       if(AUTO_CLOSE_SHIFT && dur!==null && now>=sm && (now-sm)>=dur && !sweptSeen[k]){
         sweptSeen[k]=1; swept++;
-        day.attend[t.truckNo]=day.attend[t.truckNo]||{};
-        day.attend[t.truckNo][d.pos]='absent';
-        day.attendBy[t.truckNo]=day.attendBy[t.truckNo]||{};
-        day.attendBy[t.truckNo][d.pos]='ระบบ (จบกะแล้วไม่มีการเช็ก)';
+        setCell('attend',t.truckNo,d.pos,'absent');
+        setCell('attendBy',t.truckNo,d.pos,'ระบบ (จบกะแล้วไม่มีการเช็ก)');
         marked=true;
       }
     }
@@ -1926,7 +1980,7 @@ document.getElementById('view').addEventListener('click',e=>{
       +(used?('\n\nวันนี้มีงานที่ใช้สินค้านี้อยู่ '+used+' เที่ยว งานเดิมจะไม่ถูกลบ แต่จะขึ้นป้าย “นอกทะเบียน”'):'');
     if(!confirm(msg))return;
     routes=routes.filter(r=>!(r.product===p&&(r.type||'main')===g));
-    if(day.plan&&day.plan[g+'|'+p]!==undefined){day.plan[g+'|'+p]='';saveDay();}
+    if(day.plan&&day.plan[g+'|'+p]!==undefined){setFlat('plan',g+'|'+p,'');saveDay();}
     scheduleRoutesSave();renderSummary();
     return;
   }
@@ -1958,9 +2012,9 @@ document.getElementById('view').addEventListener('click',e=>{
   const att=e.target.closest('[data-att]');const run=e.target.closest('[data-run]');const pill=e.target.closest('[data-f]');
   const add=e.target.closest('#addJob');const del=e.target.closest('[data-deljob]');const now=e.target.closest('[data-stampnow]');
   const imp=e.target.closest('#importBtn');const csv=e.target.closest('#csvBtn');const prn=e.target.closest('#printBtn');
-  if(att){const no=att.dataset.att,p=att.dataset.pos,v=att.dataset.val;day.attend[no]=day.attend[no]||{};day.attend[no][p]=day.attend[no][p]===v?'':v;day.attendBy[no]=day.attendBy[no]||{};day.attendBy[no][p]=adminName;saveDay();renderRoster();return;}
+  if(att){const no=att.dataset.att,p=att.dataset.pos,v=att.dataset.val;setAttend(no,p,((day.attend[no]||{})[p]===v)?'':v);saveDay();renderRoster();return;}
   const ot=e.target.closest('[data-ot]');
-  if(ot){const no=ot.dataset.ot,p=ot.dataset.pos;day.attend[no]=day.attend[no]||{};day.attend[no][p]=day.attend[no][p]==='ot'?'':'ot';day.attendBy[no]=day.attendBy[no]||{};day.attendBy[no][p]=adminName;saveDay();renderRoster();return;}
+  if(ot){const no=ot.dataset.ot,p=ot.dataset.pos;setAttend(no,p,((day.attend[no]||{})[p]==='ot')?'':'ot');saveDay();renderRoster();return;}
   if(e.target.closest('#editBtn')){editMode=true;editBuf=JSON.parse(JSON.stringify(config));renderRoster();return;}
   if(e.target.closest('#saveEdit')){
     config=editBuf;editBuf=null;editMode=false;flag('saving');
@@ -1985,14 +2039,14 @@ document.getElementById('view').addEventListener('click',e=>{
   const dt=e.target.closest('[data-deltruck]');
   if(dt){const ti=+dt.dataset.deltruck;if(confirm('ลบรถ '+editBuf[ti].truckNo+' และคนขับทั้งหมดของคันนี้?')){editBuf.splice(ti,1);renderRoster();}return;}
   if(e.target.closest('#addTruck')){editBuf.push({truckNo:'ใหม่-'+(editBuf.length+1),routeGroup:'',product:'เชื้อเพลิงชีวมวล',type:'model',drivers:[]});renderRoster();return;}
-  if(run){const no=run.dataset.run;day.running[no]=!day.running[no];saveDay();renderRoster();return;}
+  if(run){const no=run.dataset.run;setFlat('running',no,!day.running[no]);saveDay();renderRoster();return;}
   if(pill){const f=pill.dataset.f;filter=(filter===f&&f!=='all')?'all':f;renderRoster();return;}
   if(imp){document.getElementById('fileInput').click();return;}
   if(e.target.closest('#verBtn')){openVersionDialog();return;}
   if(csv){exportExcel();return;}
   if(prn){window.print();return;}
-  if(del){const rid=String(del.dataset.deljob);day.deleted=day.deleted||[];if(day.deleted.indexOf(rid)<0)day.deleted.push(rid);day.jobs=day.jobs.filter(j=>String(j.id)!==rid);saveDay();renderDispatch();return;}
-  if(now){const j=day.jobs.find(x=>String(x.id)===now.dataset.stampnow);if(j){j[now.dataset.field]=nowHM();saveDay();renderBoard();}return;}
+  if(del){delJobOp(String(del.dataset.deljob));saveDay();renderDispatch();return;}
+  if(now){const j=day.jobs.find(x=>String(x.id)===now.dataset.stampnow);if(j){setJobField(j,now.dataset.field,nowHM());saveDay();renderBoard();}return;}
   if(e.target.closest('#addRoute')){
     routes.unshift({id:ruid(),product:'',origin:'',dest:'',distance:'',type:'main'});
     scheduleRoutesSave();renderPlan();
@@ -2027,8 +2081,7 @@ document.getElementById('view').addEventListener('input',e=>{
   if(e.target.dataset&&e.target.dataset.planprod!==undefined){
     const key=e.target.dataset.planprod,raw=String(e.target.value).replace(/[^0-9]/g,'');
     e.target.value=raw;
-    day.plan=day.plan||{};
-    day.plan[key]=(raw==='')?'':Number(raw);   /* ใช้ '' ไม่ใช่ delete เพื่อให้การล้างค่าส่งถึงเครื่องอื่นด้วย */
+    setFlat('plan',key,(raw==='')?'':Number(raw));   /* ใช้ '' ไม่ใช่ delete เพื่อให้การล้างค่าส่งถึงเครื่องอื่นด้วย */
     saveDay();return;
   }
   if(e.target.id==='routeSearch'){routeSearch=e.target.value.trim();renderPlan();
@@ -2050,13 +2103,13 @@ document.getElementById('view').addEventListener('input',e=>{
   if(e.target.id==='planSpeed'){planSpeed=parseInt(e.target.value)||65;return;}
   if(e.target.dataset&&e.target.dataset.dnote!==undefined){
     const no=e.target.dataset.dnote,p=e.target.dataset.pos;
-    day.dnote[no]=day.dnote[no]||{};day.dnote[no][p]=e.target.value;
+    setCell('dnote',no,p,e.target.value);
     saveDay();return;
   }
-  if(e.target.dataset&&e.target.dataset.actual!==undefined){const j=day.jobs.find(x=>String(x.id)===e.target.dataset.actual);if(j){j.actualTruck=e.target.value;saveDay();}return;}
+  if(e.target.dataset&&e.target.dataset.actual!==undefined){const j=day.jobs.find(x=>String(x.id)===e.target.dataset.actual);if(j){setJobField(j,'actualTruck',e.target.value);saveDay();}return;}
   if(e.target.dataset&&e.target.dataset.over!==undefined){
-    const j=day.jobs.find(x=>String(x.id)===e.target.dataset.over);if(j){j.overNote=e.target.value;saveDay();}return;}
-  if(e.target.dataset&&e.target.dataset.note!==undefined){const j=day.jobs.find(x=>String(x.id)===e.target.dataset.note);if(j){j.note=e.target.value;saveDay();}return;}
+    const j=day.jobs.find(x=>String(x.id)===e.target.dataset.over);if(j){setJobField(j,'overNote',e.target.value);saveDay();}return;}
+  if(e.target.dataset&&e.target.dataset.note!==undefined){const j=day.jobs.find(x=>String(x.id)===e.target.dataset.note);if(j){setJobField(j,'note',e.target.value);saveDay();}return;}
   if(e.target.dataset&&e.target.dataset.depart!==undefined)return;   /* รอบันทึกตอนออกจากช่อง (ดู listener change) */
 });
 document.getElementById('modal').addEventListener('click',e=>{
@@ -2129,6 +2182,7 @@ document.getElementById('view').addEventListener('change',e=>{
       if(r)j.dest=r.dest||'';
     }
     applyRouteToJob(j);
+    ['product','origin','dest','distance','type'].forEach(f=>pendingOps.push({k:'jobset',id:String(j.id),f:f,v:j[f]}));
     saveDay();renderDispatch();
     return;
   }
@@ -2137,7 +2191,7 @@ document.getElementById('view').addEventListener('change',e=>{
     const j=day.jobs.find(x=>String(x.id)===e.target.dataset.depart);
     const nv=normHM(e.target.value);
     if(nv===null){badHM(e.target,j?j.depart:'');return;}
-    if(j){j.depart=nv;saveDay();renderDispatch();}
+    if(j){setJobField(j,'depart',nv);saveDay();renderDispatch();}
     return;
   }
   if(e.target.id==='fileInput'&&e.target.files[0])importFile(e.target.files[0]);
@@ -2164,7 +2218,7 @@ document.getElementById('view').addEventListener('change',e=>{
     const j=day.jobs.find(x=>String(x.id)===e.target.dataset.job),f=e.target.dataset.field;
     const nv=normHM(e.target.value);
     if(nv===null){badHM(e.target,j?j[f]:'');return;}
-    if(j){j[f]=nv;saveDay();renderBoard();}
+    if(j){setJobField(j,f,nv);saveDay();renderBoard();}
     return;
   }
 });
@@ -2361,7 +2415,11 @@ async function pollDay(){
     try{
       const o=JSON.parse(raw);
       /* รับเฉพาะข้อมูลที่ "ใหม่กว่า" ของในเครื่องเท่านั้น กันของเก่าทับของใหม่ */
-      if(o&&(o._rev||0)>(day._rev||0)){normDay(o);day=o;render();}
+      if(o&&(o._rev||0)>(day._rev||0)){
+        normDay(o);day=o;
+        pendingOps.forEach(op=>applyOpLocal(day,op));   /* ของที่เรายังไม่ได้ส่ง ต้องไม่หาย */
+        render();
+      }
     }catch(e){}
   }
   flag('ok');
