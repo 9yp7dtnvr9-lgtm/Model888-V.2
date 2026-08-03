@@ -117,6 +117,43 @@
   .dbig{font-size:16px;font-weight:600}
   .rin{width:100%;border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-family:inherit;font-size:13px;background:#fff}
   .rin:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
+  /* ---------- Dashboard (หน้า 6) ---------- */
+  .dwrap{display:flex;flex-direction:column;gap:14px}
+  .dbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .dseg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .dseg button{border:0;background:#fff;padding:7px 13px;font-family:inherit;font-size:13px;cursor:pointer;color:var(--ink);border-right:1px solid var(--line)}
+  .dseg button:last-child{border-right:0}
+  .dseg button.on{background:var(--nav);color:#fff;font-weight:600}
+  .dgrid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+  .dcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .dcard .k{font-size:12px;color:var(--muted);letter-spacing:.2px}
+  .dcard .v{font-size:30px;font-weight:700;line-height:1.15;margin-top:3px;font-variant-numeric:tabular-nums}
+  .dcard .s{font-size:12px;color:var(--muted);margin-top:3px}
+  .dcard.hero{background:linear-gradient(135deg,var(--nav),#20406b);border-color:var(--nav)}
+  .dcard.hero .k,.dcard.hero .s{color:#c9d7ea}
+  .dcard.hero .v{color:#fff}
+  .dpanel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .dpanel h3{margin:0 0 10px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .dpanel h3 .cno{font-weight:400}
+  .drow{display:grid;grid-template-columns:1fr 62px;gap:8px;align-items:center;padding:5px 0;font-size:13px}
+  .dbar2{height:9px;border-radius:6px;background:#eef1f6;overflow:hidden}
+  .dbar2 i{display:block;height:100%;border-radius:6px;background:var(--accent)}
+  .dnum{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  .dtwo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .dsvg{width:100%;height:auto;display:block}
+  .tag.m1212{background:#eaf3ff;color:#1f5fa8;border-color:#bcd6f2;font-weight:600}
+  .dpick{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:9px;padding:4px 9px;font-size:12.5px;background:#fff}
+  .dpick.on{border-color:var(--accent);background:var(--present-bg)}
+  .dpick input[type=date]{border:1px solid var(--line);border-radius:7px;padding:4px 6px;font-family:inherit;font-size:12.5px}
+  .dchip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;border:1px solid var(--line);background:#fff}
+  .dload{height:4px;border-radius:4px;background:#e8edf4;overflow:hidden}
+  .dload i{display:block;height:100%;background:var(--accent);transition:width .25s}
+  @media(max-width:820px){.dtwo{grid-template-columns:1fr}}
+  @media print{
+    header,nav.tabs,footer,.dbar{display:none!important}
+    .dcard,.dpanel{break-inside:avoid;border-color:#bbb}
+    body{background:#fff}
+  }
   .planin{width:74px;text-align:center;border:1px solid var(--accent2);border-radius:7px;padding:5px 6px;font-family:inherit;font-size:13px;background:#fffdf3;font-variant-numeric:tabular-nums}
   .planin:focus{outline:2px solid var(--accent2)}
   .hmin{width:66px;text-align:center;letter-spacing:.5px;font-variant-numeric:tabular-nums}
@@ -257,6 +294,7 @@
   <button data-tab="board"><span class="num">3</span> สถานะการวิ่งงาน</button>
   <button data-tab="summary"><span class="num">4</span> สรุปประจำวัน</button>
   <button data-tab="plan"><span class="num">5</span> วางแผนเส้นทาง/ชาร์จ</button>
+  <button data-tab="dash"><span class="num">6</span> Dashboard</button>
 </nav>
 <main id="view"></main>
 <div id="modal" class="modal-overlay" style="display:none"></div>
@@ -313,8 +351,36 @@ function jtLong(k){return jt(k).long;}
 function jtBadge(k){return '<span class="jtype '+esc(k||'main')+'">'+esc(jtLabel(k))+'</span>';}
 /* ประเภทงานของ "งานที่จ่ายแล้ว" อ้างอิงทะเบียนหน้า 5 เสมอ
    เทียบ สินค้า -> ต้นทาง -> ปลายทาง ถ้าไม่เจอค่อยใช้ค่าที่บันทึกตอนจ่ายงาน */
+/* ---------- Model 12:12 ----------
+   สินค้าที่มีคำว่า "รับตรง" (ชิพเชื้อเพลิง-รับตรง) = รถวิ่งงานยาว ขึ้นของเองจากต้นทาง
+   นับเป็น งานหลัก_BU4 ทุกต้นทาง · เกณฑ์เวลา 12 ชม. ไม่ใช่ 8 ชม.
+   ยกเว้นต้นทาง "บจก. วรวัฒน์ ธัญญผล" ที่ไม่เข้าเงื่อนไขนี้                     */
+function isModel1212(j){
+  if(!j)return false;
+  if(String(j.product||'').indexOf('รับตรง')<0)return false;
+  const o=String(j.origin||'');
+  if(o.indexOf('วรวัฒน์')>=0||o.indexOf('ธัญญผล')>=0)return false;
+  return true;
+}
+/* กลุ่มเกณฑ์เวลาของงาน: กะ 8 ชม. / Model 12:12 / สายสั้น 4 ชม. */
+const WT_GROUPS=[
+  {k:'long8', lim:8,  name:'กะ 8 ชม.',    who:'หลัก_BU4 + BU อื่น(สายยาว)'},
+  {k:'m1212', lim:12, name:'Model 12:12', who:'เฉพาะ Model 12:12'},
+  {k:'short4',lim:4,  name:'สายสั้น 4 ชม.',who:'VT_BU4 + BU อื่น(สายสั้น)'}
+];
+function workGroup(j){
+  if(isModel1212(j))return 'm1212';
+  return jtLong(jobType(j)) ? 'long8' : 'short4';
+}
+function workLimit(j){const g=workGroup(j);for(const x of WT_GROUPS)if(x.k===g)return x.lim;return 8;}
+/* ป้ายประเภทงานของงานหนึ่ง ๆ (ต่อท้าย 12:12 ถ้าเข้าเงื่อนไข) */
+function jtBadgeJ(j){
+  const b=jtBadge(isModel1212(j)?'main':jobType(j));
+  return b+(isModel1212(j)?' <span class="tag m1212">12:12</span>':'');
+}
 function jobType(j){
   if(!j)return 'main';
+  if(isModel1212(j))return 'main';                 /* บังคับเป็นงานหลัก_BU4 ทุกต้นทาง */
   const p=(j.product||'').trim(),o=(j.origin||'').trim(),d=(j.dest||'').trim();
   let r=null;
   if(p){
@@ -1065,7 +1131,7 @@ function renderDispatch(){
     <td class="mono">${esc(j.mainTruck||j.truck||'')}</td>
     <td><input class="actualin" data-actual="${j.id}" value="${esc(j.actualTruck||j.mainTruck||j.truck||'')}"></td>
     <td class="mono" style="text-align:center">${esc(j.trip||'')}</td>
-    <td>${jtBadge(jobType(j))}</td>
+    <td>${jtBadgeJ(j)}</td>
     ${arriveCell(j)}
     <td>${hmField(j.depart,'data-depart="'+j.id+'"','departin')}</td>
     <td><input class="noteinp" data-note="${j.id}" value="${esc(j.note||'')}" placeholder="หมายเหตุ…"></td>
@@ -1378,7 +1444,8 @@ function renderBoard(){
     const eta = addMin(j.depart, tm);
     const p = plan[j.id] || {};
     const wb = workBreakdown(j);
-    const over8 = wb.closed && wb.total > 8;
+    const wlim = isModel1212(j) ? 12 : 8;            /* Model 12:12 เกินได้ถึง 12 ชม. */
+    const over8 = wb.closed && wb.total > wlim;
     const etaCell = eta
       ? `<div class="mono" style="font-weight:600">${esc(eta.hm)} <span class="cno">น.</span>${eta.nextDay?' <span class="tag">+1 วัน</span>':''}</div>
          <div class="cno">${esc(j.origin||'-')} · ใช้เวลา ${tm/60} ชม.</div>`
@@ -1387,7 +1454,7 @@ function renderBoard(){
       <td class="mono" style="text-align:center">${idx}</td>
       <td class="mono">${esc(j.date||curDate)}</td>
       <td><div>${esc(j.driver||'-')}</div><div class="cno">${esc(j.product||'')}${j.trip?(' · เที่ยว '+esc(j.trip)):''}</div></td>
-      <td class="truck"><span class="plate">${esc(j.actualTruck||j.mainTruck||j.truck||'')}</span> ${jtBadge(jobType(j))}</td>
+      <td class="truck"><span class="plate">${esc(j.actualTruck||j.mainTruck||j.truck||'')}</span> ${jtBadgeJ(j)}</td>
       <td class="mono">${j.depart?esc(j.depart)+' <span class="cno">น.</span>':'<span class="cno">—</span>'}</td>
       <td>${etaCell}</td>
       <td><span class="badge ${c}">${l}</span></td>
@@ -1403,8 +1470,8 @@ function renderBoard(){
           +'<div class="cno" style="margin-top:3px;line-height:1.4">'+wb.parts.map(p=>esc(p.label)+' '+p.h).join(' · ')+'</div>'
       }</td>
       <td><input class="noteinp" style="width:170px${over8?';border-color:var(--absent);background:#fff7f6':''}" data-over="${j.id}"
-        value="${esc(j.overNote||'')}" placeholder="${over8?'ระบุสาเหตุที่เกิน 8 ชม.':'—'}"
-        ${over8?'':'title="ใช้เมื่อรอบนี้เกิน 8 ชม."'}></td>
+        value="${esc(j.overNote||'')}" placeholder="${over8?('ระบุสาเหตุที่เกิน '+wlim+' ชม.'):'—'}"
+        ${over8?'':('title="ใช้เมื่อรอบนี้เกิน '+wlim+' ชม."')}></td>
     </tr>`;
   }).join('');
 
@@ -1420,7 +1487,7 @@ function renderBoard(){
     <div class="toolbar"><span class="cno">กดกล่องด้านบนเพื่อกรองเฉพาะสถานะนั้น (กดซ้ำเพื่อดูทั้งหมด) · แก้เวลาออกได้ที่หน้า 2</span>
       ${boardFilter!=='all'?'<button class="btn" id="clearBf">✕ ล้างตัวกรอง</button>':''}</div>
     <div class="tablewrap sbox10"><table style="min-width:1620px">
-      <thead><tr>${thS('board','seq','ลำดับ','center')}${thS('board','date','วันที่')}${thS('board','driver','ชื่อ พจส.')}${thS('board','truck','เบอร์รถ')}${thS('board','depart','เวลาออก')}${thS('board','eta','เวลาถึงต้นทาง (คาดการณ์)')}${thS('board','status','สถานะ','center')}${thS('board','charger','แผนชาร์จ','center')}${thS('board','cs','เวลาชาร์จ')}${thS('board','ret','เวลากลับ')}${thS('board','closed','เวลาปิดงาน')}${thS('board','hours','รวมเวลาทำงาน','center')}<th>สาเหตุเกิน 8 ชม.</th></tr></thead>
+      <thead><tr>${thS('board','seq','ลำดับ','center')}${thS('board','date','วันที่')}${thS('board','driver','ชื่อ พจส.')}${thS('board','truck','เบอร์รถ')}${thS('board','depart','เวลาออก')}${thS('board','eta','เวลาถึงต้นทาง (คาดการณ์)')}${thS('board','status','สถานะ','center')}${thS('board','charger','แผนชาร์จ','center')}${thS('board','cs','เวลาชาร์จ')}${thS('board','ret','เวลากลับ')}${thS('board','closed','เวลาปิดงาน')}${thS('board','hours','รวมเวลาทำงาน','center')}<th>สาเหตุเกินเกณฑ์เวลา</th></tr></thead>
       <tbody>${shown.length?rows:'<tr><td colspan="13" class="empty-note">'+(jobs.length?'ไม่มีงานในสถานะนี้':'ยังไม่มีงานที่จ่าย — ไปที่หน้า 2 เพื่อจ่ายงาน')+'</td></tr>'}</tbody>
     </table></div>`;
   restore();
@@ -1591,7 +1658,15 @@ function tablePlanVsActual(){
     let sp=0,sa=0,rows='';
     const sortedP=sortBy('sum2',prods.map(p=>({p,plan:Number(pv(g,p))||0,a:act[g][p]||0})),
       {product:x=>x.p,plan:x=>x.plan,actual:x=>x.a,diff:x=>x.a-x.plan,pct:x=>x.plan?x.a/x.plan:0}).map(x=>x.p);
-    sortedP.forEach(p=>{
+    const is1212=p=>String(p).indexOf('รับตรง')>=0;
+    const ordered=(g==='main')?sortedP.filter(p=>!is1212(p)).concat(sortedP.filter(is1212)):sortedP;
+    let sepDone=false;
+    ordered.forEach(p=>{
+      if(g==='main'&&is1212(p)&&!sepDone&&sumProdOpen[g]){
+        sepDone=true;
+        rows+=`<tr><td colspan="5" style="padding:6px 12px 4px 22px;background:#f4f8fd">
+          <span class="tag m1212">Model 12:12</span> <span class="cno">รถวิ่งงานยาว ขึ้นของเองจากต้นทาง · เกณฑ์ 12 ชม.</span></td></tr>`;
+      }
       const plan=Number(pv(g,p))||0, a=act[g][p]||0;
       sp+=plan; sa+=a;
       if(!sumProdOpen[g])return;
@@ -1640,36 +1715,61 @@ function tablePlanVsActual(){
 
 /* ===== ตารางที่ 3: เวลาการทำงานต่อเที่ยว (เกณฑ์ 8 ชม.) ===== */
 function tableWorkTime(){
-  let le = 0, gt = 0, run = 0, sum = 0, cnt = 0;
-  const over = [];
+  /* แยกตามเกณฑ์เวลา 3 กลุ่ม: กะ 8 ชม. / Model 12:12 / สายสั้น 4 ชม. */
+  const G={}; WT_GROUPS.forEach(x=>G[x.k]={ok:0,over:0,sum:0,n:0,run:0,list:[]});
   for(const j of day.jobs){
-    const b = workBreakdown(j);
-    if(!b.started) continue;
-    if(!b.closed){ run++; continue; }
-    cnt++; sum += b.total;
-    if(b.total > 8){ gt++; over.push(j); } else le++;
+    const b=workBreakdown(j);
+    if(!b.started)continue;
+    const g=G[workGroup(j)];
+    if(!b.closed){g.run++;continue;}
+    g.n++; g.sum+=b.total;
+    if(b.total>workLimit(j)){g.over++;g.list.push(j);}else g.ok++;
   }
-  const avg = cnt ? Math.round(sum/cnt*10)/10 : null;
-  const bar = (n,total,c)=>`<div style="background:#eef1f5;border-radius:20px;height:8px;overflow:hidden"><div style="width:${total?Math.round(n/total*100):0}%;height:100%;background:${c}"></div></div>`;
-  const overList = over.length
-    ? '<div class="cno" style="margin-top:10px">เที่ยวที่เกิน 8 ชม.: '
-      + over.map(j=>esc((j.actualTruck||j.mainTruck||j.truck)+' '+(j.driver||'')+' ('+workBreakdown(j).total+' ชม.)')).join(' · ') + '</div>'
+  const T={ok:0,over:0,sum:0,n:0,run:0};
+  WT_GROUPS.forEach(x=>{const g=G[x.k];T.ok+=g.ok;T.over+=g.over;T.sum+=g.sum;T.n+=g.n;T.run+=g.run;});
+  const pc=(a,b)=>b?Math.round(a/b*100)+'%':'-';
+  const bar=(ok,over,tot)=>{
+    if(!tot)return '<div style="background:#eef1f5;border-radius:20px;height:9px"></div>';
+    return `<div style="display:flex;height:9px;border-radius:20px;overflow:hidden;background:#eef1f5">
+      <div style="width:${Math.round(ok/tot*100)}%;background:var(--present)"></div>
+      <div style="width:${Math.round(over/tot*100)}%;background:var(--absent)"></div></div>`;
+  };
+  const row=x=>{
+    const g=G[x.k];
+    return `<tr>
+      <td><b>${esc(x.name)}</b><div class="cno">${esc(x.who)}</div></td>
+      <td class="mono" style="text-align:center;font-weight:600;color:var(--present)">${g.ok}</td>
+      <td class="mono" style="text-align:center;color:var(--present)">${pc(g.ok,g.n)}</td>
+      <td class="mono" style="text-align:center;font-weight:600;color:var(--absent)">${g.over}</td>
+      <td class="mono" style="text-align:center;color:var(--absent)">${pc(g.over,g.n)}</td>
+      <td class="mono" style="text-align:center;font-weight:600">${g.n}</td>
+      <td class="mono" style="text-align:center">${g.n?(Math.round(g.sum/g.n*10)/10):'-'}</td>
+      <td style="min-width:140px">${bar(g.ok,g.over,g.n)}</td></tr>`;
+  };
+  const overAll=[];
+  WT_GROUPS.forEach(x=>G[x.k].list.forEach(j=>overAll.push({j:j,lim:workLimit(j)})));
+  const overList=overAll.length
+    ? '<div class="cno" style="margin-top:10px">เที่ยวที่เกินเกณฑ์: '
+      + overAll.map(o=>esc((o.j.actualTruck||o.j.mainTruck||o.j.truck)+' '+(o.j.driver||'')
+        +' ('+workBreakdown(o.j).total+'/'+o.lim+' ชม.)')).join(' · ') + '</div>'
     : '';
-  return `<div class="card"><h2>3 · เวลาการทำงานต่อเที่ยว (เกณฑ์ 8 ชม./กะ)</h2>
-    <div class="tablewrap sbox"><table style="min-width:560px"><thead><tr>
-      <th>เกณฑ์</th><th style="text-align:center">จำนวนเที่ยว</th><th style="text-align:center">สัดส่วน</th><th style="width:180px">กราฟ</th>
+  return `<div class="card"><h2>3 · เวลาการทำงานต่อเที่ยว (แยกตามเกณฑ์)</h2>
+    <div class="tablewrap sbox"><table style="min-width:820px"><thead><tr>
+      <th>เกณฑ์ / ประเภทงานที่นับ</th>
+      <th style="text-align:center">ไม่เกิน</th><th style="text-align:center">สัดส่วน</th>
+      <th style="text-align:center">เกิน</th><th style="text-align:center">สัดส่วน</th>
+      <th style="text-align:center">รวม</th><th style="text-align:center">เฉลี่ย (ชม.)</th><th>กราฟ</th>
     </tr></thead><tbody>
-      <tr><td><b style="color:var(--present)">ไม่เกิน 8 ชม.</b> <span class="cno">(อยู่ในกะ)</span></td>
-        <td class="mono" style="text-align:center;font-size:15px;font-weight:600">${le}</td>
-        <td class="mono" style="text-align:center">${cnt?Math.round(le/cnt*100)+'%':'-'}</td>
-        <td>${bar(le,cnt,'var(--present)')}</td></tr>
-      <tr><td><b style="color:var(--absent)">เกิน 8 ชม.</b> <span class="cno">(ล้นกะ / ต้องตรวจสอบ)</span></td>
-        <td class="mono" style="text-align:center;font-size:15px;font-weight:600">${gt}</td>
-        <td class="mono" style="text-align:center">${cnt?Math.round(gt/cnt*100)+'%':'-'}</td>
-        <td>${bar(gt,cnt,'var(--absent)')}</td></tr>
-      <tr style="background:#f7f9fc"><td style="font-weight:600">รวมเที่ยวที่ปิดงานแล้ว</td>
-        <td class="mono" style="text-align:center;font-weight:600">${cnt}</td>
-        <td class="cno" style="text-align:center" colspan="2">เฉลี่ย ${avg!==null?avg+' ชม./เที่ยว':'-'} · ยังวิ่งอยู่ ${run} เที่ยว</td></tr>
+      ${WT_GROUPS.map(row).join('')}
+      <tr style="background:var(--nav);color:#fff">
+        <td style="font-weight:600;color:#fff">รวมทั้งหมด <span style="font-size:11px;opacity:.75">(เที่ยวที่ปิดงานแล้ว)</span></td>
+        <td class="mono" style="text-align:center;font-weight:600">${T.ok}</td>
+        <td class="mono" style="text-align:center">${pc(T.ok,T.n)}</td>
+        <td class="mono" style="text-align:center;font-weight:600">${T.over}</td>
+        <td class="mono" style="text-align:center">${pc(T.over,T.n)}</td>
+        <td class="mono" style="text-align:center;font-weight:600">${T.n}</td>
+        <td class="mono" style="text-align:center">${T.n?(Math.round(T.sum/T.n*10)/10):'-'}</td>
+        <td class="cno" style="color:#c9d7ea">ยังวิ่งอยู่ ${T.run} เที่ยว</td></tr>
     </tbody></table></div>${overList}</div>`;
 }
 
@@ -1961,12 +2061,12 @@ function render(){
     if(!validConfig(config))config=seed();
     if(!isPlain(day))day=normDay(blankDay());
     document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-    ({roster:renderRoster,dispatch:renderDispatch,board:renderBoard,plan:renderPlan,summary:renderSummary}[tab])();
+    ({roster:renderRoster,dispatch:renderDispatch,board:renderBoard,plan:renderPlan,summary:renderSummary,dash:renderDash}[tab])();
   }catch(err){showFatal('วาดหน้าจอ ('+tab+')',err);}
 }
 
 /* ---------- events (delegated) ---------- */
-document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(b){tab=b.dataset.tab;if(tab==='dispatch')dispFirst=true;if(tab==='summary')sumFirst=true;render();if(tab==='roster')scrollToCurrentHour();}});
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(b){tab=b.dataset.tab;if(tab==='dash')setTimeout(()=>dashLoad(),0);if(tab==='dispatch')dispFirst=true;if(tab==='summary')sumFirst=true;render();if(tab==='roster')scrollToCurrentHour();}});
 document.getElementById('dateInput').addEventListener('change',async e=>{curDate=e.target.value||todayStr();applyRosterForDate();await loadDay();closeWidget('alarm');closeWidget('alert');loadNotify();tickAlarms();render();if(tab==='roster')scrollToCurrentHour();});
 
 document.getElementById('view').addEventListener('click',e=>{
@@ -2440,6 +2540,329 @@ function startPoll(){
   if(backendURL)pollTimer=setInterval(()=>{pollDay();if((++pollN%4)===0)pollRoster();},15000);
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollDay();});
+
+/* ==================== TAB 6: Dashboard ====================
+   ดึงข้อมูลรายวันหลายวันมารวม แล้วสรุปเป็นภาพ · ไม่แตะหน้า 1-5 */
+let dashDays=7, dashTab='overview', dashCache={}, dashBusy=false, dashDone=0, dashNeed=0;
+let dashFrom='', dashTo='';        /* ถ้ากรอกครบทั้งคู่ = ใช้ช่วงที่เลือกเอง */
+const DASH_MAX_DAYS=92;            /* กันเลือกช่วงยาวเกินจนโหลดหนัก */
+
+function dstr(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function dashDateList(){
+  const out=[];
+  if(dashFrom&&dashTo){                                    /* ช่วงที่เลือกเอง */
+    let a=new Date(dashFrom+'T00:00:00'), b=new Date(dashTo+'T00:00:00');
+    if(isNaN(a.getTime())||isNaN(b.getTime()))return [curDate];
+    if(a>b){const t=a;a=b;b=t;}
+    let cur=a, guard=0;
+    while(cur<=b&&guard++<DASH_MAX_DAYS){out.push(dstr(cur));cur=new Date(cur.getTime()+86400000);}
+    return out;
+  }
+  const end=new Date(curDate+'T00:00:00');
+  for(let i=dashDays-1;i>=0;i--)out.push(dstr(new Date(end.getTime()-i*86400000)));
+  return out;
+}
+function dashCustom(){return !!(dashFrom&&dashTo);}
+/* โหลดข้อมูลหลายวัน — อ่านของในเครื่องก่อน แล้วดึงที่ขาดทีละชุด */
+async function dashLoad(force){
+  if(dashBusy)return;
+  const dates=dashDateList();
+  if(force)dates.forEach(d=>{delete dashCache[d];});
+  dates.forEach(ds=>{
+    if(dashCache[ds]!==undefined)return;
+    const raw=lsGet('fleetdb:fleet:day:'+ds);
+    if(raw){try{const o=JSON.parse(raw);if(o&&typeof o==='object'){normDay(o);dashCache[ds]=o;}}catch(e){}}
+  });
+  const need=dates.filter(ds=>dashCache[ds]===undefined);
+  dashNeed=need.length; dashDone=0;
+  if(!need.length){renderDash();return;}
+  dashBusy=true; renderDash();
+  for(let i=0;i<need.length;i+=4){
+    const batch=need.slice(i,i+4);
+    await Promise.all(batch.map(async ds=>{
+      let raw=null;
+      try{raw=await dayFetch(ds);}catch(e){}
+      if(raw===null||raw===undefined){try{raw=await store.get('fleet:day:'+ds);}catch(e){}}
+      let o=null; if(raw){try{o=JSON.parse(raw);}catch(e){}}
+      if(o&&typeof o==='object'){normDay(o);dashCache[ds]=o;} else dashCache[ds]=null;
+      dashDone++;
+    }));
+    if(tab==='dash')renderDash();
+  }
+  dashBusy=false; if(tab==='dash')renderDash();
+}
+/* ตารางกะที่ใช้กับวันนั้น */
+function rosterOn(ds){
+  const v=rosterFor(ds);
+  return (v&&Array.isArray(v.roster))?v.roster:config;
+}
+/* ---------- รวมข้อมูลทั้งช่วง ---------- */
+function dashAgg(){
+  const dates=dashDateList();
+  const A={dates:dates,daily:[],haveDays:0,
+    att:{sched:0,present:0,late:0,absent:0,leave:0,ot:0,off:0,unchecked:0},
+    trips:0,closed:0,plan:0,byType:{},prod:{},origin:{},truck:{},driver:{},
+    hours:[],over8:0,hitTrucks:0,trucksSeen:{},wt:{}};
+  WT_GROUPS.forEach(x=>A.wt[x.k]={ok:0,over:0,sum:0,n:0});
+  JOBTYPES.forEach(t=>A.byType[t.k]=0);
+  dates.forEach(ds=>{
+    const day2=dashCache[ds];
+    const row={ds:ds,trips:0,closed:0,present:0,absent:0,late:0,leave:0,sched:0,hours:0,hoursN:0,plan:0};
+    if(!day2){A.daily.push(row);return;}
+    A.haveDays++;
+    /* --- คน --- */
+    const rs=rosterOn(ds);
+    for(const t of rs)for(const d of (t.drivers||[])){
+      const off=isOff(t,d,ds);
+      const v=((day2.attend||{})[t.truckNo]||{})[d.pos]||'';
+      if(off){A.att.off++; if(v==='ot'){A.att.ot++;A.att.present++;row.present++;} continue;}
+      A.att.sched++; row.sched++;
+      if(v==='present'){A.att.present++;row.present++;}
+      else if(v==='late'){A.att.present++;A.att.late++;row.present++;row.late++;}
+      else if(v==='ot'){A.att.present++;A.att.ot++;row.present++;}
+      else if(v==='absent'){A.att.absent++;row.absent++;}
+      else if(v==='leave'){A.att.leave++;row.leave++;}
+      else A.att.unchecked++;
+      if(v==='absent'||v==='late'||v==='leave'){
+        const nm=d.name||'-';
+        A.driver[nm]=A.driver[nm]||{absent:0,late:0,leave:0,name:nm,code:d.code||''};
+        if(v==='absent')A.driver[nm].absent++; else if(v==='late')A.driver[nm].late++; else A.driver[nm].leave++;
+      }
+    }
+    /* --- แผนงาน --- */
+    Object.keys(day2.plan||{}).forEach(k=>{
+      const num=Number(day2.plan[k]);
+      if(isFinite(num)&&num>0){A.plan+=num;row.plan+=num;}
+    });
+    /* --- เที่ยว / เส้นทาง / รถ / เวลา --- */
+    const per={};
+    (day2.jobs||[]).forEach(j=>{
+      A.trips++; row.trips++;
+      const gk=JOBTYPES.some(t=>t.k===j.type)?j.type:'main';
+      A.byType[gk]=(A.byType[gk]||0)+1;
+      const p=(j.product||'(ไม่ระบุ)').trim(); A.prod[p]=(A.prod[p]||0)+1;
+      const o=(j.origin||'(ไม่ระบุ)').trim(); A.origin[o]=(A.origin[o]||0)+1;
+      const tk=j.mainTruck||j.truck||'-'; A.truck[tk]=(A.truck[tk]||0)+1; per[tk]=(per[tk]||0)+1; A.trucksSeen[tk]=1;
+      if(j.closed){
+        A.closed++; row.closed++;
+        const wb=workBreakdown(j);
+        if(wb.total>0){A.hours.push(wb.total);row.hours+=wb.total;row.hoursN++;}
+        const g=A.wt[workGroup(j)];
+        if(wb.total>0){g.n++;g.sum+=wb.total;if(wb.total>workLimit(j)){g.over++;A.over8++;}else g.ok++;}
+      }
+    });
+    Object.keys(per).forEach(tk=>{if(per[tk]>=TARGET_ROUNDS)A.hitTrucks++;});
+    A.daily.push(row);
+  });
+  A.hoursAvg=A.hours.length?(A.hours.reduce((a,b)=>a+b,0)/A.hours.length):0;
+  A.attRate=A.att.sched?(A.att.present/A.att.sched*100):0;
+  A.tripsPerDay=A.haveDays?(A.trips/A.haveDays):0;
+  return A;
+}
+/* ---------- ชิ้นส่วนกราฟ ---------- */
+function dBars(obj,limit,color){
+  const arr=Object.keys(obj).map(k=>[k,obj[k]]).sort((a,b)=>b[1]-a[1]).slice(0,limit||8);
+  if(!arr.length)return '<div class="cno">ไม่มีข้อมูล</div>';
+  const max=arr[0][1]||1;
+  return arr.map(([k,v])=>`<div class="drow">
+    <div><div style="margin-bottom:3px">${esc(k)}</div>
+      <div class="dbar2"><i style="width:${Math.round(v/max*100)}%${color?(';background:'+color):''}"></i></div></div>
+    <div class="dnum">${v}</div></div>`).join('');
+}
+function dTrend(daily,pick,lab,color){
+  const vals=daily.map(pick), N=vals.length;
+  if(!N)return '';
+  const max=Math.max(1,...vals), W=Math.max(320,N*46), H=110, pad=16;
+  const x=i=>pad+(N===1?0:i*(W-pad*2)/(N-1)), y=v=>H-pad-(v/max)*(H-pad*2);
+  const pts=vals.map((v,i)=>x(i)+','+y(v)).join(' ');
+  const area='M'+x(0)+','+(H-pad)+' L'+vals.map((v,i)=>x(i)+','+y(v)).join(' L')+' L'+x(N-1)+','+(H-pad)+' Z';
+  return `<svg class="dsvg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(lab)}">
+    <path d="${area}" fill="${color}" opacity=".13"></path>
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"></polyline>
+    ${vals.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="3.5" fill="#fff" stroke="${color}" stroke-width="2"></circle>
+      <text x="${x(i)}" y="${y(v)-8}" font-size="11" text-anchor="middle" fill="#5a6b82">${v}</text>
+      <text x="${x(i)}" y="${H-3}" font-size="10" text-anchor="middle" fill="#8a97a8">${daily[i].ds.slice(5)}</text>`).join('')}
+  </svg>`;
+}
+/* ---------- ข้อความสรุปสำหรับคัดลอก ---------- */
+function dashText(A){
+  const L=[];
+  L.push('สรุปงานขนส่ง EV — BU4');
+  L.push('ช่วง '+A.dates[0]+' ถึง '+A.dates[A.dates.length-1]+' ('+A.haveDays+'/'+A.dates.length+' วันที่มีข้อมูล)');
+  L.push('');
+  L.push('เที่ยวงานรวม '+A.trips+' เที่ยว · เฉลี่ย '+A.tripsPerDay.toFixed(1)+' เที่ยว/วัน');
+  L.push('ปิดงานแล้ว '+A.closed+' เที่ยว · แผนที่ตั้งไว้ '+A.plan+' เที่ยว'+(A.plan?(' ('+Math.round(A.trips/A.plan*100)+'% ของแผน)'):''));
+  L.push('พจส. มาทำงาน '+A.att.present+'/'+A.att.sched+' ('+A.attRate.toFixed(1)+'%) · สาย '+A.att.late+' · ขาด '+A.att.absent+' · ลา '+A.att.leave+' · OT '+A.att.ot);
+  L.push('เวลาทำงานเฉลี่ย '+A.hoursAvg.toFixed(1)+' ชม./เที่ยว · เกินเกณฑ์ '+A.over8+' เที่ยว');
+  WT_GROUPS.forEach(x=>{const q=A.wt[x.k];if(q&&q.n)L.push('  · '+x.name+' ไม่เกิน '+q.ok+' · เกิน '+q.over+' (จาก '+q.n+' เที่ยว)');});
+  L.push('');
+  L.push('แยกตามประเภทงาน');
+  JOBTYPES.forEach(t=>L.push('  · '+t.f+' '+(A.byType[t.k]||0)+' เที่ยว'));
+  const top=k=>Object.keys(k).map(x=>[x,k[x]]).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  L.push('');
+  L.push('สินค้า/เส้นทางที่วิ่งมากสุด');
+  top(A.prod).forEach(([k,v])=>L.push('  · '+k+' '+v+' เที่ยว'));
+  return L.join('\n');
+}
+/* ---------- วาดหน้า ---------- */
+function renderDash(){
+  const restore=keepScroll();
+  const A=dashAgg();
+  const seg=(v,lab)=>`<button class="${(!dashCustom()&&dashDays===v)?'on':''}" data-dday="${v}">${lab}</button>`;
+  const tabBtn=(k,lab)=>`<button class="${dashTab===k?'on':''}" data-dtab="${k}">${lab}</button>`;
+  const pct=(a,b)=>b?Math.round(a/b*100):0;
+  const card=(k,v,s2,cls)=>`<div class="dcard ${cls||''}"><div class="k">${k}</div><div class="v">${v}</div>${s2?('<div class="s">'+s2+'</div>'):''}</div>`;
+
+  /* --- ภาพรวม --- */
+  let body='';
+  if(dashTab==='overview'){
+    body=`<div class="dgrid4">
+      ${card('เที่ยวงานรวม',A.trips,'เฉลี่ย '+A.tripsPerDay.toFixed(1)+' เที่ยว/วัน','hero')}
+      ${card('เทียบแผน',(A.plan?pct(A.trips,A.plan)+'%':'—'),A.plan?('แผน '+A.plan+' · จริง '+A.trips):'ยังไม่ได้ตั้งแผน')}
+      ${card('พจส. มาทำงาน',A.attRate.toFixed(1)+'%',A.att.present+' จาก '+A.att.sched+' คน-วัน')}
+      ${card('ปิดงานแล้ว',A.closed,pct(A.closed,A.trips)+'% ของเที่ยวทั้งหมด')}
+      ${card('เวลาทำงานเฉลี่ย',A.hoursAvg.toFixed(1),'ชม./เที่ยว · เกินเกณฑ์ '+A.over8+' เที่ยว')}
+      ${card('รถที่ครบ '+TARGET_ROUNDS+' รอบ',A.hitTrucks,'นับรวมทุกวันในช่วง')}
+    </div>
+    <div class="dtwo">
+      <div class="dpanel"><h3>เที่ยวงานรายวัน</h3>${dTrend(A.daily,r=>r.trips,'เที่ยวรายวัน','#2b6cb0')}</div>
+      <div class="dpanel"><h3>พจส. มาทำงานรายวัน</h3>${dTrend(A.daily,r=>r.present,'มาทำงานรายวัน','#2f8f6b')}</div>
+    </div>
+    <div class="dpanel"><h3>แยกตามประเภทงาน</h3>
+      ${dBars((function(){const o={};JOBTYPES.forEach(t=>{if(A.byType[t.k])o[t.f]=A.byType[t.k];});return o;})(),6)}
+    </div>`;
+  }
+  /* --- คน --- */
+  else if(dashTab==='people'){
+    const late=Object.keys(A.driver).map(k=>A.driver[k]).filter(x=>x.late).sort((a,b)=>b.late-a.late).slice(0,8);
+    const abs=Object.keys(A.driver).map(k=>A.driver[k]).filter(x=>x.absent).sort((a,b)=>b.absent-a.absent).slice(0,8);
+    body=`<div class="dgrid4">
+      ${card('มาทำงาน',A.att.present,A.attRate.toFixed(1)+'% ของที่ต้องมา','hero')}
+      ${card('มาสาย',A.att.late,pct(A.att.late,A.att.sched)+'% ของที่ต้องมา')}
+      ${card('ขาดงาน',A.att.absent,pct(A.att.absent,A.att.sched)+'% ของที่ต้องมา')}
+      ${card('ลา',A.att.leave,'')}
+      ${card('มา OT วันหยุด',A.att.ot,'จากวันหยุด '+A.att.off+' คน-วัน')}
+      ${card('ยังไม่เช็ก',A.att.unchecked,'ควรเป็น 0 เมื่อจบวัน')}
+    </div>
+    <div class="dtwo">
+      <div class="dpanel"><h3>พจส. ที่มาสายบ่อยสุด <span class="cno">(ครั้ง)</span></h3>
+        ${late.length?dBars((function(){const o={};late.forEach(x=>o[x.name+(x.code?(' · '+x.code):'')]=x.late);return o;})(),8,'#b8860b'):'<div class="cno">ไม่มีคนมาสายในช่วงนี้</div>'}</div>
+      <div class="dpanel"><h3>พจส. ที่ขาดงานบ่อยสุด <span class="cno">(ครั้ง)</span></h3>
+        ${abs.length?dBars((function(){const o={};abs.forEach(x=>o[x.name+(x.code?(' · '+x.code):'')]=x.absent);return o;})(),8,'#c0392b'):'<div class="cno">ไม่มีคนขาดงานในช่วงนี้</div>'}</div>
+    </div>
+    <div class="dpanel"><h3>ขาด / สาย / ลา รายวัน</h3>${dTrend(A.daily,r=>r.absent+r.late+r.leave,'ขาดสายลารายวัน','#c0392b')}</div>`;
+  }
+  /* --- เส้นทาง --- */
+  else if(dashTab==='route'){
+    body=`<div class="dgrid4">
+      ${card('เส้นทางที่วิ่ง',Object.keys(A.prod).length,'ชนิดสินค้า/เส้นทาง','hero')}
+      ${card('ต้นทางที่ใช้',Object.keys(A.origin).length,'จุดรับของ')}
+      ${card('เที่ยวรวม',A.trips,'ในช่วงที่เลือก')}
+      ${card('เฉลี่ยต่อเส้นทาง',(Object.keys(A.prod).length?(A.trips/Object.keys(A.prod).length).toFixed(1):'0'),'เที่ยว/เส้นทาง')}
+    </div>
+    <div class="dtwo">
+      <div class="dpanel"><h3>สินค้า / เส้นทาง <span class="cno">(เที่ยว)</span></h3>${dBars(A.prod,10)}</div>
+      <div class="dpanel"><h3>ต้นทาง <span class="cno">(เที่ยว)</span></h3>${dBars(A.origin,10,'#7b5599')}</div>
+    </div>`;
+  }
+  /* --- เที่ยวรถ --- */
+  else if(dashTab==='truck'){
+    const tk=Object.keys(A.truck).map(k=>[k,A.truck[k]]).sort((a,b)=>b[1]-a[1]);
+    const low=tk.slice().reverse().slice(0,8);
+    body=`<div class="dgrid4">
+      ${card('รถที่ออกงาน',Object.keys(A.trucksSeen).length,'จาก '+config.length+' คันในกองรถ','hero')}
+      ${card('เที่ยวรวม',A.trips,'เฉลี่ย '+A.tripsPerDay.toFixed(1)+' เที่ยว/วัน')}
+      ${card('เฉลี่ยต่อคัน',(Object.keys(A.trucksSeen).length?(A.trips/Object.keys(A.trucksSeen).length).toFixed(1):'0'),'เที่ยว/คัน ในช่วงนี้')}
+      ${card('ครบ '+TARGET_ROUNDS+' รอบ',A.hitTrucks,'ครั้ง (นับรายวัน)')}
+    </div>
+    <div class="dtwo">
+      <div class="dpanel"><h3>รถที่วิ่งมากสุด <span class="cno">(เที่ยว)</span></h3>${dBars(A.truck,10,'#2b6cb0')}</div>
+      <div class="dpanel"><h3>รถที่วิ่งน้อยสุด <span class="cno">(เที่ยว)</span></h3>
+        ${low.length?dBars((function(){const o={};low.forEach(([k,v])=>o[k]=v);return o;})(),10,'#b8860b'):'<div class="cno">ไม่มีข้อมูล</div>'}</div>
+    </div>`;
+  }
+  /* --- เวลา --- */
+  else {
+    const g=k=>A.wt[k]||{ok:0,over:0,sum:0,n:0};
+    const okpc=k=>{const x=g(k);return x.n?Math.round(x.ok/x.n*100)+'%':'—';};
+    const rows=WT_GROUPS.map(x=>{const q=g(x.k);
+      return `<div class="drow" style="grid-template-columns:1fr 150px 62px">
+        <div><div style="margin-bottom:3px">${esc(x.name)} <span class="cno">${esc(x.who)}</span></div>
+          <div style="display:flex;height:9px;border-radius:20px;overflow:hidden;background:#eef1f6">
+            <div style="width:${q.n?Math.round(q.ok/q.n*100):0}%;background:#2f8f6b"></div>
+            <div style="width:${q.n?Math.round(q.over/q.n*100):0}%;background:#c0392b"></div></div></div>
+        <div class="cno" style="text-align:right">ไม่เกิน ${q.ok} · เกิน ${q.over}</div>
+        <div class="dnum">${q.n}</div></div>`;}).join('');
+    body=`<div class="dgrid4">
+      ${card('เวลาทำงานเฉลี่ย',A.hoursAvg.toFixed(1),'ชม./เที่ยว (จาก '+A.hours.length+' เที่ยวที่ปิดงาน)','hero')}
+      ${WT_GROUPS.map(x=>card(x.name+' ผ่านเกณฑ์',okpc(x.k),'ไม่เกิน '+g(x.k).ok+' · เกิน '+g(x.k).over+' · เฉลี่ย '+(g(x.k).n?(g(x.k).sum/g(x.k).n).toFixed(1):'-')+' ชม.')).join('')}
+      ${card('เกินเกณฑ์รวม',A.over8,pct(A.over8,A.hours.length)+'% ของเที่ยวที่ปิดงาน')}
+    </div>
+    <div class="dtwo">
+      <div class="dpanel"><h3>ไม่เกิน / เกิน แยกตามเกณฑ์ <span class="cno">(เที่ยว)</span></h3>${rows}</div>
+      <div class="dpanel"><h3>เวลาทำงานเฉลี่ยรายวัน <span class="cno">(ชม.)</span></h3>
+        ${dTrend(A.daily,r=>r.hoursN?Math.round(r.hours/r.hoursN*10)/10:0,'เวลาเฉลี่ยรายวัน','#2f8f6b')}</div>
+    </div>`;
+  }
+
+  const prog=dashBusy?`<div class="dload" style="margin-top:8px"><i style="width:${dashNeed?Math.round(dashDone/dashNeed*100):100}%"></i></div>
+     <div class="cno" style="margin-top:4px">กำลังดึงข้อมูล ${dashDone}/${dashNeed} วัน…</div>`:'';
+
+  document.getElementById('view').innerHTML=`<div class="dwrap">
+    <div class="dbar">
+      <b style="font-size:14px">ช่วงข้อมูล</b>
+      <span class="dseg">${seg(3,'3 วัน')}${seg(5,'5 วัน')}${seg(7,'7 วัน')}${seg(14,'14 วัน')}${seg(30,'1 เดือน')}</span>
+      <span class="dpick ${dashCustom()?'on':''}">เลือกเอง
+        <input type="date" id="dFrom" value="${esc(dashFrom||A.dates[0])}">
+        <span class="cno">ถึง</span>
+        <input type="date" id="dTo" value="${esc(dashTo||A.dates[A.dates.length-1])}">
+        ${dashCustom()?'<button class="btn mini" id="dClear">✕ ล้าง</button>':''}
+      </span>
+      <span class="dchip mono">${A.dates[0]} → ${A.dates[A.dates.length-1]}</span>
+      <span class="dchip">${A.dates.length} วัน · มีข้อมูล ${A.haveDays}</span>
+      ${A.dates.length>=DASH_MAX_DAYS?('<span class="dchip" style="color:var(--absent)">จำกัดสูงสุด '+DASH_MAX_DAYS+' วัน</span>'):''}
+      <span style="margin-left:auto" class="dhide">
+        <button class="btn" id="dRefresh">⟳ ดึงใหม่</button>
+        <button class="btn" id="dCopy">📋 คัดลอกสรุป</button>
+        <button class="btn" id="dPrint">🖨 บันทึก PDF</button>
+      </span>
+    </div>
+    ${prog}
+    <div class="dbar" style="padding:8px 12px">
+      <span class="dseg">${tabBtn('overview','ภาพรวม')}${tabBtn('people','คน')}${tabBtn('route','เส้นทาง')}${tabBtn('truck','เที่ยวรถ')}${tabBtn('time','เวลา')}</span>
+      <span class="cno" style="margin-left:auto">ข้อมูลจากหน้า 4 · อัปเดต ${nowHM()} น.</span>
+    </div>
+    ${body}
+  </div>`;
+  restore();
+}
+
+/* ---------- ช่องเลือกวันที่ของหน้า 6 ---------- */
+document.getElementById('view').addEventListener('change',e=>{
+  if(e.target.id==='dFrom'||e.target.id==='dTo'){
+    const a=document.getElementById('dFrom'), b=document.getElementById('dTo');
+    if(a&&b&&a.value&&b.value){dashFrom=a.value;dashTo=b.value;dashLoad();renderDash();}
+    return;
+  }
+});
+/* ---------- ปุ่มต่าง ๆ ของหน้า 6 ---------- */
+document.getElementById('view').addEventListener('click',e=>{
+  const dd=e.target.closest('[data-dday]');
+  if(dd){dashDays=+dd.dataset.dday;dashFrom='';dashTo='';dashLoad();renderDash();return;}
+  if(e.target.closest('#dClear')){dashFrom='';dashTo='';dashLoad();renderDash();return;}
+  const dt=e.target.closest('[data-dtab]');
+  if(dt){dashTab=dt.dataset.dtab;renderDash();return;}
+  if(e.target.closest('#dRefresh')){dashLoad(true);return;}
+  if(e.target.closest('#dPrint')){window.print();return;}
+  if(e.target.closest('#dCopy')){
+    const txt=dashText(dashAgg());
+    try{
+      navigator.clipboard.writeText(txt).then(()=>alert('คัดลอกสรุปแล้ว วางใน LINE / PowerPoint / Word ได้เลย'),
+        ()=>alert(txt));
+    }catch(err){alert(txt);}
+    return;
+  }
+});
 
 /* init */
 /* ---- passcode gate (deterrent) ---- */
