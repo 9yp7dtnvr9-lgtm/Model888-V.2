@@ -141,6 +141,10 @@
   .dnum{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
   .dtwo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   .dsvg{width:100%;height:auto;display:block}
+  .dpt{cursor:pointer}
+  .dpt rect{pointer-events:all}
+  .dpt:hover circle{r:5.5}
+  .drow[title]{cursor:help}
   .tag.m1212{background:#eaf3ff;color:#1f5fa8;border-color:#bcd6f2;font-weight:600}
   .dpick{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:9px;padding:4px 9px;font-size:12.5px;background:#fff}
   .dpick.on{border-color:var(--accent);background:var(--present-bg)}
@@ -2544,6 +2548,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollDay();
 /* ==================== TAB 6: Dashboard ====================
    ดึงข้อมูลรายวันหลายวันมารวม แล้วสรุปเป็นภาพ · ไม่แตะหน้า 1-5 */
 let dashDays=7, dashTab='overview', dashCache={}, dashBusy=false, dashDone=0, dashNeed=0;
+let dashPickDay='';
 let dashFrom='', dashTo='';        /* ถ้ากรอกครบทั้งคู่ = ใช้ช่วงที่เลือกเอง */
 const DASH_MAX_DAYS=92;            /* กันเลือกช่วงยาวเกินจนโหลดหนัก */
 
@@ -2607,22 +2612,23 @@ function dashAgg(){
   JOBTYPES.forEach(t=>A.byType[t.k]=0);
   dates.forEach(ds=>{
     const day2=dashCache[ds];
-    const row={ds:ds,trips:0,closed:0,present:0,absent:0,late:0,leave:0,sched:0,hours:0,hoursN:0,plan:0};
-    if(!day2){A.daily.push(row);return;}
+    const row={ds:ds,trips:0,closed:0,present:0,absent:0,late:0,leave:0,ot:0,off:0,unchecked:0,sched:0,hours:0,hoursN:0,plan:0,types:{},wt:{},noData:false};
+    WT_GROUPS.forEach(x=>row.wt[x.k]={ok:0,over:0});
+    if(!day2){row.noData=true;A.daily.push(row);return;}
     A.haveDays++;
     /* --- คน --- */
     const rs=rosterOn(ds);
     for(const t of rs)for(const d of (t.drivers||[])){
       const off=isOff(t,d,ds);
       const v=((day2.attend||{})[t.truckNo]||{})[d.pos]||'';
-      if(off){A.att.off++; if(v==='ot'){A.att.ot++;A.att.present++;row.present++;} continue;}
+      if(off){A.att.off++; row.off++; if(v==='ot'){A.att.ot++;A.att.present++;row.present++;row.ot++;} continue;}
       A.att.sched++; row.sched++;
       if(v==='present'){A.att.present++;row.present++;}
       else if(v==='late'){A.att.present++;A.att.late++;row.present++;row.late++;}
-      else if(v==='ot'){A.att.present++;A.att.ot++;row.present++;}
+      else if(v==='ot'){A.att.present++;A.att.ot++;row.present++;row.ot++;}
       else if(v==='absent'){A.att.absent++;row.absent++;}
       else if(v==='leave'){A.att.leave++;row.leave++;}
-      else A.att.unchecked++;
+      else {A.att.unchecked++;row.unchecked++;}
       if(v==='absent'||v==='late'||v==='leave'){
         const nm=d.name||'-';
         A.driver[nm]=A.driver[nm]||{absent:0,late:0,leave:0,name:nm,code:d.code||''};
@@ -2640,6 +2646,7 @@ function dashAgg(){
       A.trips++; row.trips++;
       const gk=JOBTYPES.some(t=>t.k===j.type)?j.type:'main';
       A.byType[gk]=(A.byType[gk]||0)+1;
+      row.types[gk]=(row.types[gk]||0)+1;
       const p=(j.product||'(ไม่ระบุ)').trim(); A.prod[p]=(A.prod[p]||0)+1;
       const o=(j.origin||'(ไม่ระบุ)').trim(); A.origin[o]=(A.origin[o]||0)+1;
       const tk=j.mainTruck||j.truck||'-'; A.truck[tk]=(A.truck[tk]||0)+1; per[tk]=(per[tk]||0)+1; A.trucksSeen[tk]=1;
@@ -2647,8 +2654,9 @@ function dashAgg(){
         A.closed++; row.closed++;
         const wb=workBreakdown(j);
         if(wb.total>0){A.hours.push(wb.total);row.hours+=wb.total;row.hoursN++;}
-        const g=A.wt[workGroup(j)];
-        if(wb.total>0){g.n++;g.sum+=wb.total;if(wb.total>workLimit(j)){g.over++;A.over8++;}else g.ok++;}
+        const wk=workGroup(j), g=A.wt[wk];
+        if(wb.total>0){g.n++;g.sum+=wb.total;
+          if(wb.total>workLimit(j)){g.over++;A.over8++;row.wt[wk].over++;}else{g.ok++;row.wt[wk].ok++;}}
       }
     });
     Object.keys(per).forEach(tk=>{if(per[tk]>=TARGET_ROUNDS)A.hitTrucks++;});
@@ -2660,28 +2668,52 @@ function dashAgg(){
   return A;
 }
 /* ---------- ชิ้นส่วนกราฟ ---------- */
-function dBars(obj,limit,color){
-  const arr=Object.keys(obj).map(k=>[k,obj[k]]).sort((a,b)=>b[1]-a[1]).slice(0,limit||8);
+function dBars(obj,limit,color,unit){
+  const all=Object.keys(obj).map(k=>[k,obj[k]]).sort((a,b)=>b[1]-a[1]);
+  const arr=all.slice(0,limit||8);
   if(!arr.length)return '<div class="cno">ไม่มีข้อมูล</div>';
-  const max=arr[0][1]||1;
-  return arr.map(([k,v])=>`<div class="drow">
-    <div><div style="margin-bottom:3px">${esc(k)}</div>
-      <div class="dbar2"><i style="width:${Math.round(v/max*100)}%${color?(';background:'+color):''}"></i></div></div>
-    <div class="dnum">${v}</div></div>`).join('');
+  const max=arr[0][1]||1, sum=all.reduce((a,b)=>a+b[1],0);
+  const u=unit||'';
+  return arr.map(([k,v],i)=>{
+    const tip=k+' : '+v+u+(sum?(' ('+Math.round(v/sum*100)+'% ของทั้งหมด '+sum+u+')'):'')+' · อันดับที่ '+(i+1);
+    return `<div class="drow" title="${esc(tip)}">
+      <div><div style="margin-bottom:3px">${esc(k)}</div>
+        <div class="dbar2"><i style="width:${Math.round(v/max*100)}%${color?(';background:'+color):''}"></i></div></div>
+      <div class="dnum">${v}</div></div>`;}).join('');
+}
+/* ข้อความรายละเอียดของวันหนึ่ง — ใช้ทั้งใน tooltip และแผงด้านล่าง */
+function dayDetailText(r){
+  if(!r)return '';
+  if(r.noData)return r.ds+'\nไม่มีข้อมูลของวันนี้';
+  const L=[r.ds];
+  L.push('เที่ยวงาน '+r.trips+' · ปิดงาน '+r.closed+(r.plan?(' · แผน '+r.plan):''));
+  L.push('พจส. ต้องมา '+r.sched+' · มา '+r.present+' · สาย '+r.late+' · ขาด '+r.absent+' · ลา '+r.leave
+    +(r.unchecked?(' · ยังไม่เช็ก '+r.unchecked):'')+(r.ot?(' · OT '+r.ot):''));
+  const ty=JOBTYPES.filter(t=>r.types[t.k]).map(t=>t.s+' '+r.types[t.k]);
+  if(ty.length)L.push('ประเภทงาน: '+ty.join(' · '));
+  const wt=WT_GROUPS.filter(x=>r.wt[x.k]&&(r.wt[x.k].ok||r.wt[x.k].over))
+    .map(x=>x.name+' ไม่เกิน '+r.wt[x.k].ok+'/เกิน '+r.wt[x.k].over);
+  if(wt.length)L.push('เวลา: '+wt.join(' · '));
+  if(r.hoursN)L.push('เวลาทำงานเฉลี่ย '+(Math.round(r.hours/r.hoursN*10)/10)+' ชม./เที่ยว');
+  return L.join('\n');
 }
 function dTrend(daily,pick,lab,color){
   const vals=daily.map(pick), N=vals.length;
   if(!N)return '';
-  const max=Math.max(1,...vals), W=Math.max(320,N*46), H=110, pad=16;
-  const x=i=>pad+(N===1?0:i*(W-pad*2)/(N-1)), y=v=>H-pad-(v/max)*(H-pad*2);
+  const max=Math.max(1,...vals), W=Math.max(320,N*46), H=118, pad=16;
+  const x=i=>pad+(N===1?(W-pad*2)/2:i*(W-pad*2)/(N-1)), y=v=>H-pad-10-(v/max)*(H-pad*2-10);
   const pts=vals.map((v,i)=>x(i)+','+y(v)).join(' ');
-  const area='M'+x(0)+','+(H-pad)+' L'+vals.map((v,i)=>x(i)+','+y(v)).join(' L')+' L'+x(N-1)+','+(H-pad)+' Z';
-  return `<svg class="dsvg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(lab)}">
+  const area='M'+x(0)+','+(H-pad-10)+' L'+vals.map((v,i)=>x(i)+','+y(v)).join(' L')+' L'+x(N-1)+','+(H-pad-10)+' Z';
+  const hit=(W-pad*2)/Math.max(1,N)/2+6;
+  return `<svg class="dsvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(lab)}">
     <path d="${area}" fill="${color}" opacity=".13"></path>
     <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"></polyline>
-    ${vals.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="3.5" fill="#fff" stroke="${color}" stroke-width="2"></circle>
-      <text x="${x(i)}" y="${y(v)-8}" font-size="11" text-anchor="middle" fill="#5a6b82">${v}</text>
-      <text x="${x(i)}" y="${H-3}" font-size="10" text-anchor="middle" fill="#8a97a8">${daily[i].ds.slice(5)}</text>`).join('')}
+    ${vals.map((v,i)=>`<g class="dpt${dashPickDay===daily[i].ds?' on':''}" data-dd="${esc(daily[i].ds)}">
+      <title>${esc(dayDetailText(daily[i]))}</title>
+      <rect x="${x(i)-hit}" y="0" width="${hit*2}" height="${H}" fill="transparent"></rect>
+      <circle cx="${x(i)}" cy="${y(v)}" r="${dashPickDay===daily[i].ds?5.5:3.5}" fill="${dashPickDay===daily[i].ds?color:'#fff'}" stroke="${color}" stroke-width="2"></circle>
+      <text x="${x(i)}" y="${y(v)-9}" font-size="11" text-anchor="middle" fill="#5a6b82">${v}</text>
+      <text x="${x(i)}" y="${H-3}" font-size="10" text-anchor="middle" fill="#8a97a8">${daily[i].ds.slice(5)}</text></g>`).join('')}
   </svg>`;
 }
 /* ---------- ข้อความสรุปสำหรับคัดลอก ---------- */
@@ -2811,7 +2843,7 @@ function renderDash(){
   document.getElementById('view').innerHTML=`<div class="dwrap">
     <div class="dbar">
       <b style="font-size:14px">ช่วงข้อมูล</b>
-      <span class="dseg">${seg(3,'3 วัน')}${seg(5,'5 วัน')}${seg(7,'7 วัน')}${seg(14,'14 วัน')}${seg(30,'1 เดือน')}</span>
+      <span class="dseg">${seg(1,'1 วัน')}${seg(3,'3 วัน')}${seg(5,'5 วัน')}${seg(7,'7 วัน')}${seg(14,'14 วัน')}${seg(30,'1 เดือน')}</span>
       <span class="dpick ${dashCustom()?'on':''}">เลือกเอง
         <input type="date" id="dFrom" value="${esc(dashFrom||A.dates[0])}">
         <span class="cno">ถึง</span>
@@ -2828,6 +2860,14 @@ function renderDash(){
       </span>
     </div>
     ${prog}
+    ${(function(){
+      if(!dashPickDay)return '';
+      const r=A.daily.find(x=>x.ds===dashPickDay);
+      if(!r)return '';
+      return '<div class="dpanel" style="border-color:var(--accent)">'
+        +'<h3>รายละเอียดวันที่ '+esc(dashPickDay)+' <button class="btn mini" id="dPickClear" style="margin-left:auto">✕ ปิด</button></h3>'
+        +'<div style="font-size:13.5px;line-height:1.85;white-space:pre-line">'+esc(dayDetailText(r).split('\n').slice(1).join('\n'))+'</div></div>';
+    })()}
     <div class="dbar" style="padding:8px 12px">
       <span class="dseg">${tabBtn('overview','ภาพรวม')}${tabBtn('people','คน')}${tabBtn('route','เส้นทาง')}${tabBtn('truck','เที่ยวรถ')}${tabBtn('time','เวลา')}</span>
       <span class="cno" style="margin-left:auto">ข้อมูลจากหน้า 4 · อัปเดต ${nowHM()} น.</span>
@@ -2850,6 +2890,9 @@ document.getElementById('view').addEventListener('click',e=>{
   const dd=e.target.closest('[data-dday]');
   if(dd){dashDays=+dd.dataset.dday;dashFrom='';dashTo='';dashLoad();renderDash();return;}
   if(e.target.closest('#dClear')){dashFrom='';dashTo='';dashLoad();renderDash();return;}
+  if(e.target.closest('#dPickClear')){dashPickDay='';renderDash();return;}
+  const dp=e.target.closest('[data-dd]');
+  if(dp){dashPickDay=(dashPickDay===dp.dataset.dd)?'':dp.dataset.dd;renderDash();return;}
   const dt=e.target.closest('[data-dtab]');
   if(dt){dashTab=dt.dataset.dtab;renderDash();return;}
   if(e.target.closest('#dRefresh')){dashLoad(true);return;}
