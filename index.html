@@ -1822,7 +1822,7 @@ const TARGET_ROUNDS = 3;
 function roundsData(){
   const per = {};
   for(const j of day.jobs){
-    const no = j.mainTruck || j.truck || '(ไม่ระบุ)';
+    const no = j.actualTruck || j.mainTruck || j.truck || '(ไม่ระบุ)';   /* นับตามเบอร์รถที่วิ่งงานจริง */
     const p = per[no] = per[no] || {main:0,vt:0,oth:0,hrs:[],closed:0};
     p.byType=p.byType||{}; const gk=jobType(j);
     p.byType[gk]=(p.byType[gk]||0)+1;
