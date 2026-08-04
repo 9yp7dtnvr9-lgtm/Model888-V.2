@@ -115,6 +115,8 @@
   .dgrid .lb{color:var(--muted);font-size:12.5px}
   .dsec{margin:14px 0 6px;font-size:12.5px;font-weight:600;color:var(--n);border-bottom:1px solid var(--line);padding-bottom:5px}
   .dbig{font-size:16px;font-weight:600}
+  .woin{min-width:130px;min-height:34px;resize:both;overflow:auto;font-size:12.5px;line-height:1.5}
+  .tag.tseq{background:#eef4fb;color:#2b6cb0;border-color:#c9dcf0;font-weight:600}
   .rin{width:100%;border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-family:inherit;font-size:13px;background:#fff}
   .rin:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
   /* ---------- Dashboard (หน้า 6) ---------- */
@@ -1421,9 +1423,26 @@ function chargerPlan(jobs){
   return out;
 }
 
+/* ลำดับเที่ยวของ "เบอร์รถที่วิ่งจริง" ในวันนั้น เรียงตามเวลาออก
+   งานที่ยังไม่มีเวลาออกต่อท้าย                                        */
+function truckTripSeq(jobs){
+  const by={}, out={};
+  (jobs||[]).forEach(j=>{const t=String(j.actualTruck||j.mainTruck||j.truck||'-');(by[t]=by[t]||[]).push(j);});
+  Object.keys(by).forEach(t=>{
+    by[t].slice().sort((a,b)=>{
+      const x=hm2min(a.depart), y=hm2min(b.depart);
+      if(x===null&&y===null)return String(a.id).localeCompare(String(b.id));
+      if(x===null)return 1;
+      if(y===null)return -1;
+      return x-y||String(a.id).localeCompare(String(b.id));
+    }).forEach((j,i)=>{out[j.id]=i+1;});
+  });
+  return out;
+}
 function renderBoard(){
   const restore=keepScroll();
   const jobs = day.jobs;
+  const TSEQ = truckTripSeq(jobs);
   const plan = chargerPlan(jobs);
   const cnt = { wait:0, run:0, charge:0, back:0, closed:0 };
   jobs.forEach(j=>{ cnt[runStatus(j)[0]]++; });
@@ -1458,7 +1477,7 @@ function renderBoard(){
       <td class="mono" style="text-align:center">${idx}</td>
       <td class="mono">${esc(j.date||curDate)}</td>
       <td><div>${esc(j.driver||'-')}</div><div class="cno">${esc(j.product||'')}${j.trip?(' · เที่ยว '+esc(j.trip)):''}</div></td>
-      <td class="truck"><span class="plate">${esc(j.actualTruck||j.mainTruck||j.truck||'')}</span> ${jtBadgeJ(j)}</td>
+      <td class="truck"><span class="plate">${esc(j.actualTruck||j.mainTruck||j.truck||'')}</span>${TSEQ[j.id]?(' <span class="tag tseq">เที่ยวที่ '+TSEQ[j.id]+'</span>'):''} ${jtBadgeJ(j)}</td>
       <td class="mono">${j.depart?esc(j.depart)+' <span class="cno">น.</span>':'<span class="cno">—</span>'}</td>
       <td>${etaCell}</td>
       <td><span class="badge ${c}">${l}</span></td>
@@ -1499,6 +1518,24 @@ function renderBoard(){
 
 /* ---------- TAB 4: planning (placeholder) ---------- */
 let routeSort={key:'type',dir:1};
+/* ส่งออกทะเบียนเส้นทางเป็น Excel — ตามรายการที่แสดงอยู่ (ถ้ามีคำค้นจะได้เฉพาะที่กรอง) */
+function exportRoutes(){
+  const q=(routeSearch||'').toLowerCase();
+  let data=routes.filter(r=>!q||((r.product||'')+' '+(r.origin||'')+' '+(r.dest||'')).toLowerCase().indexOf(q)>=0);
+  const dir=routeSort.dir, k=routeSort.key;
+  data=data.slice().sort((a,b)=>{
+    let x=a[k],y=b[k];
+    if(k==='distance'){x=+x||0;y=+y||0;return (x-y)*dir||String(a.product).localeCompare(String(b.product),'th');}
+    return String(x||'').localeCompare(String(y||''),'th')*dir||String(a.product).localeCompare(String(b.product),'th');
+  });
+  const aoa=[['สินค้า','ต้นทาง','ปลายทาง','ระยะทาง (กม.)','ประเภทงาน','เลขที่ใบงาน']];
+  data.forEach(r=>aoa.push([r.product||'',r.origin||'',r.dest||'',
+    (r.distance!==''&&r.distance!==undefined&&r.distance!==null)?Number(r.distance):'',
+    jtFull(r.type),r.wo||'']));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),'ทะเบียนเส้นทาง');
+  XLSX.writeFile(wb,'ทะเบียนเส้นทาง_'+curDate+(q?'_กรอง':'')+'.xlsx');
+}
 function renderPlan(){
   const restore=keepScroll();
   const q=(routeSearch||'').toLowerCase();
@@ -1509,7 +1546,7 @@ function renderPlan(){
     if(k==='distance'){x=+x||0;y=+y||0;return (x-y)*dir||String(a.product).localeCompare(String(b.product),'th');}
     return String(x||'').localeCompare(String(y||''),'th')*dir||String(a.product).localeCompare(String(b.product),'th');
   });
-  const TH=[['product','สินค้า'],['origin','ต้นทาง'],['dest','ปลายทาง'],['distance','ระยะทาง (กม.)'],['type','ประเภทงาน']];
+  const TH=[['product','สินค้า'],['origin','ต้นทาง'],['dest','ปลายทาง'],['distance','ระยะทาง (กม.)'],['type','ประเภทงาน'],['wo','เลขที่ใบงาน']];
   const head=TH.map(([k,lab])=>{const on=routeSort.key===k;
     return `<th class="th-sort${on?' on':''}" data-rtsort="${k}">${lab}<span class="sortcaret">${on?(dir>0?'▲':'▼'):'⇅'}</span></th>`;}).join('');
   const rows=data.map(r=>`<tr>
@@ -1519,6 +1556,7 @@ function renderPlan(){
     <td><input class="rin mono" data-rt="distance" data-id="${r.id}" value="${esc(r.distance)}" inputmode="numeric" style="width:78px;text-align:center"></td>
     <td><select class="rin" data-rt="type" data-id="${r.id}" style="width:186px">
         ${JOBTYPES.map(x=>`<option value="${x.k}"${r.type===x.k?' selected':''}>${esc(x.f)}</option>`).join('')}</select></td>
+    <td><textarea class="rin woin" data-rt="wo" data-id="${r.id}" placeholder="เลขที่ใบงาน (ลากมุมขยายได้)">${esc(r.wo||'')}</textarea></td>
     <td style="text-align:center"><button class="del" data-rtdel="${r.id}" title="ลบเส้นทางนี้">✕</button></td>
   </tr>`).join('');
   const cnt=k=>routes.filter(r=>(r.type||'main')===k).length;
@@ -1533,10 +1571,11 @@ function renderPlan(){
     <div class="toolbar">
       <input type="search" id="routeSearch" placeholder="ค้นหา สินค้า / ต้นทาง / ปลายทาง…" value="${esc(routeSearch)}">
       <button class="btn primary" id="addRoute">＋ เพิ่มเส้นทางใหม่</button>
+      <button class="btn" id="expRoutes" title="ส่งออกรายการที่แสดงอยู่เป็นไฟล์ Excel">⬇ ส่งออก Excel</button>
     </div>
     <div class="tablewrap sbox"><table style="min-width:860px">
       <thead><tr>${head}<th style="width:44px"></th></tr></thead>
-      <tbody>${rows||'<tr><td colspan="6" class="empty-note">ยังไม่มีเส้นทาง — กด “เพิ่มเส้นทางใหม่”</td></tr>'}</tbody>
+      <tbody>${rows||'<tr><td colspan="7" class="empty-note">ยังไม่มีเส้นทาง — กด “เพิ่มเส้นทางใหม่”</td></tr>'}</tbody>
     </table></div>`;
   restore();
 }
@@ -2151,8 +2190,9 @@ document.getElementById('view').addEventListener('click',e=>{
   if(prn){window.print();return;}
   if(del){delJobOp(String(del.dataset.deljob));saveDay();renderDispatch();return;}
   if(now){const j=day.jobs.find(x=>String(x.id)===now.dataset.stampnow);if(j){setJobField(j,now.dataset.field,nowHM());saveDay();renderBoard();}return;}
+  if(e.target.closest('#expRoutes')){exportRoutes();return;}
   if(e.target.closest('#addRoute')){
-    routes.unshift({id:ruid(),product:'',origin:'',dest:'',distance:'',type:'main'});
+    routes.unshift({id:ruid(),product:'',origin:'',dest:'',distance:'',type:'main',wo:''});
     scheduleRoutesSave();renderPlan();
     const f=document.querySelector('[data-rt="product"]');if(f)f.focus();
     return;
