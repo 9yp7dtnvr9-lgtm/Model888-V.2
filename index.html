@@ -1095,19 +1095,17 @@ function editorTable(){
    เบราว์เซอร์เรียก http:// จากหน้า https:// ไม่ได้ และปลายทางไม่เปิด CORS
    จึงส่งผ่าน Apps Script เป็นตัวกลาง                                       */
 let omsAuto = true;                  /* กดจ่ายงาน = ส่งเข้า OMS ทันที (ปิดได้ที่ ⚙ ตั้งค่า) */
-let omsQty  = 'trip';                /* ค่าที่ใส่หลัง WO: trip=เลขเที่ยว · one=1 · plan=แผนของสินค้านั้น */
-const OMS_QTY_OPT = [['trip','เลขเที่ยวของงานนั้น'],['one','1 ต่อการจ่ายงาน 1 ครั้ง'],['plan','แผนรายสินค้าของวันนั้น']];
+/* หมายเหตุ: เดิมมีตัวเลือก "ค่าหลังเลขที่ใบงาน" — เอาออกแล้ว
+   เพราะเลขหลัง : เป็นส่วนหนึ่งของเลขที่ใบงาน ต้องกรอกที่หน้า 5 ให้ครบ */
 
 async function loadOmsCfg(){
   try{
     const a=await store.get('fleet:oms:auto');
     if(a!==null&&a!==undefined&&String(a)!=='')omsAuto=(String(a)==='1');   /* ไม่เคยตั้ง = เปิดไว้ */
-    const q=await store.get('fleet:oms:qty'); if(q&&OMS_QTY_OPT.some(x=>x[0]===q))omsQty=q;
   }catch(e){}
 }
 async function saveOmsCfg(){
   await store.set('fleet:oms:auto', omsAuto?'1':'0');
-  await store.set('fleet:oms:qty', omsQty);
 }
 /* เลขที่ใบงานของงานหนึ่ง ๆ — ดึงจากทะเบียนหน้า 5 ตามสินค้า+ต้นทาง+ปลายทาง */
 function woOf(j){
@@ -1118,19 +1116,31 @@ function woOf(j){
   return r ? String(r.wo||'').trim() : '';
 }
 /* ประกอบข้อมูลที่จะส่ง */
+/* จัดรูปเลขที่ใบงานให้เป็น workList ตามที่ OMS ต้องการ
+   ** ส่งตรงตามที่กรอกในหน้า 5 ทุกตัวอักษร ห้ามแตะเลขห้อยท้ายหลัง : **
+   รองรับหลายใบงาน: พิมพ์คนละบรรทัด หรือคั่นด้วยจุลภาค                    */
+function normWorkList(raw){
+  return String(raw||'')
+    .replace(/[\r\n;|]+/g,',')      /* ขึ้นบรรทัดใหม่ = คั่นรายการ */
+    .split(',')
+    .map(x=>x.replace(/\s+/g,'').trim())
+    .filter(x=>x.length)
+    .join(',');
+}
 function omsPayload(j){
   const t=truckByNo(j.mainTruck||j.truck), d=driverAt(t,j.shift);
   const empId=String((d&&d.code)||j.code||'').trim();
   const truckId=String(j.mainTruck||j.truck||'').trim();
   const wo=woOf(j);
-  let qty=1;
-  if(omsQty==='trip') qty=parseInt(j.trip,10)||1;
-  else if(omsQty==='plan'){ const v=Number((day.plan||{})[jobType(j)+'|'+(j.product||'')]); qty=(isFinite(v)&&v>0)?v:1; }
-  const miss=[];
+  const workList=normWorkList(wo);
+  const miss=[], warn=[];
   if(!empId)  miss.push('รหัส พจส.');
   if(!truckId)miss.push('เบอร์รถ');
-  if(!wo)     miss.push('เลขที่ใบงาน (ตั้งที่หน้า 5)');
-  return { empId, truckId, wo, qty, workList: wo+':'+qty, jobId:String(j.id), miss };
+  if(!workList)miss.push('เลขที่ใบงาน (ตั้งที่หน้า 5)');
+  /* เตือนถ้าไม่มีเลขห้อยท้าย — OMS ต้องมี เช่น WOO5000000:11 */
+  const noSuffix=workList.split(',').filter(x=>x&&x.indexOf(':')<0);
+  if(noSuffix.length)warn.push('ไม่มีเลขห้อยท้ายหลัง : → '+noSuffix.join(' , '));
+  return { empId, truckId, wo, workList, jobId:String(j.id), miss, warn };
 }
 /* ยิงจริง (หรือทดลอง) ผ่าน Apps Script */
 async function omsSend(j,dry){
@@ -1171,11 +1181,12 @@ async function openOmsDialog(id){
       ${row('เบอร์รถ','<span class="plate">'+esc(p.truckId||'—')+'</span>')}
       ${row('สินค้า / เส้นทาง', esc(j.product||'-')+' <span class="cno">'+esc(j.origin||'')+'</span>')}
       ${row('เลขที่ใบงาน', p.wo?('<b>'+esc(p.wo)+'</b>'):'<span style="color:var(--absent)">ยังไม่ได้ตั้งที่หน้า 5</span>')}
-      ${row('workList','<span class="mono">'+esc(p.workList)+'</span> <span class="cno">('+esc((OMS_QTY_OPT.find(x=>x[0]===omsQty)||[])[1]||'')+')</span>')}
+      ${row('workList ที่จะส่ง','<span class="mono" style="font-weight:600">'+esc(p.workList||'—')+'</span>')}
       ${row('สถานะล่าสุด', j.omsDoc?('<span class="badge b-done">ส่งแล้ว</span> <span class="mono">'+esc(j.omsDoc)+'</span>')
         : (j.omsState==='err'?('<span class="badge b-wait">ไม่สำเร็จ</span> <span class="cno">'+esc(j.omsMsg||'')+'</span>'):'<span class="cno">ยังไม่ได้ส่ง</span>'))}
     </div>
     ${p.miss.length?('<div class="hint" style="margin-top:12px;color:var(--absent)">ยังส่งไม่ได้ — ขาด '+esc(p.miss.join(' · '))+'</div>'):''}
+    ${(!p.miss.length&&p.warn.length)?('<div class="hint" style="margin-top:12px;color:var(--off)">⚠ '+esc(p.warn.join(' · '))+'<br>เลขที่ใบงานต้องมีเลขห้อยท้าย เช่น <b>WOO5000000:11</b> — แก้ที่หน้า 5</div>'):''}
     <div id="omsOut" class="cno mono" style="margin-top:12px;white-space:pre-wrap"></div>
     <div class="modal-actions">
       <button class="btn" id="cancelJob">ปิด</button>
@@ -1365,9 +1376,6 @@ function openLogin(){
     <div class="hint" style="margin-top:10px;font-size:12.5px">
       <b>ส่งแผนงานไประบบ OMS</b>
       <label style="display:block;margin-top:6px"><input type="checkbox" id="omsAutoChk"${omsAuto?' checked':''}> ส่งอัตโนมัติทุกครั้งที่จ่ายงาน</label>
-      <label style="display:block;margin-top:6px">ค่าที่ใส่หลังเลขที่ใบงาน
-        <select id="omsQtySel" style="margin-left:6px">${OMS_QTY_OPT.map(o=>`<option value="${o[0]}"${omsQty===o[0]?' selected':''}>${esc(o[1])}</option>`).join('')}</select>
-      </label>
       <div class="cno" style="margin-top:4px">ถ้าปิด = ต้องกดส่งเองทีละงานจากปุ่มในคอลัมน์ “ส่ง OMS” หน้า 2</div>
     </div>
     <div class="hint" style="margin-top:10px;font-size:12.5px">
@@ -1390,9 +1398,8 @@ async function doLogin(){
   const v=(document.getElementById('login_name').value||'').trim();if(!v){alert('กรุณาระบุชื่อผู้บันทึก');return;}
   const url=(document.getElementById('login_url').value||'').trim();
   adminName=v;lsSet('fleet:admin',adminName);
-  const ac=document.getElementById('omsAutoChk'), qs=document.getElementById('omsQtySel');
+  const ac=document.getElementById('omsAutoChk');
   if(ac)omsAuto=ac.checked;
-  if(qs)omsQty=qs.value;
   saveOmsCfg();
   if(url&&url!==BACKEND_URL_DEFAULT){backendURL=url;lsSet('fleet:backend',url);lsSet('fleet:backend:manual','1');}
   else{backendURL=BACKEND_URL_DEFAULT;lsSet('fleet:backend',BACKEND_URL_DEFAULT);lsSet('fleet:backend:manual','0');}
@@ -1700,7 +1707,7 @@ function renderPlan(){
     <td><input class="rin mono" data-rt="distance" data-id="${r.id}" value="${esc(r.distance)}" inputmode="numeric" style="width:78px;text-align:center"></td>
     <td><select class="rin" data-rt="type" data-id="${r.id}" style="width:186px">
         ${JOBTYPES.map(x=>`<option value="${x.k}"${r.type===x.k?' selected':''}>${esc(x.f)}</option>`).join('')}</select></td>
-    <td><textarea class="rin woin" data-rt="wo" data-id="${r.id}" placeholder="เลขที่ใบงาน">${esc(r.wo||'')}</textarea></td>
+    <td><textarea class="rin woin" data-rt="wo" data-id="${r.id}" placeholder="เช่น WOO5000000:11" title="ใส่เลขห้อยท้ายหลัง : ให้ครบ · หลายใบงานพิมพ์คนละบรรทัด">${esc(r.wo||'')}</textarea></td>
     <td style="text-align:center"><button class="del" data-rtdel="${r.id}" title="ลบเส้นทางนี้">✕</button></td>
   </tr>`).join('');
   const cnt=k=>routes.filter(r=>(r.type||'main')===k).length;
