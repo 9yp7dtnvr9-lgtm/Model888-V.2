@@ -102,6 +102,8 @@
   .planlink.done{border-color:var(--line);background:#f1f4f8;color:var(--muted);font-weight:400;cursor:default}
   .planlink.done:hover{background:#f1f4f8;color:var(--muted);border-color:var(--line)}
   .actualin{border:1px solid var(--accent2);border-radius:7px;padding:4px 7px;font-family:"Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;font-size:12px;background:#fffdf3;width:92px}
+  .omsbtn{border:0;background:transparent;cursor:pointer;padding:2px;font-family:inherit}
+  .omsbtn:hover{opacity:.75}
   .jsel{border:1px solid var(--line);border-radius:7px;padding:5px 6px;font-family:inherit;font-size:12.5px;background:#fff;max-width:168px}
   .jsel:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
   .jsel:hover{border-color:#bcc4d2}
@@ -1068,6 +1070,108 @@ function editorTable(){
     <tbody>${body}</tbody></table></div>`;
 }
 
+/* ==================== เชื่อมต่อระบบ OMS (ส่งแผนงาน) ====================
+   เบราว์เซอร์เรียก http:// จากหน้า https:// ไม่ได้ และปลายทางไม่เปิด CORS
+   จึงส่งผ่าน Apps Script เป็นตัวกลาง                                       */
+let omsAuto = true;                  /* กดจ่ายงาน = ส่งเข้า OMS ทันที (ปิดได้ที่ ⚙ ตั้งค่า) */
+let omsQty  = 'trip';                /* ค่าที่ใส่หลัง WO: trip=เลขเที่ยว · one=1 · plan=แผนของสินค้านั้น */
+const OMS_QTY_OPT = [['trip','เลขเที่ยวของงานนั้น'],['one','1 ต่อการจ่ายงาน 1 ครั้ง'],['plan','แผนรายสินค้าของวันนั้น']];
+
+async function loadOmsCfg(){
+  try{
+    const a=await store.get('fleet:oms:auto');
+    if(a!==null&&a!==undefined&&String(a)!=='')omsAuto=(String(a)==='1');   /* ไม่เคยตั้ง = เปิดไว้ */
+    const q=await store.get('fleet:oms:qty'); if(q&&OMS_QTY_OPT.some(x=>x[0]===q))omsQty=q;
+  }catch(e){}
+}
+async function saveOmsCfg(){
+  await store.set('fleet:oms:auto', omsAuto?'1':'0');
+  await store.set('fleet:oms:qty', omsQty);
+}
+/* เลขที่ใบงานของงานหนึ่ง ๆ — ดึงจากทะเบียนหน้า 5 ตามสินค้า+ต้นทาง+ปลายทาง */
+function woOf(j){
+  const P=(j.product||'').trim(), O=(j.origin||'').trim(), D=(j.dest||'').trim();
+  const r=routes.find(x=>(x.product||'').trim()===P&&(x.origin||'').trim()===O&&(x.dest||'').trim()===D)
+       || routes.find(x=>(x.product||'').trim()===P&&(x.origin||'').trim()===O)
+       || routes.find(x=>(x.product||'').trim()===P);
+  return r ? String(r.wo||'').trim() : '';
+}
+/* ประกอบข้อมูลที่จะส่ง */
+function omsPayload(j){
+  const t=truckByNo(j.mainTruck||j.truck), d=driverAt(t,j.shift);
+  const empId=String((d&&d.code)||j.code||'').trim();
+  const truckId=String(j.mainTruck||j.truck||'').trim();
+  const wo=woOf(j);
+  let qty=1;
+  if(omsQty==='trip') qty=parseInt(j.trip,10)||1;
+  else if(omsQty==='plan'){ const v=Number((day.plan||{})[jobType(j)+'|'+(j.product||'')]); qty=(isFinite(v)&&v>0)?v:1; }
+  const miss=[];
+  if(!empId)  miss.push('รหัส พจส.');
+  if(!truckId)miss.push('เบอร์รถ');
+  if(!wo)     miss.push('เลขที่ใบงาน (ตั้งที่หน้า 5)');
+  return { empId, truckId, wo, qty, workList: wo+':'+qty, jobId:String(j.id), miss };
+}
+/* ยิงจริง (หรือทดลอง) ผ่าน Apps Script */
+async function omsSend(j,dry){
+  if(!backendURL)return {ok:false,message:'ยังไม่ได้ตั้ง URL ระบบกลาง'};
+  const p=omsPayload(j);
+  if(p.miss.length)return {ok:false,message:'ข้อมูลไม่ครบ: '+p.miss.join(' · ')};
+  try{
+    const r=await fetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({omsplan:1,tk:API_TOKEN,dryRun:dry?1:0,
+        empId:p.empId,truckId:p.truckId,workList:p.workList,jobId:p.jobId})});
+    const d=await r.json();
+    return d||{ok:false,message:'ไม่มีคำตอบจากระบบกลาง'};
+  }catch(e){return {ok:false,message:'ต่อระบบกลางไม่ได้'};}
+}
+/* ส่งแล้วบันทึกผลกลับไปที่งาน */
+async function omsSendAndSave(j,force){
+  if(!j)return;
+  if(j.omsDoc&&!force)return;                      /* ส่งสำเร็จแล้ว ไม่ส่งซ้ำเอง */
+  setJobField(j,'omsState','sending');saveDay();renderDispatch();
+  const r=await omsSend(j,false);
+  setJobField(j,'omsState', r.ok?'ok':'err');
+  setJobField(j,'omsMsg',  String(r.message||'').slice(0,200));
+  setJobField(j,'omsAt',   nowHM());
+  if(r.ok&&r.doc)setJobField(j,'omsDoc',String(r.doc));
+  saveDay();renderDispatch();
+  return r;
+}
+/* หน้าต่างดูก่อนส่ง */
+async function openOmsDialog(id){
+  const j=day.jobs.find(x=>String(x.id)===String(id)); if(!j)return;
+  const p=omsPayload(j);
+  const m=document.getElementById('modal');
+  const row=(k,v)=>`<div class="lb">${k}</div><div>${v}</div>`;
+  m.innerHTML=`<div class="modal-card" style="max-width:660px">
+    <div class="modal-head"><h2>ส่งแผนงานไประบบ OMS</h2><button class="modal-x" id="closeModal">✕</button></div>
+    <div class="dgrid">
+      ${row('พจส.', esc(j.driver||'-')+' <span class="cno">รหัส '+esc(p.empId||'—')+'</span>')}
+      ${row('เบอร์รถ','<span class="plate">'+esc(p.truckId||'—')+'</span>')}
+      ${row('สินค้า / เส้นทาง', esc(j.product||'-')+' <span class="cno">'+esc(j.origin||'')+'</span>')}
+      ${row('เลขที่ใบงาน', p.wo?('<b>'+esc(p.wo)+'</b>'):'<span style="color:var(--absent)">ยังไม่ได้ตั้งที่หน้า 5</span>')}
+      ${row('workList','<span class="mono">'+esc(p.workList)+'</span> <span class="cno">('+esc((OMS_QTY_OPT.find(x=>x[0]===omsQty)||[])[1]||'')+')</span>')}
+      ${row('สถานะล่าสุด', j.omsDoc?('<span class="badge b-done">ส่งแล้ว</span> <span class="mono">'+esc(j.omsDoc)+'</span>')
+        : (j.omsState==='err'?('<span class="badge b-wait">ไม่สำเร็จ</span> <span class="cno">'+esc(j.omsMsg||'')+'</span>'):'<span class="cno">ยังไม่ได้ส่ง</span>'))}
+    </div>
+    ${p.miss.length?('<div class="hint" style="margin-top:12px;color:var(--absent)">ยังส่งไม่ได้ — ขาด '+esc(p.miss.join(' · '))+'</div>'):''}
+    <div id="omsOut" class="cno mono" style="margin-top:12px;white-space:pre-wrap"></div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelJob">ปิด</button>
+      <button class="btn" id="omsDry"${p.miss.length?' disabled style="opacity:.4"':''}>🔍 ดูว่าจะส่งอะไร (ไม่ยิงจริง)</button>
+      <button class="btn primary" id="omsGo" data-id="${esc(String(j.id))}"${p.miss.length?' disabled style="opacity:.4"':''}>${j.omsDoc?'ส่งซ้ำ':'ส่งไป OMS'}</button>
+    </div>
+  </div>`;
+  m.style.display='flex';
+  m.dataset.omsjob=String(j.id);
+}
+function omsBadge(j){
+  if(j.omsDoc)      return '<span class="badge b-done" title="'+esc(j.omsDoc)+' · ส่งเมื่อ '+esc(j.omsAt||'')+'">ส่งแล้ว</span>';
+  if(j.omsState==='sending') return '<span class="badge b-run">กำลังส่ง…</span>';
+  if(j.omsState==='err')     return '<span class="badge b-wait" title="'+esc(j.omsMsg||'')+'">ไม่สำเร็จ</span>';
+  return '<span class="cno">—</span>';
+}
+
 /* ---------- TAB 2: dispatch summary table + popup form ---------- */
 /* เวลามาจริง = ค่าที่ CC คีย์ไว้ในหน้า 1 (day.arrive[เบอร์รถ][กะ]) */
 function jobArrive(j){
@@ -1126,7 +1230,8 @@ function renderDispatch(){
     origin:x=>x.j.origin||'', dest:x=>x.j.dest||'', code:x=>x.j.code||'',
     driver:x=>x.j.driver||'', mtruck:x=>x.j.mainTruck||x.j.truck||'',
     atruck:x=>x.j.actualTruck||'', trip:x=>+x.j.trip||0, type:x=>jtFull(jobType(x.j)),
-    arrive:x=>jobArrive(x.j)||'~', depart:x=>x.j.depart||'~', by:x=>x.j.by||''
+    arrive:x=>jobArrive(x.j)||'~', depart:x=>x.j.depart||'~', by:x=>x.j.by||'',
+    oms:x=>x.j.omsDoc?'1':(x.j.omsState==='err'?'2':'3')
   });
   const rows=list.map(({j,i})=>`<tr class="jrow" data-jobrow="${j.id}" title="กดเพื่อดูรายละเอียดแผนงานเที่ยวนี้">
     <td class="mono">${esc(j.date||curDate)}</td>
@@ -1143,6 +1248,7 @@ function renderDispatch(){
     ${arriveCell(j)}
     <td>${hmField(j.depart,'data-depart="'+j.id+'"','departin')}</td>
     <td><input class="noteinp" data-note="${j.id}" value="${esc(j.note||'')}" placeholder="หมายเหตุ…"></td>
+    <td style="text-align:center"><button class="omsbtn" data-oms="${esc(String(j.id))}" title="ส่งแผนงานไป OMS">${omsBadge(j)}</button></td>
     <td class="cno">${esc(j.by||'')}</td>
     <td><button class="del" data-deljob="${j.id}">✕</button></td>
   </tr>`).join('');
@@ -1155,9 +1261,9 @@ function renderDispatch(){
     </div>
     <div class="tablewrap sbox10"><table style="min-width:1620px">
       <thead><tr>
-        ${thS('dispatch','date','วันที่')}${thS('dispatch','seq','ลำดับ','center')}${thS('dispatch','product','ชื่อสินค้า')}${thS('dispatch','origin','ต้นทาง')}${thS('dispatch','dest','ปลายทาง')}${thS('dispatch','code','รหัส พจส.')}${thS('dispatch','driver','ชื่อ พจส.')}${thS('dispatch','mtruck','เบอร์รถหลัก')}${thS('dispatch','atruck','เบอร์รถที่วิ่งจริง')}${thS('dispatch','trip','เที่ยว','center')}${thS('dispatch','type','ประเภทงาน')}${thS('dispatch','arrive','เวลามาจริง')}${thS('dispatch','depart','เวลาออก')}<th>หมายเหตุ</th>${thS('dispatch','by','ผู้บันทึก (CC)')}<th></th>
+        ${thS('dispatch','date','วันที่')}${thS('dispatch','seq','ลำดับ','center')}${thS('dispatch','product','ชื่อสินค้า')}${thS('dispatch','origin','ต้นทาง')}${thS('dispatch','dest','ปลายทาง')}${thS('dispatch','code','รหัส พจส.')}${thS('dispatch','driver','ชื่อ พจส.')}${thS('dispatch','mtruck','เบอร์รถหลัก')}${thS('dispatch','atruck','เบอร์รถที่วิ่งจริง')}${thS('dispatch','trip','เที่ยว','center')}${thS('dispatch','type','ประเภทงาน')}${thS('dispatch','arrive','เวลามาจริง')}${thS('dispatch','depart','เวลาออก')}<th>หมายเหตุ</th>${thS('dispatch','oms','ส่ง OMS','center')}${thS('dispatch','by','ผู้บันทึก (CC)')}<th></th>
       </tr></thead>
-      <tbody>${rows||'<tr><td colspan="16" class="empty-note">ยังไม่มีงานที่จ่าย — กด “จ่ายแผน” จากแท็บ 1 หรือปุ่ม “จ่ายงานใหม่”</td></tr>'}</tbody>
+      <tbody>${rows||'<tr><td colspan="17" class="empty-note">ยังไม่มีงานที่จ่าย — กด “จ่ายแผน” จากแท็บ 1 หรือปุ่ม “จ่ายงานใหม่”</td></tr>'}</tbody>
     </table></div>`;
   const box=document.querySelector('#view .tablewrap');
   if(box){
@@ -1235,6 +1341,14 @@ function openLogin(){
     <div class="field"><label>ชื่อผู้บันทึก (CC)</label><input id="login_name" value="${esc(adminName)}" placeholder="เช่น CC สมชาย (กะเช้า)"></div>
     <div class="field" style="margin-top:12px"><label>URL ระบบกลาง (Google Apps Script) — ต้องใส่เพื่อแชร์ข้อมูลกับ CC เครื่องอื่น</label><input id="login_url" value="${esc(backendURL)}" placeholder="https://script.google.com/macros/s/.../exec"></div>
     <div class="hint" style="margin-top:10px;font-size:12.5px">
+      <b>ส่งแผนงานไประบบ OMS</b>
+      <label style="display:block;margin-top:6px"><input type="checkbox" id="omsAutoChk"${omsAuto?' checked':''}> ส่งอัตโนมัติทุกครั้งที่จ่ายงาน</label>
+      <label style="display:block;margin-top:6px">ค่าที่ใส่หลังเลขที่ใบงาน
+        <select id="omsQtySel" style="margin-left:6px">${OMS_QTY_OPT.map(o=>`<option value="${o[0]}"${omsQty===o[0]?' selected':''}>${esc(o[1])}</option>`).join('')}</select>
+      </label>
+      <div class="cno" style="margin-top:4px">ถ้าปิด = ต้องกดส่งเองทีละงานจากปุ่มในคอลัมน์ “ส่ง OMS” หน้า 2</div>
+    </div>
+    <div class="hint" style="margin-top:10px;font-size:12.5px">
       ${backendURL
         ? 'กำลังใช้ deployment: <b class="mono">…'+esc(backendURL.slice(-18))+'</b> <span class="tag" style="background:var(--present-bg);color:var(--present)">ตั้งไว้ในเครื่องนี้แล้ว</span>'
         : '<b style="color:var(--absent)">ยังไม่ได้ตั้ง URL ระบบกลาง</b> — ตอนนี้ข้อมูลเก็บในเครื่องนี้เท่านั้น ไม่แชร์กับ CC คนอื่น'}
@@ -1254,10 +1368,14 @@ async function doLogin(){
   const v=(document.getElementById('login_name').value||'').trim();if(!v){alert('กรุณาระบุชื่อผู้บันทึก');return;}
   const url=(document.getElementById('login_url').value||'').trim();
   adminName=v;lsSet('fleet:admin',adminName);
+  const ac=document.getElementById('omsAutoChk'), qs=document.getElementById('omsQtySel');
+  if(ac)omsAuto=ac.checked;
+  if(qs)omsQty=qs.value;
+  saveOmsCfg();
   if(url&&url!==BACKEND_URL_DEFAULT){backendURL=url;lsSet('fleet:backend',url);lsSet('fleet:backend:manual','1');}
   else{backendURL=BACKEND_URL_DEFAULT;lsSet('fleet:backend',BACKEND_URL_DEFAULT);lsSet('fleet:backend:manual','0');}
   updateAdminChip();closeModal();
-  flag('saving');await loadConfig();await loadRoutes();await loadDay();flag('ok');render();startPoll();startAlarms();if(tab==='roster')scrollToCurrentHour();
+  flag('saving');await loadConfig();await loadRoutes();await loadOmsCfg();await loadDay();flag('ok');render();startPoll();startAlarms();if(tab==='roster')scrollToCurrentHour();
 }
 function stampBy(){day.by=adminName;}
 function syncActual(){const a=document.getElementById('j_actual');if(a&&!a.dataset.touched)a.value=document.getElementById('j_truck').value;}
@@ -1281,6 +1399,7 @@ function saveJob(){
   day.seq++;
   const newJob={id:uid(),date:curDate,truck:no,mainTruck:no,actualTruck:actual,shift:pos,code:d?(d.code||''):'',driver:d?d.name:'',product,route:product,origin,dest,distance:dist,type:g('j_type').value,trip,depart:'',by:adminName,note:'',chargeStart:'',chargeEnd:'',ret:''};
   addJobOp(newJob);
+  if(omsAuto)setTimeout(()=>omsSendAndSave(newJob,false),600);   /* ส่งไป OMS อัตโนมัติ (ถ้าเปิดไว้) */
   if(!day.running[no])setFlat('running',no,true);
   saveDay();closeModal();tab='dispatch';render();
 }
@@ -2246,6 +2365,8 @@ document.getElementById('view').addEventListener('click',e=>{
   const plan=e.target.closest('[data-plan]');
   if(plan){openModal(plan.dataset.plan,plan.dataset.pos);return;}
   if(e.target.closest('#openDispatch')){openModal(null,null);return;}
+  const om=e.target.closest('[data-oms]');
+  if(om){openOmsDialog(om.dataset.oms);return;}
   const jr=e.target.closest('[data-jobrow]');
   if(jr&&!e.target.closest('input,button,select,textarea,a')){openJobDetail(jr.dataset.jobrow);return;}
   const ad=e.target.closest('[data-adddrv]');
@@ -2361,10 +2482,31 @@ document.getElementById('modal').addEventListener('click',e=>{
     }return;}
   if(e.target.closest('#goBoard')){closeModal();tab='board';render();return;}
   if(e.target.closest('#goPlan')){closeModal();tab='plan';render();return;}
+  if(e.target.closest('#omsDry')){
+    const id=document.getElementById('modal').dataset.omsjob;
+    const j=day.jobs.find(x=>String(x.id)===String(id));
+    const out=document.getElementById('omsOut');
+    out.textContent='กำลังตรวจ…';
+    omsSend(j,true).then(r=>{out.textContent=r.ok?('จะยิงไปที่:\n'+r.url):('ส่งไม่ได้: '+(r.message||r.error||''));
+      out.style.color=r.ok?'var(--muted)':'var(--absent)';});
+    return;
+  }
+  const og=e.target.closest('#omsGo');
+  if(og){
+    const j=day.jobs.find(x=>String(x.id)===String(og.dataset.id));
+    const out=document.getElementById('omsOut');
+    out.textContent='กำลังส่ง…';out.style.color='var(--muted)';
+    omsSendAndSave(j,true).then(r=>{
+      out.textContent=r.ok?('สำเร็จ · เลขที่เอกสาร '+(r.doc||'-')):('ไม่สำเร็จ: '+(r.message||''));
+      out.style.color=r.ok?'var(--present)':'var(--absent)';
+      const b=document.getElementById('omsGo');if(b)b.textContent='ส่งซ้ำ';
+    });
+    return;
+  }
   if(e.target.closest('#cancelJob')||e.target.closest('#closeModal')||e.target.id==='modal'){closeModal();return;}
 });
 document.getElementById('adminChip').addEventListener('click',e=>{if(e.target.closest('#changeAdmin')||e.target.closest('#loginBtn'))openLogin();});
-document.getElementById('refreshBtn').addEventListener('click',async()=>{flag('saving');await loadConfig();await loadRoutes();await loadDay();flag('ok');render();if(tab==='roster')scrollToCurrentHour();});
+document.getElementById('refreshBtn').addEventListener('click',async()=>{flag('saving');await loadConfig();await loadRoutes();await loadOmsCfg();await loadDay();flag('ok');render();if(tab==='roster')scrollToCurrentHour();});
 document.getElementById('modal').addEventListener('input',e=>{
   if(e.target.id==='j_truck'){fillShift();preselectRoute();fillOrigins();syncActual();syncDriverInfo();syncTrip();return;}
   if(e.target.id==='j_shift'){syncDriverInfo();return;}
@@ -3046,7 +3188,7 @@ async function boot_(){
   const man=lsGet('fleet:backend:manual')==='1'?(lsGet('fleet:backend')||''):'';
   backendURL=man||BACKEND_URL_DEFAULT||'';
   if(!man&&lsGet('fleet:backend')&&lsGet('fleet:backend')!==BACKEND_URL_DEFAULT)lsSet('fleet:backend',BACKEND_URL_DEFAULT);
-  await loadConfig();await loadRoutes();await loadDay();
+  await loadConfig();await loadRoutes();await loadOmsCfg();await loadDay();
   document.getElementById('fleetcount').textContent=Array.isArray(config)?config.length:'?';
   updateAdminChip();
   render();flag('ok');startPoll();startAlarms();fitTabs();
