@@ -930,10 +930,25 @@ function shiftCls(pos){return pos==='1'?'m':pos==='2'?'a':'n';}
 
 /* จำตำแหน่งที่เลื่อนอยู่ (ทั้งหน้าเว็บและทุกตารางที่เลื่อนได้) แล้วคืนค่าหลังวาดใหม่
    -> แก้ข้อมูลกลางตารางแล้วบรรทัดค้างอยู่ที่เดิม ไม่เด้งขึ้นบนสุด */
+/* ยืดกล่องตารางหลักให้สูงเต็มจอ (กันเนื้อที่ว่างด้านล่างหน้า 2 · 3 · 5)
+   คิดจากตำแหน่งกล่องเทียบหัวเอกสาร ไม่อิงการเลื่อนจอ จึงไม่บวมขึ้นทุกครั้งที่วาดใหม่ */
+function fitTableHeight(){
+  const boxes=document.querySelectorAll('#view .tablewrap.fitv');
+  if(!boxes.length)return;
+  const sy=window.scrollY||window.pageYOffset||0;
+  const reserve=74;                 /* เผื่อท้ายหน้า + ระยะล่าง 1 ซม. */
+  boxes.forEach(b=>{
+    const docTop=b.getBoundingClientRect().top+sy;
+    const h=window.innerHeight-docTop-reserve;
+    b.style.maxHeight=Math.max(260,Math.round(h))+'px';
+  });
+}
+window.addEventListener('resize',()=>{clearTimeout(window.__fitT);window.__fitT=setTimeout(fitTableHeight,120);});
 function keepScroll(){
   const y=window.scrollY||window.pageYOffset||0;
   const tops=[...document.querySelectorAll('#view .tablewrap')].map(b=>b.scrollTop);
   return function(){
+    fitTableHeight();                 /* ตั้งความสูงก่อน แล้วค่อยคืนตำแหน่งเลื่อน */
     const boxes=[...document.querySelectorAll('#view .tablewrap')];
     boxes.forEach((b,i)=>{if(tops[i]!==undefined)b.scrollTop=tops[i];});
     if(y)window.scrollTo(0,y);
@@ -1265,7 +1280,7 @@ function renderDispatch(){
       <div style="flex:1"></div>
       <button class="btn" id="csvBtn">⬇ ส่งออก Excel</button>
     </div>
-    <div class="tablewrap sbox10"><table style="min-width:1620px">
+    <div class="tablewrap sbox10 fitv"><table style="min-width:1620px">
       <thead><tr>
         ${thS('dispatch','date','วันที่')}${thS('dispatch','seq','ลำดับ','center')}${thS('dispatch','product','ชื่อสินค้า')}${thS('dispatch','origin','ต้นทาง')}${thS('dispatch','dest','ปลายทาง')}${thS('dispatch','code','รหัส พจส.')}${thS('dispatch','driver','ชื่อ พจส.')}${thS('dispatch','mtruck','เบอร์รถหลัก')}${thS('dispatch','atruck','เบอร์รถที่วิ่งจริง')}${thS('dispatch','trip','เที่ยว','center')}${thS('dispatch','type','ประเภทงาน')}${thS('dispatch','arrive','เวลามาจริง')}${thS('dispatch','depart','เวลาออก')}<th>หมายเหตุ</th>${thS('dispatch','oms','ส่ง OMS','center')}${thS('dispatch','by','ผู้บันทึก (CC)')}<th></th>
       </tr></thead>
@@ -1273,6 +1288,7 @@ function renderDispatch(){
     </table></div>`;
   const box=document.querySelector('#view .tablewrap');
   if(box){
+    fitTableHeight();                                                        /* ตั้งความสูงก่อน แล้วค่อยเลื่อน */
     if(dispFirst||!hadBox){box.scrollTop=box.scrollHeight;dispFirst=false;}   /* เปิดหน้ามา = เห็นรายการล่าสุด */
     else restore();                                                           /* แก้ข้อมูลแล้วบรรทัดอยู่ที่เดิม */
   }
@@ -1636,7 +1652,7 @@ function renderBoard(){
     </section>
     <div class="toolbar"><span class="cno">กดกล่องด้านบนเพื่อกรองเฉพาะสถานะนั้น (กดซ้ำเพื่อดูทั้งหมด) · แก้เวลาออกได้ที่หน้า 2</span>
       ${boardFilter!=='all'?'<button class="btn" id="clearBf">✕ ล้างตัวกรอง</button>':''}</div>
-    <div class="tablewrap sbox10"><table style="min-width:1620px">
+    <div class="tablewrap sbox10 fitv"><table style="min-width:1620px">
       <thead><tr>${thS('board','seq','ลำดับ','center')}${thS('board','date','วันที่')}${thS('board','driver','ชื่อ พจส.')}${thS('board','truck','เบอร์รถ')}${thS('board','depart','เวลาออก')}${thS('board','eta','เวลาถึงต้นทาง (คาดการณ์)')}${thS('board','status','สถานะ','center')}${thS('board','charger','แผนชาร์จ','center')}${thS('board','cs','เวลาชาร์จ')}${thS('board','ret','เวลากลับ')}${thS('board','closed','เวลาปิดงาน')}${thS('board','hours','รวมเวลาทำงาน','center')}<th>สาเหตุเกินเกณฑ์เวลา</th></tr></thead>
       <tbody>${shown.length?rows:'<tr><td colspan="13" class="empty-note">'+(jobs.length?'ไม่มีงานในสถานะนี้':'ยังไม่มีงานที่จ่าย — ไปที่หน้า 2 เพื่อจ่ายงาน')+'</td></tr>'}</tbody>
     </table></div>`;
@@ -1701,7 +1717,7 @@ function renderPlan(){
       <button class="btn primary" id="addRoute">＋ เพิ่มเส้นทางใหม่</button>
       <button class="btn" id="expRoutes" title="ส่งออกรายการที่แสดงอยู่เป็นไฟล์ Excel">⬇ ส่งออก Excel</button>
     </div>
-    <div class="tablewrap sbox"><table style="min-width:860px">
+    <div class="tablewrap sbox fitv"><table style="min-width:860px">
       <thead><tr><th style="width:46px;text-align:center">ลำดับ</th>${head}<th style="width:44px"></th></tr></thead>
       <tbody>${rows||'<tr><td colspan="8" class="empty-note">ยังไม่มีเส้นทาง — กด “เพิ่มเส้นทางใหม่”</td></tr>'}</tbody>
     </table></div>`;
