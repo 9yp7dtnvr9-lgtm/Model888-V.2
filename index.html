@@ -129,7 +129,7 @@
   .dgrid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
   .dcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
   .dcard .k{font-size:12px;color:var(--muted);letter-spacing:.2px}
-  .dcard .v{font-size:30px;font-weight:700;line-height:1.15;margin-top:3px;font-variant-numeric:tabular-nums}
+  .dcard .v{font-size:26px;font-weight:700;line-height:1.15;margin-top:3px;font-variant-numeric:tabular-nums}
   .dcard .s{font-size:12px;color:var(--muted);margin-top:3px}
   .dcard.hero{background:linear-gradient(135deg,var(--nav),#20406b);border-color:var(--nav)}
   .dcard.hero .k,.dcard.hero .s{color:#c9d7ea}
@@ -140,13 +140,15 @@
   .drow{display:grid;grid-template-columns:1fr 62px;gap:8px;align-items:center;padding:5px 0;font-size:13px}
   .dbar2{height:9px;border-radius:6px;background:#eef1f6;overflow:hidden}
   .dbar2 i{display:block;height:100%;border-radius:6px;background:var(--accent)}
-  .dnum{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  .dnum{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;font-size:12px}
   .dtwo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   .dsvg{width:100%;height:auto;display:block}
   .dpt{cursor:pointer}
   .dpt rect{pointer-events:all}
   .dpt:hover circle{r:5.5}
   .drow[title]{cursor:help}
+  .rchip.outbox{cursor:pointer;background:#eef4fb;color:#1f5fa8;border-color:#bcd6f2;font-weight:600}
+  .rchip.outbox:hover{background:#dfeaf7}
   .tag.m1212{background:#eaf3ff;color:#1f5fa8;border-color:#bcd6f2;font-weight:600}
   .dpick{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:9px;padding:4px 9px;font-size:12.5px;background:#fff}
   .dpick.on{border-color:var(--accent);background:var(--present-bg)}
@@ -357,7 +359,7 @@ function jtLong(k){return jt(k).long;}
 function jtBadge(k){return '<span class="jtype '+esc(k||'main')+'">'+esc(jtLabel(k))+'</span>';}
 /* ประเภทงานของ "งานที่จ่ายแล้ว" อ้างอิงทะเบียนหน้า 5 เสมอ
    เทียบ สินค้า -> ต้นทาง -> ปลายทาง ถ้าไม่เจอค่อยใช้ค่าที่บันทึกตอนจ่ายงาน */
-/* ---------- Model 12:12 ----------
+/* ---------- งานสายยาว-ขึ้นเอง ----------
    สินค้าที่มีคำว่า "รับตรง" (ชิพเชื้อเพลิง-รับตรง) = รถวิ่งงานยาว ขึ้นของเองจากต้นทาง
    นับเป็น งานหลัก_BU4 ทุกต้นทาง · เกณฑ์เวลา 12 ชม. ไม่ใช่ 8 ชม.
    ยกเว้นต้นทาง "บจก. วรวัฒน์ ธัญญผล" ที่ไม่เข้าเงื่อนไขนี้                     */
@@ -368,10 +370,10 @@ function isModel1212(j){
   if(o.indexOf('วรวัฒน์')>=0||o.indexOf('ธัญญผล')>=0)return false;
   return true;
 }
-/* กลุ่มเกณฑ์เวลาของงาน: กะ 8 ชม. / Model 12:12 / สายสั้น 4 ชม. */
+/* กลุ่มเกณฑ์เวลาของงาน: กะ 8 ชม. / งานสายยาว-ขึ้นเอง / สายสั้น 4 ชม. */
 const WT_GROUPS=[
   {k:'long8', lim:8,  name:'กะ 8 ชม.',    who:'หลัก_BU4 + BU อื่น(สายยาว)'},
-  {k:'m1212', lim:12, name:'Model 12:12', who:'เฉพาะ Model 12:12'},
+  {k:'m1212', lim:12, name:'งานสายยาว-ขึ้นเอง', who:'เฉพาะงานสายยาว-ขึ้นเอง'},
   {k:'short4',lim:4,  name:'สายสั้น 4 ชม.',who:'VT_BU4 + BU อื่น(สายสั้น)'}
 ];
 function workGroup(j){
@@ -382,7 +384,7 @@ function workLimit(j){const g=workGroup(j);for(const x of WT_GROUPS)if(x.k===g)r
 /* ป้ายประเภทงานของงานหนึ่ง ๆ (ต่อท้าย 12:12 ถ้าเข้าเงื่อนไข) */
 function jtBadgeJ(j){
   const b=jtBadge(isModel1212(j)?'main':jobType(j));
-  return b+(isModel1212(j)?' <span class="tag m1212">12:12</span>':'');
+  return b+(isModel1212(j)?' <span class="tag m1212">สายยาว-ขึ้นเอง</span>':'');
 }
 function jobType(j){
   if(!j)return 'main';
@@ -1467,7 +1469,7 @@ function renderBoard(){
     const eta = addMin(j.depart, tm);
     const p = plan[j.id] || {};
     const wb = workBreakdown(j);
-    const wlim = isModel1212(j) ? 12 : 8;            /* Model 12:12 เกินได้ถึง 12 ชม. */
+    const wlim = isModel1212(j) ? 12 : 8;            /* งานสายยาว-ขึ้นเอง เกินได้ถึง 12 ชม. */
     const over8 = wb.closed && wb.total > wlim;
     const etaCell = eta
       ? `<div class="mono" style="font-weight:600">${esc(eta.hm)} <span class="cno">น.</span>${eta.nextDay?' <span class="tag">+1 วัน</span>':''}</div>
@@ -1709,7 +1711,7 @@ function tablePlanVsActual(){
       if(g==='main'&&is1212(p)&&!sepDone&&sumProdOpen[g]){
         sepDone=true;
         rows+=`<tr><td colspan="5" style="padding:6px 12px 4px 22px;background:#f4f8fd">
-          <span class="tag m1212">Model 12:12</span> <span class="cno">รถวิ่งงานยาว ขึ้นของเองจากต้นทาง · เกณฑ์ 12 ชม.</span></td></tr>`;
+          <span class="tag m1212">งานสายยาว-ขึ้นเอง</span> <span class="cno">รถวิ่งงานยาว ขึ้นของเองจากต้นทาง · เกณฑ์ 12 ชม.</span></td></tr>`;
       }
       const plan=Number(pv(g,p))||0, a=act[g][p]||0;
       sp+=plan; sa+=a;
@@ -1759,7 +1761,7 @@ function tablePlanVsActual(){
 
 /* ===== ตารางที่ 3: เวลาการทำงานต่อเที่ยว (เกณฑ์ 8 ชม.) ===== */
 function tableWorkTime(){
-  /* แยกตามเกณฑ์เวลา 3 กลุ่ม: กะ 8 ชม. / Model 12:12 / สายสั้น 4 ชม. */
+  /* แยกตามเกณฑ์เวลา 3 กลุ่ม: กะ 8 ชม. / งานสายยาว-ขึ้นเอง / สายสั้น 4 ชม. */
   const G={}; WT_GROUPS.forEach(x=>G[x.k]={ok:0,over:0,sum:0,n:0,run:0,list:[]});
   for(const j of day.jobs){
     const b=workBreakdown(j);
@@ -1819,10 +1821,67 @@ function tableWorkTime(){
 
 /* ===== ตารางที่ 4: จำนวนรอบต่อคัน (1 คัน = 3 กะ = เป้า 3 รอบ/วัน) ===== */
 const TARGET_ROUNDS = 3;
+/* ---- รถที่ถูกใช้วิ่งจริงแต่ไม่อยู่ในทะเบียนกองรถ ----
+   คืนค่า: { list:[{truck,trips,closed,avg,origins:{},mains:{}}], trucks, trips }   */
+function outsideData(){
+  const known={}; config.forEach(t=>known[t.truckNo]=1);
+  const map={};
+  for(const j of (day.jobs||[])){
+    const act=String(j.actualTruck||'').trim();
+    if(!act||known[act])continue;
+    const o=map[act]=map[act]||{truck:act,trips:0,closed:0,hrs:[],origins:{},mains:{}};
+    o.trips++;
+    const org=String(j.origin||'(ไม่ระบุต้นทาง)').trim();
+    o.origins[org]=(o.origins[org]||0)+1;
+    const mn=String(j.mainTruck||j.truck||'-').trim();
+    o.mains[mn]=(o.mains[mn]||0)+1;
+    const b=workBreakdown(j);
+    if(b.closed){o.closed++;o.hrs.push(b.total);}
+  }
+  const list=Object.keys(map).sort((a,b)=>a.localeCompare(b,'th')).map(k=>{
+    const o=map[k];
+    o.avg=o.hrs.length?Math.round(o.hrs.reduce((a,b)=>a+b,0)/o.hrs.length*10)/10:null;
+    return o;
+  });
+  return { list:list, trucks:list.length, trips:list.reduce((a,b)=>a+b.trips,0) };
+}
+/* หน้าต่างรายละเอียดรถนอกกอง */
+function openOutsideDialog(){
+  const O=outsideData();
+  const m=document.getElementById('modal');
+  const rows=O.list.map(o=>{
+    const org=Object.keys(o.origins).map(k=>esc(k)+' <b>'+o.origins[k]+'</b>').join(' · ');
+    const mn=Object.keys(o.mains).map(k=>esc(k)).join(', ');
+    return `<tr>
+      <td class="plate">${esc(o.truck)}</td>
+      <td class="cno">${org||'-'}</td>
+      <td class="mono" style="text-align:center;font-weight:600">${o.trips}</td>
+      <td class="mono" style="text-align:center">${o.closed}</td>
+      <td class="mono" style="text-align:center">${o.avg!==null?(o.avg+' ชม.'):'<span class="cno">-</span>'}</td>
+      <td class="cno">${mn||'-'}</td></tr>`;
+  }).join('');
+  m.innerHTML=`<div class="modal-card" style="max-width:820px">
+    <div class="modal-head"><h2>รถที่ไม่อยู่ในกอง ${config.length} คัน — วันที่ ${esc(curDate)}</h2>
+      <button class="modal-x" id="closeModal">✕</button></div>
+    <div class="dgrid4" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px">
+      <div class="dcard"><div class="k">จำนวนรถ</div><div class="v">${O.trucks}</div></div>
+      <div class="dcard"><div class="k">เที่ยวงานรวม</div><div class="v">${O.trips}</div></div>
+      <div class="dcard"><div class="k">ปิดงานแล้ว</div><div class="v">${O.list.reduce((a,b)=>a+b.closed,0)}</div></div>
+    </div>
+    <div class="tablewrap" style="max-height:300px;overflow:auto"><table style="min-width:700px">
+      <thead><tr><th>เบอร์รถที่วิ่งจริง</th><th>ต้นทาง (จำนวนเที่ยว)</th>
+        <th style="text-align:center">เที่ยว</th><th style="text-align:center">ปิดงาน</th>
+        <th style="text-align:center">เฉลี่ย/เที่ยว</th><th>รับงานแทนรถหลัก</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="6" class="empty-note">ไม่มีรถนอกกองวิ่งงานในวันนี้</td></tr>'}</tbody>
+    </table></div>
+    <div class="modal-actions"><button class="btn" id="cancelJob">ปิด</button></div>
+  </div>`;
+  m.style.display='flex';
+}
 function roundsData(){
   const per = {};
   for(const j of day.jobs){
-    const no = j.actualTruck || j.mainTruck || j.truck || '(ไม่ระบุ)';   /* นับตามเบอร์รถที่วิ่งงานจริง */
+    const no = j.mainTruck || j.truck || '(ไม่ระบุ)';        /* นับรอบตามเบอร์รถหลักที่รับงาน */
     const p = per[no] = per[no] || {main:0,vt:0,oth:0,hrs:[],closed:0};
     p.byType=p.byType||{}; const gk=jobType(j);
     p.byType[gk]=(p.byType[gk]||0)+1;
@@ -1835,6 +1894,13 @@ function roundsData(){
   const known={}; config.forEach(t=>known[t.truckNo]=1);
   const ghosts=Object.keys(per).filter(no=>!known[no])
     .map(no=>({truckNo:no,routeGroup:'(ไม่อยู่ในตารางกะ)',drivers:[]}));
+  /* รถที่วิ่งจริงแต่ไม่อยู่ในกอง — เพิ่มเข้ามาในรายการด้วย ไม่ให้ตกหล่น */
+  const OUT=outsideData();
+  const outRows=OUT.list.filter(o=>!per[o.truck]).map(o=>({
+    truck:o.truck, route:'(รถนอกกอง)', came:0, crew:0,
+    rounds:o.trips, main:0, vt:0, oth:0, target:0, ok:true, outside:true,
+    avg:o.avg
+  }));
   const data = config.concat(ghosts)
     .filter(t => per[t.truckNo] || (t.drivers||[]).length >= TARGET_ROUNDS)
     .map(t=>{
@@ -1844,21 +1910,23 @@ function roundsData(){
       for(const d of (t.drivers||[])){ const v = attOf(t.truckNo)[d.pos]||''; if(v==='present'||v==='ot') came++; }
       const rounds = p.main + p.vt + (p.oth||0);
       const target = Math.min(TARGET_ROUNDS, crew || TARGET_ROUNDS);
-      return { truck:t.truckNo, route:t.routeGroup||'', came:came, crew:crew,
+      return { truck:t.truckNo, route:t.routeGroup||'', came:came, crew:crew, outside:false,
                rounds:rounds, main:p.main, vt:p.vt, oth:p.oth||0, target:target, ok:rounds>=target,
                avg: p.hrs.length ? Math.round(p.hrs.reduce((a,b)=>a+b,0)/p.hrs.length*10)/10 : null };
     });
 
-  return data;
+  return data.concat(outRows);
 }
 function tableRounds(){
   const data = roundsData();
   /* ---- สรุปจำนวนคันตามรอบที่ทำได้ ---- */
-  const c0 = data.filter(r=>r.rounds===0).length;
-  const c1 = data.filter(r=>r.rounds===1).length;
-  const c2 = data.filter(r=>r.rounds===2).length;
-  const cLess = data.filter(r=>r.rounds<TARGET_ROUNDS).length;
-  const cHit  = data.filter(r=>r.rounds>=TARGET_ROUNDS).length;
+  const inFleet = data.filter(r=>!r.outside);
+  const c0 = inFleet.filter(r=>r.rounds===0).length;
+  const c1 = inFleet.filter(r=>r.rounds===1).length;
+  const c2 = inFleet.filter(r=>r.rounds===2).length;
+  const cLess = inFleet.filter(r=>r.rounds<TARGET_ROUNDS).length;
+  const cHit  = inFleet.filter(r=>r.rounds>=TARGET_ROUNDS).length;
+  const OUTS = outsideData();
 
   /* ---- เรียงข้อมูลตามคอลัมน์ที่เลือก ---- */
   const dir = roundSort.dir;
@@ -1871,17 +1939,18 @@ function tableRounds(){
     return ((x||0) - (y||0)) * dir || a.truck.localeCompare(b.truck,'th');
   });
 
-  const rows = data.map(r=>`<tr${r.ok?'':' style="background:#fdf6f5"'}>
-      <td class="plate">${esc(r.truck)}</td>
+  const rows = data.map(r=>`<tr${r.outside?' style="background:#f4f8fd"':(r.ok?'':' style="background:#fdf6f5"')}>
+      <td class="plate">${esc(r.truck)}${r.outside?' <span class="tag m1212">นอกกอง</span>':''}</td>
       <td class="cno">${esc(r.route||'-')}</td>
-      <td class="mono" style="text-align:center">${r.came}/${r.crew||'-'}</td>
+      <td class="mono" style="text-align:center">${r.outside?'<span class="cno">-</span>':(r.came+'/'+(r.crew||'-'))}</td>
       <td class="mono" style="text-align:center;font-size:15px;font-weight:600">${r.rounds}</td>
       <td class="mono" style="text-align:center">${r.main}</td>
       <td class="mono" style="text-align:center">${r.vt||'-'}</td>
       <td class="mono" style="text-align:center">${r.oth||'-'}</td>
-      <td class="mono" style="text-align:center">${r.target}</td>
+      <td class="mono" style="text-align:center">${r.outside?'<span class="cno">-</span>':r.target}</td>
       <td class="mono" style="text-align:center">${r.avg!==null?r.avg+' ชม.':'<span class="cno">-</span>'}</td>
-      <td style="text-align:center">${r.ok?'<span class="badge b-done">ครบ</span>':`<span class="badge b-wait">ขาด ${r.target-r.rounds} รอบ</span>`}</td>
+      <td style="text-align:center">${r.outside?'<span class="badge b-charge">นอกกอง</span>'
+        :(r.ok?'<span class="badge b-done">ครบ</span>':`<span class="badge b-wait">ขาด ${r.target-r.rounds} รอบ</span>`)}</td>
     </tr>`).join('');
 
   /* ---- หัวตารางกดเรียงได้ ---- */
@@ -1903,7 +1972,9 @@ function tableRounds(){
       ${chip('ได้ 2 รอบ',c2)}
       ${chip('ได้ 1 รอบ',c1)}
       ${chip('ยังไม่ได้วิ่ง (0 รอบ)',c0,'bad')}
-      <span class="cno" style="margin-left:auto">รวม ${data.length} คัน</span>
+      <span class="rchip outbox" id="outBox" title="กดดูรายละเอียดรถที่ไม่อยู่ในกอง">
+        รถนอกกอง <b>${OUTS.trucks}</b> คัน · <b>${OUTS.trips}</b> เที่ยว ▸</span>
+      <span class="cno" style="margin-left:auto">ในกอง ${inFleet.length} คัน</span>
     </div>
     <div class="tablewrap sbox5"><table style="min-width:800px"><thead><tr>${head}</tr></thead>
     <tbody>${rows||'<tr><td colspan="10" class="empty-note">ยังไม่มีข้อมูล</td></tr>'}</tbody></table></div></div>`;
@@ -2146,6 +2217,7 @@ document.getElementById('view').addEventListener('click',e=>{
     render();return;
   }
   if(e.target.closest('#clearSort')){tsort['roster']=null;renderRoster();return;}
+  if(e.target.closest('#outBox')){openOutsideDialog();return;}
   const rs=e.target.closest('[data-rsort]');
   if(rs){
     const k=rs.dataset.rsort;
@@ -2753,8 +2825,8 @@ function dTrend(daily,pick,lab,color){
       <title>${esc(dayDetailText(daily[i]))}</title>
       <rect x="${x(i)-hit}" y="0" width="${hit*2}" height="${H}" fill="transparent"></rect>
       <circle cx="${x(i)}" cy="${y(v)}" r="${dashPickDay===daily[i].ds?5.5:3.5}" fill="${dashPickDay===daily[i].ds?color:'#fff'}" stroke="${color}" stroke-width="2"></circle>
-      <text x="${x(i)}" y="${y(v)-9}" font-size="11" text-anchor="middle" fill="#5a6b82">${v}</text>
-      <text x="${x(i)}" y="${H-3}" font-size="10" text-anchor="middle" fill="#8a97a8">${daily[i].ds.slice(5)}</text></g>`).join('')}
+      <text x="${x(i)}" y="${y(v)-8}" font-size="8.5" text-anchor="middle" fill="#5a6b82">${v}</text>
+      <text x="${x(i)}" y="${H-3}" font-size="8" text-anchor="middle" fill="#8a97a8">${daily[i].ds.slice(5)}</text></g>`).join('')}
   </svg>`;
 }
 /* ---------- ข้อความสรุปสำหรับคัดลอก ---------- */
