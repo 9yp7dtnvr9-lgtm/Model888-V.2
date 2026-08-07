@@ -435,8 +435,11 @@ async function loadRoutes(){
   try{raw=await store.get('fleet:routes');}catch(e){raw=null;}
   let r=null; if(raw){try{r=JSON.parse(raw);}catch(e){r=null;}}
   if(validRoutes(r)&&r.length){routes=r;return;}
-  routes=seedRoutes();
-  try{await saveRoutes();}catch(e){}
+  /* แก้บัคเดียวกับตารางกะ (2026-08-06): เดิมถ้าดึงพลาด/ยังไม่มีข้อมูล จะ seed แล้วบันทึกทับระบบกลางทันที —
+     เน็ตสะดุดแวบเดียวตอนใครโหลดหน้าเว็บ ก็ลบทะเบียนเส้นทางจริงของทุกคนได้ ตอนนี้ไม่บันทึกทับจากการโหลดอีกต่อไป
+     ถ้ามีของเดิมอยู่ในเครื่องนี้แล้ว (โหลดสำเร็จมาก่อนหน้านี้) ใช้อันนั้นต่อไปก่อน ไม่ต้องทำอะไร */
+  if(routes.length)return;
+  routes=seedRoutes();      /* ไม่มีอะไรเลยจริง ๆ -> แสดง seed ไปก่อน จะบันทึกจริงตอนผู้ใช้แก้ไข/เพิ่มเส้นทางเอง */
 }
 async function saveRoutes(){return await store.set('fleet:routes',JSON.stringify(routes));}
 let rsT=null;
@@ -770,12 +773,15 @@ async function flushSaveBeforeSwitch(){
   if(pendingOps.length||dirty)await doSaveNow();
 }
 async function saveConfig(){
-  const v=rosterVersions.find(x=>x.id===activeVerId);
-  if(v){v.roster=config;v.savedAt=new Date().toISOString();v.by=adminName||v.by;}
-  else rosterVersions.push({id:'v'+Date.now(),from:'2000-01-01',name:'ตารางกะเริ่มต้น',
-        roster:config,savedAt:new Date().toISOString(),by:adminName||''});
-  if(!activeVerId&&rosterVersions.length)activeVerId=rosterVersions[rosterVersions.length-1].id;
-  return await saveRosters();
+  const okSave=await saveRosterVersions(list=>{
+    const v=list.find(x=>x.id===activeVerId);
+    if(v){v.roster=config;v.savedAt=new Date().toISOString();v.by=adminName||v.by;}
+    else list.push({id:'v'+Date.now(),from:'2000-01-01',name:'ตารางกะเริ่มต้น',
+          roster:config,savedAt:new Date().toISOString(),by:adminName||''});
+    if(!activeVerId&&list.length)activeVerId=list[list.length-1].id;
+    return list;
+  });
+  return okSave;
 }
 let cs=null;function scheduleConfigSave(){flag('saving');clearTimeout(cs);cs=setTimeout(async()=>{await saveConfig();flag('ok');},400);}
 /* ============ ตารางกะแบบมีเวอร์ชัน ============
@@ -809,18 +815,40 @@ async function loadConfig(){
   let raw=null;
   try{raw=await store.get('fleet:rosters');}catch(e){raw=null;}
   let vs=null; if(raw){try{vs=JSON.parse(raw);}catch(e){vs=null;}}
-  if(Array.isArray(vs)&&vs.length&&vs.every(v=>v&&v.from&&validConfig(v.roster))){
-    rosterVersions=vs;
+  /* แก้บัคใหญ่ (2026-08-06): เดิมถ้าเจอแม้แต่ชุดเดียวที่ validConfig ไม่ผ่าน (หรือดึงพลาด/parse ไม่ออก)
+     จะทิ้งชุดตารางกะ "ทั้งหมด" แล้วสร้างชุดเปล่าใหม่บันทึกทับระบบกลางทันทีอัตโนมัติ — เครื่องใครเครื่องหนึ่งโหลด
+     พลาดแวบเดียว (เน็ตสะดุด/ตารางกะที่อัปโหลดไว้มีจุดเสียแค่จุดเดียว) ก็ลบตารางกะจริงของทุกคนหายหมดได้
+     ตอนนี้: (1) กรองทิ้งเฉพาะชุดที่เสียจริง ๆ ไม่ทิ้งชุดที่ดี (2) ไม่มีการบันทึกทับระบบกลางจากแค่การโหลดหน้าเว็บอีก
+     ต่อไป — จะบันทึกก็ต่อเมื่อผู้ใช้แก้ไข/อัปโหลดจริงเท่านั้น (saveConfig/applyImport) */
+  const good=Array.isArray(vs)?vs.filter(v=>v&&v.from&&validConfig(v.roster)):[];
+  if(good.length){
+    rosterVersions=good;
+  }else if(rosterVersions.length){
+    /* ดึงจากระบบกลางไม่ได้/ไม่มีชุดที่ใช้ได้เลยตอนนี้ (เช่นเน็ตสะดุด) -> ใช้ของที่มีอยู่ในเครื่องต่อไปก่อน ไม่ทับของเดิม */
   }else{
-    /* ย้ายของเดิม (fleet:roster ชุดเดียว) มาเป็นเวอร์ชันแรก */
+    /* ไม่มีอะไรเลยจริง ๆ (ครั้งแรกที่ใช้งาน) — สร้างให้ดูไปก่อนเฉย ๆ ยังไม่บันทึก */
     let old=null; try{old=await store.get('fleet:roster');}catch(e){}
     let oc=null; if(old){try{oc=JSON.parse(old);}catch(e){}}
     rosterVersions=[{id:'v0',from:'2000-01-01',name:'ตารางกะเริ่มต้น',
       roster:validConfig(oc)?oc:seed(),savedAt:new Date().toISOString(),by:adminName||''}];
-    try{await saveRosters();}catch(e){}
   }
   try{rosterRev=String(await store.get('fleet:rosters:rev')||'');}catch(e){}
   applyRosterForDate();
+}
+/* ดึงชุดตารางกะล่าสุดจากระบบกลางตรงก่อนบันทึกเสมอ (ไม่ใช่ของที่ค้างอยู่ในเครื่องตัวเองซึ่งอาจเก่ากว่าที่คนอื่น
+   เพิ่งบันทึกไปหลังจากเราเปิดหน้าเว็บ) แล้วค่อยแก้ไขบนชุดล่าสุดนั้นก่อนเซฟกลับ — ลดช่วงเวลาที่จะชนกับคนอื่นจาก
+   "นานเท่าที่เปิดหน้าเว็บทิ้งไว้" ให้เหลือแค่เสี้ยววินาทีที่ fetch-แก้ไข-save (ยังไม่ใช่ระบบ merge เต็มรูปแบบแบบ
+   หน้า 1 แต่ปลอดภัยกว่าของเดิมมาก) */
+async function freshRosterVersions(){
+  let raw=null; try{raw=await store.get('fleet:rosters');}catch(e){}
+  let vs=null; if(raw){try{vs=JSON.parse(raw);}catch(e){}}
+  const good=Array.isArray(vs)?vs.filter(v=>v&&v.from&&validConfig(v.roster)):[];
+  return good.length?good:rosterVersions;
+}
+async function saveRosterVersions(mutate){
+  const fresh=await freshRosterVersions();
+  rosterVersions=mutate(fresh.slice());
+  return await saveRosters();
 }
 function seed(){const r=ROSTER.map(t=>({...t,routeGroup:(t.routeGroup||'').trim()}));EXTRA.forEach(x=>{if(!r.find(t=>t.truckNo===x.truckNo))r.push(x);});return r;}
 async function loadDay(){
@@ -2554,8 +2582,8 @@ document.getElementById('modal').addEventListener('click',e=>{
   const vd=e.target.closest('[data-verdel]');
   if(vd){const v=rosterVersions.find(x=>x.id===vd.dataset.verdel);
     if(v&&confirm('ลบชุด "'+v.name+'" (เริ่ม '+v.from+') ?')){
-      rosterVersions=rosterVersions.filter(x=>x.id!==vd.dataset.verdel);
-      saveRosters().then(()=>{applyRosterForDate();openVersionDialog();render();});
+      const delId=vd.dataset.verdel;
+      saveRosterVersions(list=>list.filter(x=>x.id!==delId)).then(()=>{applyRosterForDate();openVersionDialog();render();});
     }return;}
   if(e.target.closest('#goBoard')){closeModal();tab='board';render();return;}
   if(e.target.closest('#goPlan')){closeModal();tab='plan';render();return;}
@@ -2595,8 +2623,11 @@ document.getElementById('modal').addEventListener('input',e=>{
 document.getElementById('modal').addEventListener('change',e=>{
   if(e.target.id==='imp_sheet'){openImportDialog(e.target.value);return;}
   if(e.target.dataset&&e.target.dataset.verfrom){
-    const v=rosterVersions.find(x=>x.id===e.target.dataset.verfrom);
-    if(v&&e.target.value){v.from=e.target.value;saveRosters().then(()=>{applyRosterForDate();openVersionDialog();render();});}
+    const verId=e.target.dataset.verfrom, newFrom=e.target.value;
+    if(newFrom){
+      saveRosterVersions(list=>{const v=list.find(x=>x.id===verId);if(v)v.from=newFrom;return list;})
+        .then(()=>{applyRosterForDate();openVersionDialog();render();});
+    }
     return;}
   if(e.target.id==='j_truck'){fillShift();preselectRoute();fillOrigins();syncActual();syncDriverInfo();syncTrip();return;}
   if(e.target.id==='j_shift'){syncDriverInfo();return;}
@@ -2786,9 +2817,10 @@ async function applyImport(){
   if(!R||!R.ok)return;
   const dup=rosterVersions.find(v=>v.from===from);
   if(dup&&!confirm('มีตารางกะที่เริ่มวันที่ '+from+' อยู่แล้ว ("'+dup.name+'") ต้องการแทนที่ไหม?'))return;
-  if(dup)rosterVersions=rosterVersions.filter(v=>v.from!==from);
-  rosterVersions.push({id:'v'+Date.now(),from,name:nm,roster:R.roster,savedAt:new Date().toISOString(),by:adminName||''});
-  flag('saving');const okSave=await saveRosters();flag(okSave?'ok':'err');
+  const newVer={id:'v'+Date.now(),from,name:nm,roster:R.roster,savedAt:new Date().toISOString(),by:adminName||''};
+  flag('saving');
+  const okSave=await saveRosterVersions(list=>list.filter(v=>v.from!==from).concat([newVer]));
+  flag(okSave?'ok':'err');
   applyRosterForDate();pendingWb=null;closeModal();render();
   if(!okSave){
     alert('⚠ อัปโหลดขึ้นระบบกลางไม่สำเร็จ'+(lastWriteErr?(' ('+lastWriteErr+')'):'')
