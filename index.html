@@ -729,35 +729,45 @@ let st=null;
 function flag(s){const e=document.getElementById('saveFlag');if(!e)return;if(s==='saving'){e.textContent='● กำลังบันทึก…';e.className='saveflag saving';}else if(s==='err'){e.textContent='● ต่อระบบกลางไม่ได้';e.className='saveflag saving';}else{e.textContent=backendURL?(lastSyncTxt?('● ซิงก์ '+lastSyncTxt):'● บันทึกแล้ว'):'● เก็บในเครื่อง';e.className='saveflag';}}
 function saveDay(){
   flag('saving');dirty=true;editGen++;clearTimeout(st);
-  st=setTimeout(async()=>{
-    const ds=curDate, gen=editGen;
-    mem['fleet:day:'+ds]=JSON.stringify(day);
-    if(backendURL){
-      if(!pendingOps.length){dirty=false;flag('ok');return;}
-      const sending=pendingOps; pendingOps=[];
-      saveBusy=true;
-      const merged=await dayPatch(ds,sending);
-      saveBusy=false;
-      if(merged&&ds===curDate){
-        try{const o=JSON.parse(merged);
-          if(o&&typeof o==='object'){
-            normDay(o);day=o;
-            pendingOps.forEach(op=>applyOpLocal(day,op));   /* ที่พิมพ์ระหว่างรอ ยังอยู่ครบ */
-          }
-        }catch(e){}
-        lastSyncTxt=nowHM();
-        if(!pendingOps.length)dirty=false;
-        flag('ok');
-      }else{
-        pendingOps=sending.concat(pendingOps);              /* ส่งไม่สำเร็จ เก็บไว้ส่งรอบหน้า */
-        flag('err');
-      }
-    }else{
-      await store.set('fleet:day:'+ds,JSON.stringify(day));
-      if(gen===editGen)dirty=false;
+  st=setTimeout(()=>{st=null;doSaveNow();},250);
+}
+/* บันทึกจริง ณ ตอนนี้ (ใช้จาก debounce ปกติ และตอนบังคับ flush ก่อนสลับวันที่)
+   จับ ds/snap ทันทีตอนเริ่มบันทึก ไม่ใช่ค่อยจับตอน timeout ยิง -> ถ้าผู้ใช้สลับวันที่ระหว่างรอ debounce
+   จะไม่หยิบ curDate/day ของวันใหม่มาใช้ผิดวัน (กัน race condition ข้อมูลข้ามวันปนกัน) */
+async function doSaveNow(){
+  const ds=curDate, gen=editGen, snap=day;
+  mem['fleet:day:'+ds]=JSON.stringify(snap);
+  if(backendURL){
+    if(!pendingOps.length){dirty=false;flag('ok');return;}
+    const sending=pendingOps; pendingOps=[];
+    saveBusy=true;
+    const merged=await dayPatch(ds,sending);
+    saveBusy=false;
+    if(merged&&ds===curDate){
+      try{const o=JSON.parse(merged);
+        if(o&&typeof o==='object'){
+          normDay(o);day=o;
+          pendingOps.forEach(op=>applyOpLocal(day,op));   /* ที่พิมพ์ระหว่างรอ ยังอยู่ครบ */
+        }
+      }catch(e){}
+      lastSyncTxt=nowHM();
+      if(!pendingOps.length)dirty=false;
       flag('ok');
+    }else{
+      pendingOps=sending.concat(pendingOps);              /* ส่งไม่สำเร็จ เก็บไว้ส่งรอบหน้า */
+      flag('err');
     }
-  },250);
+  }else{
+    await store.set('fleet:day:'+ds,JSON.stringify(snap));
+    if(gen===editGen)dirty=false;
+    flag('ok');
+  }
+}
+/* บังคับบันทึกข้อมูลของวันที่กำลังดูอยู่ให้เสร็จก่อน จะสลับไปดูวันอื่น
+   (แก้บัค: เดิมสลับวันที่ระหว่างรอ debounce 250ms แล้วข้อมูลวันเก่าไปปนกับวันใหม่/หายไปเงียบๆ) */
+async function flushSaveBeforeSwitch(){
+  if(st){clearTimeout(st);st=null;}
+  if(pendingOps.length||dirty)await doSaveNow();
 }
 async function saveConfig(){
   const v=rosterVersions.find(x=>x.id===activeVerId);
@@ -848,6 +858,9 @@ function isRunning(no){return !!day.running[no];}
 /* ---------- KPIs ---------- */
 function kpis(){
   let running=0,present=0,absent=0,leave=0,off=0,ot=0,late=0,unchecked=0,total=0;
+  let dispatched=0,pendingDispatch=0;    /* พจส. ที่มา/สายแล้ว: จ่ายแผนงานเที่ยวแรกไปแล้วกี่คน / เหลืออีกกี่คน */
+  const dispatchedSet=new Set();
+  (day.jobs||[]).forEach(j=>dispatchedSet.add(String(j.mainTruck||j.truck)+'|'+String(j.shift)));
   for(const t of config){
     if(isRunning(t.truckNo))running++;
     const a=attOf(t.truckNo);
@@ -855,17 +868,22 @@ function kpis(){
       total++;
       const v=a[d.pos];
       if(isOff(t,d,curDate)){ off++; if(v==='ot')ot++; continue; }   // วันหยุด fix ตามตารางกะ ไม่หัก OT
-      if(v==='present')present++;else if(v==='late')late++;else if(v==='absent')absent++;else if(v==='leave')leave++;else if(v==='ot')ot++;else unchecked++;
+      if(v==='present'||v==='late'){
+        if(v==='present')present++; else late++;
+        if(dispatchedSet.has(String(t.truckNo)+'|'+String(d.pos)))dispatched++; else pendingDispatch++;
+      }
+      else if(v==='absent')absent++;else if(v==='leave')leave++;else if(v==='ot')ot++;else unchecked++;
     }
   }
   const scheduled=total-off;      // ต้องมาทำงานวันนี้ (ตามตารางกะ)
   const actual=present+late+ot;   // มาทำงานจริงทั้งหมด (รวมสาย + OT)
-  return {running,present,absent,leave,off,ot,late,unchecked,total,scheduled,actual};
+  return {running,present,absent,leave,off,ot,late,unchecked,total,scheduled,actual,dispatched,pendingDispatch};
 }
 const STATUS_FILTERS={present:1,late:1,absent:1,leave:1,ot:1};
 function summaryBar(){
   const k=kpis();
   const bx=(f,cls,lab,val)=>`<div class="stat boardbox ${cls} ${filter===f?'sel':''}" data-f="${f}" title="กดเพื่อกรองเฉพาะ ${lab}"><div class="lab">${lab}</div><div class="val mono">${val}</div></div>`;
+  const checkedIn=k.present+k.late;      /* พจส. ที่บันทึกว่า มา+สาย ทั้งหมด */
   return `<section class="summary">
     <div class="stat hero boardbox ${filter==='all'?'sel':''}" data-f="all" title="กดเพื่อดูทั้งหมด"><div class="lab">สรุปการมาทำงาน</div><div class="val mono">${k.actual}/${k.scheduled}</div><div class="bar" style="width:${k.scheduled?Math.min(100,k.actual/k.scheduled*100):0}%"></div></div>
     ${bx('present','go','มา (ปกติ)',k.present)}
@@ -875,6 +893,8 @@ function summaryBar(){
     ${bx('leave','lv','ลา',k.leave)}
     ${bx('off','','วันหยุดวันนี้ (ตามตารางกะ)',k.off)}
     ${bx('incomplete','gap','ยังไม่เช็ก',k.unchecked)}
+    <div class="stat go" title="พจส. ที่บันทึกว่า มา+สาย ทั้งหมด ${checkedIn} คน — จ่ายแผนงานเที่ยวแรกไปแล้ว ${k.dispatched} คน"><div class="lab">จ่ายงานแล้ว</div><div class="val mono">${k.dispatched}<small>/${checkedIn}</small></div></div>
+    <div class="stat${k.pendingDispatch?' miss':''}" title="พจส. ที่มา/สายแล้ว แต่ยังไม่ได้จ่ายแผนงานเที่ยวแรก (ไปจ่ายที่ปุ่ม “จ่ายแผน →” ในตารางด้านล่าง)"><div class="lab">เหลือรอจ่ายงาน</div><div class="val mono">${k.pendingDispatch}</div></div>
   </section>`;
 }
 
@@ -1142,6 +1162,21 @@ function omsPayload(j){
   if(noSuffix.length)warn.push('ไม่มีเลขห้อยท้ายหลัง : → '+noSuffix.join(' , '));
   return { empId, truckId, wo, workList, jobId:String(j.id), miss, warn };
 }
+/* แปลงคำตอบให้เป็นรูปแบบเดียว {ok,message,doc,url}
+   Apps Script บางเส้นทาง (เช่น dryRun) ตอบเป็น {ok,message,doc,url} อยู่แล้ว
+   แต่เส้นทางส่งจริงจะ forward คำตอบดิบจากระบบ OMS (MIB) มาตรงๆ ซึ่งใช้ชื่อฟิลด์ต่างกัน
+   คือ {result:'SUCCESS'/'FAIL'/…, resultMessage, woHeaderDocId} — ต้อง map เอง ไม่งั้น
+   ฝั่งหน้าเว็บจะไม่เห็นทั้งข้อความและเลขที่เอกสารแม้ OMS ตอบสำเร็จจริง */
+function omsInterpret(d){
+  if(!d)return {ok:false,message:'ไม่มีคำตอบจากระบบกลาง',doc:''};
+  if(typeof d.ok==='boolean')
+    return {ok:d.ok,message:String(d.message||d.resultMessage||''),doc:String(d.doc||d.woHeaderDocId||''),url:d.url};
+  if(d.result!==undefined){
+    const okResult=['SUCCESS','PASS','OK','TRUE','1'].includes(String(d.result).toUpperCase());
+    return {ok:okResult,message:String(d.resultMessage||(okResult?'':'ระบบ OMS ปฏิเสธ (ไม่ระบุสาเหตุ)')),doc:String(d.woHeaderDocId||'')};
+  }
+  return {ok:false,message:'รูปแบบคำตอบจากระบบกลางไม่ถูกต้อง',doc:''};
+}
 /* ยิงจริง (หรือทดลอง) ผ่าน Apps Script */
 async function omsSend(j,dry){
   if(!backendURL)return {ok:false,message:'ยังไม่ได้ตั้ง URL ระบบกลาง'};
@@ -1152,7 +1187,7 @@ async function omsSend(j,dry){
       body:JSON.stringify({omsplan:1,tk:API_TOKEN,dryRun:dry?1:0,
         empId:p.empId,truckId:p.truckId,workList:p.workList,jobId:p.jobId})});
     const d=await r.json();
-    return d||{ok:false,message:'ไม่มีคำตอบจากระบบกลาง'};
+    return omsInterpret(d);
   }catch(e){return {ok:false,message:'ต่อระบบกลางไม่ได้'};}
 }
 /* ส่งแล้วบันทึกผลกลับไปที่งาน */
@@ -1455,6 +1490,7 @@ function openJobDetail(id){
   const tm=travelMin(j), eta=addMin(j.depart,tm), p=chargerPlan(day.jobs)[j.id]||{};
   const wb=workBreakdown(j);
   const t=truckByNo(j.mainTruck||j.truck), d=driverAt(t,j.shift);
+  const omsP=omsPayload(j);
   const row=(lb,v)=>`<div class="lb">${lb}</div><div>${v}</div>`;
   const tval=v=>v?('<span class="mono">'+esc(v)+'</span> <span class="cno">น.</span>'):'<span class="cno">— ยังไม่ระบุ</span>';
   const m=document.getElementById('modal');
@@ -1464,7 +1500,7 @@ function openJobDetail(id){
       <button class="modal-x" id="closeModal">✕</button></div>
     <div class="dgrid">
       ${row('วันที่','<span class="mono">'+esc(j.date||curDate)+'</span>')}
-      ${row('สินค้า','<span class="dbig">'+esc(j.product||'-')+'</span> <span class="jtype \'+esc(jobType(j))+\'">\'+esc(jtFull(jobType(j)))+\'</span>')}
+      ${row('สินค้า','<span class="dbig">'+esc(j.product||'-')+'</span> <span class="jtype '+esc(jobType(j))+'">'+esc(jtFull(jobType(j)))+'</span>')}
       ${row('เส้นทาง',esc(j.origin||'-')+' <span class="cno">→</span> '+esc(j.dest||'-'))}
       ${row('ระยะทาง',j.distance?('<span class="mono">'+esc(j.distance)+'</span> กม.'):'<span class="cno">-</span>')}
     </div>
@@ -1476,6 +1512,14 @@ function openJobDetail(id){
       ${row('เบอร์รถหลัก','<span class="plate">'+esc(j.mainTruck||j.truck||'-')+'</span>')}
       ${row('เบอร์รถที่วิ่งจริง','<span class="plate">'+esc(j.actualTruck||j.mainTruck||j.truck||'-')+'</span>'+((j.actualTruck&&j.actualTruck!==(j.mainTruck||j.truck))?' <span class="tag" style="background:var(--m-bg);color:var(--off)">สับรถ</span>':''))}
       ${row('เที่ยวที่','<span class="mono">'+esc(j.trip||'-')+'</span>')}
+    </div>
+    <div class="dsec">การส่งเข้าระบบ OMS</div>
+    <div class="dgrid">
+      ${row('สถานะ',omsBadge(j))}
+      ${row('เลขที่ใบงานที่ส่ง',omsP.workList?('<span class="mono">'+esc(omsP.workList)+'</span>'):'<span class="cno">— ยังไม่มีเลขที่ใบงาน (ตั้งที่หน้า 5)</span>')}
+      ${row('เลขที่เอกสารจาก OMS',j.omsDoc?('<span class="dbig mono">'+esc(j.omsDoc)+'</span>'):'<span class="cno">— ยังไม่ได้รับ (ยังไม่ส่ง หรือส่งไม่สำเร็จ)</span>')}
+      ${j.omsState==='err'?row('สาเหตุที่ไม่สำเร็จ','<span style="color:var(--absent)">'+(esc(j.omsMsg||'')||'ไม่ระบุสาเหตุ (ปลายทางไม่ส่งคำอธิบายกลับมา)')+'</span>'):''}
+      ${j.omsAt?row('ส่งล่าสุดเมื่อ','<span class="mono">'+esc(j.omsAt)+'</span> น.'):''}
     </div>
     <div class="dsec">เวลาตามแผนและที่เกิดขึ้นจริง</div>
     <div class="dgrid">
@@ -1490,7 +1534,7 @@ function openJobDetail(id){
           ?('<span class="dbig mono">'+wb.total+'</span> ชม.'+(wb.closed?'':' <span class="tag">ถึง'+esc(wb.upto)+'</span>')
             +'<div class="cno" style="margin-top:3px">'+wb.parts.map(x=>esc(x.label)+' '+x.h).join(' · ')+'</div>')
           :(wb.started?'<span class="badge b-run">กำลังเดินทาง</span>':'<span class="badge b-wait">รอออก</span>'))}
-      ${(wb.closed&&wb.total>8)?row('สาเหตุเกิน 8 ชม.','<span style="color:var(--absent)">'+(esc(j.overNote||'')||'<span class="cno">ยังไม่ได้ระบุ (กรอกที่หน้า 3)</span>')+'</span>'):''}
+      ${(wb.closed&&wb.total>workLimit(j))?row('สาเหตุเกิน '+workLimit(j)+' ชม.','<span style="color:var(--absent)">'+(esc(j.overNote||'')||'<span class="cno">ยังไม่ได้ระบุ (กรอกที่หน้า 3)</span>')+'</span>'):''}
       ${row('หมายเหตุ',esc(j.note||'')||'<span class="cno">-</span>')}
       ${row('ผู้บันทึก (CC)','<span class="cno">'+(esc(j.by||'-'))+'</span>')}
     </div>
@@ -1617,7 +1661,7 @@ function renderBoard(){
     const eta = addMin(j.depart, tm);
     const p = plan[j.id] || {};
     const wb = workBreakdown(j);
-    const wlim = isModel1212(j) ? 12 : 8;            /* งานสายยาว-ขึ้นเอง เกินได้ถึง 12 ชม. */
+    const wlim = workLimit(j);            /* เกณฑ์จริงตามกลุ่มงาน: สายสั้น 4 / กะปกติ 8 / งานสายยาว-ขึ้นเอง 12 ชม. */
     const over8 = wb.closed && wb.total > wlim;
     const etaCell = eta
       ? `<div class="mono" style="font-weight:600">${esc(eta.hm)} <span class="cno">น.</span>${eta.nextDay?' <span class="tag">+1 วัน</span>':''}</div>
@@ -1756,8 +1800,12 @@ function hourlyAttend(){
 }
 function tableAttend(){
   const b = hourlyAttend();
-  const nowH = new Date().getHours();
-  const lastH = Math.min(23, nowH + 1);          /* แสดงแผนล่วงหน้า 1 ชม. */
+  /* "ล่วงหน้า"/"ชม.นี้" มีความหมายเฉพาะเมื่อกำลังดูข้อมูลของวันนี้ ถ้าเปิดดูวันอื่น (เช่นเมื่อวาน)
+     ทุกชั่วโมงถือว่าจบวันแล้ว ต้องนับรวมยอดขาด/สาย/ลาให้ครบ ไม่ซ่อนไว้ตามนาฬิกาจริง (แก้บัค: เดิมใช้เวลานาฬิกาจริง
+     ไม่ผูกกับ curDate ทำให้เปิดดูสรุปวันก่อนแล้วชั่วโมงหลังๆของวันนั้นถูกซ่อนยอดไปเงียบๆ) */
+  const isToday = curDate===todayStr();
+  const nowH = isToday ? new Date().getHours() : 24;
+  const lastH = isToday ? Math.min(23, nowH + 1) : 23;          /* แสดงแผนล่วงหน้า 1 ชม. เฉพาะวันนี้ */
   let cp = 0, ca = 0;
   const list=[];
   const hoursToShow=[];
@@ -1765,12 +1813,12 @@ function tableAttend(){
   for(let x=0;x<=lastH;x++)hoursToShow.push(x);
   for(const h of hoursToShow){
     const r = b[h] || {plan:0,present:0,ot:0,late:0,absent:0,leave:0,unchecked:0,off:0};
-    const ahead = (h>=0) && (h > nowH);
+    const ahead = isToday && (h>=0) && (h > nowH);
     const actual = r.present;
     if(!ahead){ cp += r.plan; ca += actual; }
     const diff = ca - cp;
     const hl = (h<0) ? 'ไม่ระบุเวลากะ' : (String(h).padStart(2,'0') + ':00');
-    const cls = ahead ? 'aheadrow' : (h===nowH ? 'nowrow' : '');
+    const cls = ahead ? 'aheadrow' : (isToday && h===nowH ? 'nowrow' : '');
     list.push({h,r,ahead,actual,cp,ca,diff,cls,html:`<tr class="${cls}">
       <td class="mono" style="font-weight:600">${hl}${h===nowH?' <span class="tag">ชม.นี้</span>':''}${ahead?' <span class="tag" style="background:var(--m-bg);color:var(--off)">ล่วงหน้า</span>':''}</td>
       <td class="mono" style="text-align:center">${r.plan||'-'}</td>
@@ -2330,7 +2378,7 @@ function render(){
 
 /* ---------- events (delegated) ---------- */
 document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(b){tab=b.dataset.tab;if(tab==='dash')setTimeout(()=>dashLoad(),0);if(tab==='dispatch')dispFirst=true;if(tab==='summary')sumFirst=true;render();if(tab==='roster')scrollToCurrentHour();}});
-document.getElementById('dateInput').addEventListener('change',async e=>{curDate=e.target.value||todayStr();applyRosterForDate();await loadDay();closeWidget('alarm');closeWidget('alert');loadNotify();tickAlarms();render();if(tab==='roster')scrollToCurrentHour();});
+document.getElementById('dateInput').addEventListener('change',async e=>{await flushSaveBeforeSwitch();curDate=e.target.value||todayStr();applyRosterForDate();await loadDay();closeWidget('alarm');closeWidget('alert');loadNotify();tickAlarms();render();if(tab==='roster')scrollToCurrentHour();});
 
 document.getElementById('view').addEventListener('click',e=>{
   const tg=e.target.closest('[data-grp]');
