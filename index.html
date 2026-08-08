@@ -485,7 +485,8 @@ const EXTRA = [
 ];
 const DEST_DEFAULT='โรงไฟฟ้า NPS (304)';
 const DAYS=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
-const TYPELABEL={model:'3 กะ',twelve:'12 ชม.',vt:'VT',spare:'สำรอง'};
+const TYPELABEL={model:'3 กะ',twelve:'12 ชม.',vt:'VT',spare:'สำรอง',trainee:'พจส.ใหม่/รอรถ'};
+const TRAINEE_TRUCK='EV-TRAINEE';
 
 /* storage: shared backend (Apps Script) when URL set, else window.storage, else memory */
 const mem={};
@@ -898,7 +899,10 @@ function kpis(){
       if(isOff(t,d,curDate)){ off++; if(v==='ot')ot++; continue; }   // วันหยุด fix ตามตารางกะ ไม่หัก OT
       if(v==='present'||v==='late'){
         if(v==='present')present++; else late++;
-        if(dispatchedSet.has(String(t.truckNo)+'|'+String(d.pos)))dispatched++; else pendingDispatch++;
+        /* พจส.ใหม่/รอเบอร์รถ (trainee) ยังไม่มีรถให้จ่ายงานจริง จึงไม่นับเข้าการ์ด "จ่ายงานแล้ว/เหลือรอจ่ายงาน" */
+        if(t.type!=='trainee'){
+          if(dispatchedSet.has(String(t.truckNo)+'|'+String(d.pos)))dispatched++; else pendingDispatch++;
+        }
       }
       else if(v==='absent')absent++;else if(v==='leave')leave++;else if(v==='ot')ot++;else unchecked++;
     }
@@ -1017,6 +1021,7 @@ function renderRoster(){
       ${sortActive('roster')?'<button class="btn" id="clearSort">↩ กลับไปจัดกลุ่มตามชั่วโมง</button>':''}
       <button class="btn" id="editBtn">✎ แก้ไขรายชื่อ/เบอร์รถ</button>
       <button class="btn" id="importBtn">⬆ อัปโหลดตารางกะใหม่</button>
+      <button class="btn" id="importSheetBtn" title="ดึงตารางกะล่าสุดจาก Google Sheet ที่ CC แก้ตรง">🔄 ดึงจาก Google Sheet</button>
       <button class="btn" id="verBtn" title="กดเพื่อดู/แก้วันเริ่มมีผลของแต่ละชุด">🗓 ใช้ชุด: ${esc(activeVerName())} <span class="cno">· ทั้งหมด ${rosterVersions.length}</span></button>
       <button class="btn" id="csvBtn">⬇ ส่งออก Excel</button>
       <button class="btn" id="printBtn">🖨 พิมพ์</button>
@@ -1368,7 +1373,7 @@ function renderDispatch(){
   }
 }
 function dispatchFormHTML(){
-  const truckOpts=config.map(t=>`<option value="${esc(t.truckNo)}">${esc(t.truckNo)} — ${esc(t.routeGroup)}</option>`).join('');
+  const truckOpts=config.filter(t=>t.type!=='trainee').map(t=>`<option value="${esc(t.truckNo)}">${esc(t.truckNo)} — ${esc(t.routeGroup)}</option>`).join('');
   const grp=t=>{const ps=[...new Set(routes.filter(r=>(r.type||'main')===t.k&&r.product).map(r=>r.product))];
     return ps.length?('<optgroup label="'+esc(t.f)+'">'+ps.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('')+'</optgroup>'):'';};
   const routeOpts=JOBTYPES.map(grp).join('');
@@ -2451,7 +2456,7 @@ document.getElementById('view').addEventListener('click',e=>{
   }
   const att=e.target.closest('[data-att]');const run=e.target.closest('[data-run]');const pill=e.target.closest('[data-f]');
   const add=e.target.closest('#addJob');const del=e.target.closest('[data-deljob]');const now=e.target.closest('[data-stampnow]');
-  const imp=e.target.closest('#importBtn');const csv=e.target.closest('#csvBtn');const prn=e.target.closest('#printBtn');
+  const imp=e.target.closest('#importBtn');const impSheet=e.target.closest('#importSheetBtn');const csv=e.target.closest('#csvBtn');const prn=e.target.closest('#printBtn');
   if(att){const no=att.dataset.att,p=att.dataset.pos,v=att.dataset.val;setAttend(no,p,((day.attend[no]||{})[p]===v)?'':v);saveDay();renderRoster();return;}
   const ot=e.target.closest('[data-ot]');
   if(ot){const no=ot.dataset.ot,p=ot.dataset.pos;setAttend(no,p,((day.attend[no]||{})[p]==='ot')?'':'ot');saveDay();renderRoster();return;}
@@ -2484,6 +2489,7 @@ document.getElementById('view').addEventListener('click',e=>{
   if(run){const no=run.dataset.run;setFlat('running',no,!day.running[no]);saveDay();renderRoster();return;}
   if(pill){const f=pill.dataset.f;filter=(filter===f&&f!=='all')?'all':f;renderRoster();return;}
   if(imp){document.getElementById('fileInput').click();return;}
+  if(impSheet){importFromSheet();return;}
   if(e.target.closest('#verBtn')){openVersionDialog();return;}
   if(csv){exportExcel();return;}
   if(prn){window.print();return;}
@@ -2726,18 +2732,23 @@ function parseSheet(wb,name){
   const cChg=H.findIndex(h=>h.indexOf('เปลี่ยน')>=0);
   const cTime2=H.findIndex((h,ix)=>ix!==cTime&&(h.indexOf('16-31')>=0||h.indexOf('ครึ่งเดือนหลัง')>=0||(h.indexOf('วันที่')>=0&&h.indexOf('เปลี่ยน')<0&&ix>cTime)));
   if(cTruck<0||cName<0)return {ok:false,msg:'หาคอลัมน์เบอร์รถหรือรายชื่อไม่เจอ'};
-  const trucks={},order=[];let skipped=0;
+  const trucks={},order=[];let skipped=0,trainee=0;
   for(let r=hi+1;r<aoa.length;r++){
     const row=aoa[r];if(!row)continue;
-    const truck=cell(row,cTruck);
-    if(truck.indexOf('EV')!==0){if(cell(row,cName))skipped++;continue;}
+    let truck=cell(row,cTruck);
+    const nmRaw=cell(row,cName);
+    if(truck.indexOf('EV')!==0){
+      /* ไม่มีเบอร์รถ — ถ้ามีชื่อจริง (เช่น พจส.ใหม่/ยังฝึกงาน) เก็บไว้ใต้เบอร์รถชั่วคราว ไม่ทิ้งแถวไป */
+      if(nmRaw&&nmRaw!=='Vacant'){truck=TRAINEE_TRUCK;trainee++;}
+      else{if(nmRaw)skipped++;continue;}
+    }
     if(!trucks[truck]){
       const rt=cell(row,cRoute);
-      const ty=(truck==='EV1-033'||truck==='EV1-039')?'vt':(rt.indexOf('เปลือกไม้')>=0?'twelve':'model');
-      trucks[truck]={truckNo:truck,routeGroup:rt,product:cell(row,cProd)||'เชื้อเพลิงชีวมวล',type:ty,drivers:[]};
+      const ty=(truck===TRAINEE_TRUCK)?'trainee':(truck==='EV1-033'||truck==='EV1-039')?'vt':(rt.indexOf('เปลือกไม้')>=0?'twelve':'model');
+      trucks[truck]={truckNo:truck,routeGroup:truck===TRAINEE_TRUCK?'พจส.ใหม่ / รอมอบหมายเบอร์รถ':rt,product:cell(row,cProd)||'เชื้อเพลิงชีวมวล',type:ty,drivers:[]};
       order.push(truck);
     }
-    const nm=cell(row,cName);
+    const nm=nmRaw;
     if(nm&&nm!=='Vacant'){
       let pos=cell(row,cOrder);pos=pos.indexOf('Head')>=0?'1':(pos[0]||String(trucks[truck].drivers.length+1));
       const rawRow=aoaRaw[r]||[];
@@ -2757,7 +2768,7 @@ function parseSheet(wb,name){
   const chgN=roster.reduce((a,t)=>a+(t.drivers||[]).filter(d=>d.shiftFrom).length,0);
   const chgDates=[...new Set([].concat.apply([],roster.map(t=>(t.drivers||[]).map(d=>d.shiftFrom).filter(Boolean))))].sort();
   return {ok:roster.length>=5,msg:roster.length<5?('อ่านได้แค่ '+roster.length+' คัน โครงไฟล์อาจต่างจากที่รองรับ'):'',
-          roster,trucks:roster.length,drivers:drv,noShift,noOff,skipped,chgN,chgDates,
+          roster,trucks:roster.length,drivers:drv,noShift,noOff,skipped,trainee,chgN,chgDates,
           cols:{เส้นทาง:cRoute,เบอร์รถ:cTruck,ลำดับ:cOrder,รหัส:cCode,รายชื่อ:cName,เบอร์โทร:cPhone,สินค้า:cProd,'วัน off':cOff,เวลากะ:cTime}};
 }
 function importFile(file){
@@ -2773,6 +2784,30 @@ function importFile(file){
   r.onerror=()=>alert('เปิดไฟล์ไม่ได้');
   r.readAsArrayBuffer(file);
 }
+/* ดึงตารางกะสดจาก Google Sheet ผ่าน Apps Script (endpoint ?roster=live) แทนการอัปโหลด Excel
+   ใช้ dialog/ปุ่ม "ใช้ตารางกะชุดนี้" เดียวกับตอนอัปโหลด Excel เลย (applyImport ไม่ต้องแก้อะไร) */
+async function importFromSheet(){
+  if(!backendURL){alert('ยังไม่ได้ตั้ง URL ระบบกลาง — กด ⚙ ตั้งค่าระบบกลางก่อน');return;}
+  const btn=document.getElementById('importSheetBtn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ กำลังดึง…';}
+  try{
+    const res=await fetch(backendURL+'?roster=live'+tk()+'&t='+Date.now());
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    if(data&&data.ok===false)throw new Error(data.message||'อ่านไม่สำเร็จ');
+    const roster=Array.isArray(data)?data:(data.roster||[]);
+    if(!roster.length)throw new Error('ไม่พบข้อมูลตารางกะในชีต (ตรวจชื่อชีต/สิทธิ์เข้าถึงฝั่ง Apps Script)');
+    const drv=roster.reduce((a,t)=>a+(t.drivers||[]).length,0);
+    const noShift=roster.reduce((a,t)=>a+(t.drivers||[]).filter(d=>!d.shift).length,0);
+    const noOff=roster.reduce((a,t)=>a+(t.drivers||[]).filter(d=>!d.dayOff).length,0);
+    const traineeT=roster.find(t=>t.truckNo===TRAINEE_TRUCK);
+    const trainee=traineeT?(traineeT.drivers||[]).length:0;
+    const nm='Google Sheet (ปัจจุบัน) · '+nowHM()+' น.';
+    pendingWb={wb:{SheetNames:[nm]},results:{[nm]:{ok:true,roster,trucks:roster.length,drivers:drv,noShift,noOff,skipped:0,trainee,chgN:0,chgDates:[]}}};
+    openImportDialog();
+  }catch(err){alert('ดึงข้อมูลจาก Google Sheet ไม่สำเร็จ: '+err.message);}
+  if(btn){btn.disabled=false;btn.textContent='🔄 ดึงจาก Google Sheet';}
+}
 function openImportDialog(sel){
   const names=pendingWb.wb.SheetNames;
   const cur=sel||names.find(nm=>pendingWb.results[nm].ok)||names[0];
@@ -2785,7 +2820,8 @@ function openImportDialog(sel){
   if(R.ok){
     if(R.noShift)warn.push(R.noShift+' คนไม่มีเวลากะ');
     if(R.noOff)warn.push(R.noOff+' คนไม่มีวันหยุด');
-    if(R.skipped)warn.push('ข้ามแถวที่เบอร์รถไม่ขึ้นต้นด้วย EV '+R.skipped+' แถว');
+    if(R.trainee)warn.push(R.trainee+' คนยังไม่มีเบอร์รถ (เก็บไว้ที่ "'+TRAINEE_TRUCK+'" ชั่วคราว — ย้ายไปเบอร์รถจริงในหน้าตารางกะเมื่อมอบหมายแล้ว)');
+    if(R.skipped)warn.push('ข้ามแถวที่อ่านไม่ออก (ไม่มีชื่อ ไม่มีเบอร์รถ) '+R.skipped+' แถว');
   }
   const m=document.getElementById('modal');
   m.innerHTML=`<div class="modal-card" style="max-width:720px">
