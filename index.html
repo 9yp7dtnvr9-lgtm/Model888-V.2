@@ -144,7 +144,8 @@
   .dbar2 i{display:block;height:100%;border-radius:6px;background:var(--accent)}
   .dnum{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;font-size:12px}
   .dtwo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .dsvg{width:100%;height:auto;display:block}
+  .dsvg{display:block}         /* ไม่ยืด width:100% แล้ว — ใช้ขนาดจริงตาม viewBox เท่านั้น กันจุด/ตัวเลข/เส้นถูกขยายเบลอเวลาข้อมูลน้อยวัน */
+  .dscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}   /* กราฟกว้างกว่ากล่อง (วันมาก) เลื่อนดูได้ ไม่บีบจนอ่านไม่ออก */
   .dpt{cursor:pointer}
   .dpt rect{pointer-events:all}
   .dpt:hover circle{r:5.5}
@@ -532,7 +533,7 @@ let lastSyncTxt='',dirty=false,editGen=0,saveBusy=false,lastTypeAt=0;
    -> คนละช่อง/คนละคัน/คนละงาน บันทึกพร้อมกันได้ ไม่มีใครหาย            */
 let pendingOps=[];
 const CELL_SEC={attend:1,arrive:1,attendBy:1,dnote:1};
-const FLAT_SEC={plan:1,running:1};
+const FLAT_SEC={plan:1,running:1,truckNote:1};   /* truckNote: หมายเหตุรถ 0 เที่ยว ในรายงานหน้า 6 — คีย์ตรง = เบอร์รถ */
 
 /* นำ op ไปใช้กับข้อมูลในเครื่อง (ตรรกะเดียวกับฝั่งเซิร์ฟเวอร์) */
 function applyOpLocal(doc,op){
@@ -624,7 +625,7 @@ function validConfig(c){
 function isPlain(o){return o&&typeof o==='object'&&!Array.isArray(o);}
 function normDay(d){
   if(!isPlain(d))d={};
-  ['attend','running','arrive','attendBy','plan','dnote'].forEach(k=>{if(!isPlain(d[k]))d[k]={};});
+  ['attend','running','arrive','attendBy','plan','dnote','truckNote'].forEach(k=>{if(!isPlain(d[k]))d[k]={};});
   if(!Array.isArray(d.jobs))d.jobs=[];
   if(!Array.isArray(d.deleted))d.deleted=[];
   d.jobs=d.jobs.filter(j=>j&&typeof j==='object'&&j.id!==undefined);
@@ -724,7 +725,7 @@ function sortBy(tbl,arr,getters){
 }
 function sortActive(tbl){const st=tsort[tbl];return !!(st&&st.key);}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
-function blankDay(){return {attend:{},running:{},jobs:[],seq:0,arrive:{},attendBy:{},plan:{},dnote:{},deleted:[],_rev:0};}
+function blankDay(){return {attend:{},running:{},jobs:[],seq:0,arrive:{},attendBy:{},plan:{},dnote:{},truckNote:{},deleted:[],_rev:0};}
 function truckByNo(no){return config.find(t=>t.truckNo===no);}
 function driverAt(t,pos){return (t.drivers||[]).find(d=>d.pos===String(pos));}
 
@@ -3001,6 +3002,16 @@ function rosterOn(ds){
   const v=rosterFor(ds);
   return (v&&Array.isArray(v.roster))?v.roster:config;
 }
+/* ---------- กลุ่มรถ สำหรับรายงานเที่ยวรถหน้า 6 (2026-08) ----------
+   ใช้ field "type" ของรถที่มีอยู่แล้ว (คำนวณอัตโนมัติตอนดึงตารางกะจาก Google Sheet)
+   ยืนยันจากข้อมูลจริง: model=27 · twelve=3 · vt+spare=4 · รวม 34 คัน ตรงกับที่แจ้งไว้ */
+const FLEET_GROUPS=[
+  {k:'all',   lab:'ทั้งหมด',       n:34, test:t=>t.type!=='trainee'},
+  {k:'model', lab:'Model 888',    n:27, test:t=>t.type==='model'},
+  {k:'twelve',lab:'Model 12:12',  n:3,  test:t=>t.type==='twelve'},
+  {k:'spare', lab:'สำรอง + VT',   n:4,  test:t=>t.type==='vt'||t.type==='spare'}
+];
+let dashFleetGroup='all';
 /* ---------- รวมข้อมูลทั้งช่วง ---------- */
 function dashAgg(){
   const dates=dashDateList();
@@ -3012,12 +3023,15 @@ function dashAgg(){
   JOBTYPES.forEach(t=>A.byType[t.k]=0);
   dates.forEach(ds=>{
     const day2=dashCache[ds];
-    const row={ds:ds,trips:0,closed:0,present:0,absent:0,late:0,leave:0,ot:0,off:0,unchecked:0,sched:0,hours:0,hoursN:0,plan:0,types:{},wt:{},noData:false};
+    const row={ds:ds,trips:0,closed:0,present:0,absent:0,late:0,leave:0,ot:0,off:0,unchecked:0,sched:0,hours:0,hoursN:0,plan:0,types:{},wt:{},noData:false,
+      truckClosed:{},fleet:[],truckNote:{}};   /* truckClosed: เที่ยวที่ปิดงานแล้วต่อคันของวันนี้ · fleet: รายชื่อรถทั้งหมดของวันนี้ (สำหรับรายงานเที่ยวรถ) */
     WT_GROUPS.forEach(x=>row.wt[x.k]={ok:0,over:0});
     if(!day2){row.noData=true;A.daily.push(row);return;}
     A.haveDays++;
     /* --- คน --- */
     const rs=rosterOn(ds);
+    row.fleet=rs; row.truckNote=isPlain(day2.truckNote)?day2.truckNote:{};
+    row.dnote=isPlain(day2.dnote)?day2.dnote:{};   /* หมายเหตุเดิมจากหน้า 1 (ต่อคัน/ต่อกะ) — ใช้เป็นค่าเริ่มต้นของหมายเหตุรถ 0 เที่ยว */
     for(const t of rs)for(const d of (t.drivers||[])){
       const off=isOff(t,d,ds);
       const v=((day2.attend||{})[t.truckNo]||{})[d.pos]||'';
@@ -3052,6 +3066,7 @@ function dashAgg(){
       const tk=j.mainTruck||j.truck||'-'; A.truck[tk]=(A.truck[tk]||0)+1; per[tk]=(per[tk]||0)+1; A.trucksSeen[tk]=1;
       if(j.closed){
         A.closed++; row.closed++;
+        row.truckClosed[tk]=(row.truckClosed[tk]||0)+1;
         const wb=workBreakdown(j);
         if(wb.total>0){A.hours.push(wb.total);row.hours+=wb.total;row.hoursN++;}
         const wk=workGroup(j), g=A.wt[wk];
@@ -3105,7 +3120,7 @@ function dTrend(daily,pick,lab,color){
   const pts=vals.map((v,i)=>x(i)+','+y(v)).join(' ');
   const area='M'+x(0)+','+(H-pad-10)+' L'+vals.map((v,i)=>x(i)+','+y(v)).join(' L')+' L'+x(N-1)+','+(H-pad-10)+' Z';
   const hit=(W-pad*2)/Math.max(1,N)/2+6;
-  return `<svg class="dsvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(lab)}">
+  return `<div class="dscroll"><svg class="dsvg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(lab)}">
     <path d="${area}" fill="${color}" opacity=".13"></path>
     <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"></polyline>
     ${vals.map((v,i)=>`<g class="dpt${dashPickDay===daily[i].ds?' on':''}" data-dd="${esc(daily[i].ds)}">
@@ -3114,7 +3129,107 @@ function dTrend(daily,pick,lab,color){
       <circle cx="${x(i)}" cy="${y(v)}" r="${dashPickDay===daily[i].ds?5.5:3.5}" fill="${dashPickDay===daily[i].ds?color:'#fff'}" stroke="${color}" stroke-width="2"></circle>
       <text x="${x(i)}" y="${y(v)-8}" font-size="8.5" text-anchor="middle" fill="#5a6b82">${v}</text>
       <text x="${x(i)}" y="${H-3}" font-size="8" text-anchor="middle" fill="#8a97a8">${daily[i].ds.slice(5)}</text></g>`).join('')}
-  </svg>`;
+  </svg></div>`;
+}
+/* ---------- รายงานเที่ยวรถแยกตามกลุ่ม (2026-08) ----------
+   นับ "เที่ยว" เฉพาะที่ปิดงานแล้วเท่านั้น (ตามที่ยืนยัน) ต่อคัน ต่อวัน แบ่งเป็น 3/2/1/0 เที่ยว
+   รถ 0 เที่ยว แยกเป็นรายงานย่อยต่างหาก (อาจส่งซ่อม/มีปัญหา) ให้บันทึกหมายเหตุได้ */
+/* รวมหมายเหตุเดิมจากหน้า 1 (คอลัมน์ "หมายเหตุ" ต่อกะ/ต่อคนขับ ของรถคันนั้น) เป็นข้อความเดียว
+   ตัดค่าซ้ำ/ค่าว่างออก — ใช้เป็นค่าเริ่มต้นของช่องหมายเหตุรถ 0 เที่ยว ก่อนที่ CC จะพิมพ์เพิ่มเอง */
+function dnoteJoin(posMap){
+  if(!posMap||typeof posMap!=='object')return '';
+  const vals=[...new Set(Object.values(posMap).map(v=>String(v||'').trim()).filter(Boolean))];
+  return vals.join(' / ');
+}
+function tripBucketCounts(row,group){
+  const g=FLEET_GROUPS.find(x=>x.k===group)||FLEET_GROUPS[0];
+  const fleet=(row.fleet||[]).filter(t=>t&&t.truckNo&&g.test(t));
+  let b3=0,b2=0,b1=0; const zero=[];
+  fleet.forEach(t=>{
+    const n=(row.truckClosed||{})[t.truckNo]||0;
+    if(n>=3)b3++; else if(n===2)b2++; else if(n===1)b1++;
+    else{
+      /* หมายเหตุที่บันทึกไว้เฉพาะทาง (ช่องนี้) มาก่อน — ถ้ายังไม่มี ใช้หมายเหตุเดิมจากหน้า 1 เป็นค่าเริ่มต้น ยังแก้ไข/พิมพ์เพิ่มได้ตามปกติ */
+      const saved=(row.truckNote||{})[t.truckNo];
+      const note=(saved!==undefined&&saved!=='')?saved:dnoteJoin((row.dnote||{})[t.truckNo]);
+      zero.push({truckNo:t.truckNo,route:t.routeGroup||'',note:note||''});
+    }
+  });
+  return {b3:b3,b2:b2,b1:b1,zero:zero,total:fleet.length};
+}
+function dGroupedBars(daily,group){
+  const N=daily.length; if(!N)return '<div class="cno">ไม่มีข้อมูล</div>';
+  const rows=daily.map(r=>r.noData?{b3:0,b2:0,b1:0,zero:[],total:0}:tripBucketCounts(r,group));
+  const max=Math.max(1,...rows.map(x=>Math.max(x.b3,x.b2,x.b1)));
+  const H=150, pad=18, innerH=H-pad*2-14, gW=64, W=Math.max(320,pad*2+N*gW), barW=Math.min(16,gW/4.2);
+  const yBase=H-pad-14, COL={b3:'#2f8f6b',b2:'#b8860b',b1:'#c0392b'};
+  const bar=(x,v,color)=>{
+    if(!v)return '';
+    const h=Math.round(v/max*innerH);
+    return `<rect x="${x}" y="${yBase-h}" width="${barW}" height="${h}" rx="2" fill="${color}"></rect>
+      <text x="${x+barW/2}" y="${yBase-h-4}" font-size="8.5" text-anchor="middle" fill="#5a6b82">${v}</text>`;
+  };
+  const groups=daily.map((r,i)=>{
+    const cx=pad+gW*i+gW/2, x3=cx-barW*1.6, x2=cx-barW*0.5, x1=cx+barW*0.6;
+    const on=dashPickDay===r.ds;
+    return `<g class="dpt${on?' on':''}" data-dd="${esc(r.ds)}">
+      <title>${esc(r.ds)} — 3 เที่ยว ${rows[i].b3} คัน · 2 เที่ยว ${rows[i].b2} คัน · 1 เที่ยว ${rows[i].b1} คัน · 0 เที่ยว ${rows[i].zero.length} คัน</title>
+      <rect x="${cx-gW/2}" y="0" width="${gW}" height="${H}" fill="${on?'rgba(43,108,176,.08)':'transparent'}"></rect>
+      ${bar(x3,rows[i].b3,COL.b3)}${bar(x2,rows[i].b2,COL.b2)}${bar(x1,rows[i].b1,COL.b1)}
+      <text x="${cx}" y="${H-3}" font-size="8" text-anchor="middle" fill="#8a97a8">${esc(r.ds.slice(5))}</text></g>`;
+  }).join('');
+  return `<div class="dscroll"><svg class="dsvg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="เที่ยวที่ปิดงานแล้วต่อคัน 3/2/1 เที่ยวต่อวัน">${groups}</svg></div>
+    <div style="display:flex;gap:14px;font-size:11.5px;color:#5a6b82;margin-top:8px;flex-wrap:wrap">
+      <span><i style="display:inline-block;width:9px;height:9px;background:${COL.b3};border-radius:2px;margin-right:4px;vertical-align:-1px"></i>3 เที่ยว/วัน</span>
+      <span><i style="display:inline-block;width:9px;height:9px;background:${COL.b2};border-radius:2px;margin-right:4px;vertical-align:-1px"></i>2 เที่ยว/วัน</span>
+      <span><i style="display:inline-block;width:9px;height:9px;background:${COL.b1};border-radius:2px;margin-right:4px;vertical-align:-1px"></i>1 เที่ยว/วัน</span>
+      <span class="cno">กดแท่งวันไหนก็ได้ เพื่อดู/บันทึกหมายเหตุรถ 0 เที่ยวของวันนั้น</span>
+    </div>`;
+}
+/* ---------- กราฟแท่งกลุ่มทั่วไป N ชุด/วัน (ใช้กับ "ขาด/สาย/ลา รายวัน" หน้า 6 แท็บคน) ----------
+   series: [{key,label,color,pick:r=>ค่าของวันนั้น}, ...] */
+function dMultiBars(daily,series){
+  const N=daily.length; if(!N)return '<div class="cno">ไม่มีข้อมูล</div>';
+  const vals=daily.map(r=>series.map(s=>r.noData?0:(s.pick(r)||0)));
+  const max=Math.max(1,...vals.map(v=>Math.max(...v)));
+  const S=series.length;
+  const H=150, pad=18, innerH=H-pad*2-14, gW=Math.max(48,S*22), W=Math.max(320,pad*2+N*gW), barW=Math.min(16,gW/(S*1.4));
+  const yBase=H-pad-14;
+  const bar=(x,v,color)=>{
+    if(!v)return '';
+    const h=Math.round(v/max*innerH);
+    return `<rect x="${x}" y="${yBase-h}" width="${barW}" height="${h}" rx="2" fill="${color}"></rect>
+      <text x="${x+barW/2}" y="${yBase-h-4}" font-size="8.5" text-anchor="middle" fill="#5a6b82">${v}</text>`;
+  };
+  const groups=daily.map((r,i)=>{
+    const cx=pad+gW*i+gW/2, on=dashPickDay===r.ds;
+    const gap=barW*1.15, x0=cx-(S-1)*gap/2;
+    const tip=r.ds+' — '+series.map((s,k)=>s.label+' '+vals[i][k]).join(' · ');
+    const bars=series.map((s,k)=>bar(x0+gap*k-barW/2,vals[i][k],s.color)).join('');
+    return `<g class="dpt${on?' on':''}" data-dd="${esc(r.ds)}">
+      <title>${esc(tip)}</title>
+      <rect x="${cx-gW/2}" y="0" width="${gW}" height="${H}" fill="${on?'rgba(43,108,176,.08)':'transparent'}"></rect>
+      ${bars}
+      <text x="${cx}" y="${H-3}" font-size="8" text-anchor="middle" fill="#8a97a8">${esc(r.ds.slice(5))}</text></g>`;
+  }).join('');
+  return `<div class="dscroll"><svg class="dsvg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(series.map(s=>s.label).join(' / '))} รายวัน">${groups}</svg></div>
+    <div style="display:flex;gap:14px;font-size:11.5px;color:#5a6b82;margin-top:8px;flex-wrap:wrap">
+      ${series.map(s=>`<span><i style="display:inline-block;width:9px;height:9px;background:${s.color};border-radius:2px;margin-right:4px;vertical-align:-1px"></i>${esc(s.label)}</span>`).join('')}
+    </div>`;
+}
+/* รายชื่อรถ 0 เที่ยว(ปิดงาน) ของวันที่เลือก + ช่องบันทึกหมายเหตุ (แก้แล้วเซฟอัตโนมัติ) */
+function dZeroPanel(daily,group,ds){
+  const r=daily.find(x=>x.ds===ds);
+  if(!r)return '<div class="cno">เลือกวันบนกราฟด้านบนเพื่อดูรายละเอียด</div>';
+  if(r.noData)return '<div class="cno">ไม่มีข้อมูลวันที่ '+esc(ds)+'</div>';
+  const b=tripBucketCounts(r,group);
+  if(!b.zero.length)return '<div class="cno">วันที่ '+esc(ds)+' — ไม่มีรถ 0 เที่ยวในกลุ่มนี้ 🎉</div>';
+  const rows=b.zero.map(z=>`<tr>
+      <td class="plate">${esc(z.truckNo)}</td><td class="cno">${esc(z.route||'-')}</td>
+      <td><input class="noteinp" style="width:280px" data-tnote="${esc(z.truckNo)}" data-tds="${esc(ds)}" value="${esc(z.note)}" placeholder="เหตุผล เช่น ส่งซ่อม / รออะไหล่ / ไม่มีคนขับ…"></td></tr>`).join('');
+  return `<div class="tablewrap"><table style="min-width:560px">
+    <thead><tr><th>เบอร์รถ</th><th>ต้นทาง</th><th>หมายเหตุ</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
 }
 /* ---------- ข้อความสรุปสำหรับคัดลอก ---------- */
 function dashText(A){
@@ -3182,7 +3297,11 @@ function renderDash(){
       <div class="dpanel"><h3>พจส. ที่ขาดงานบ่อยสุด <span class="cno">(ครั้ง)</span></h3>
         ${abs.length?dBars((function(){const o={};abs.forEach(x=>o[x.name+(x.code?(' · '+x.code):'')]=x.absent);return o;})(),8,'#c0392b'):'<div class="cno">ไม่มีคนขาดงานในช่วงนี้</div>'}</div>
     </div>
-    <div class="dpanel"><h3>ขาด / สาย / ลา รายวัน</h3>${dTrend(A.daily,r=>r.absent+r.late+r.leave,'ขาดสายลารายวัน','#c0392b')}</div>`;
+    <div class="dpanel"><h3>ขาด / สาย / ลา รายวัน</h3>${dMultiBars(A.daily,[
+      {key:'late',  label:'สาย', color:'#b8860b', pick:r=>r.late},
+      {key:'absent',label:'ขาด', color:'#c0392b', pick:r=>r.absent},
+      {key:'leave', label:'ลา',  color:'#8b93a4', pick:r=>r.leave}
+    ])}</div>`;
   }
   /* --- เส้นทาง --- */
   else if(dashTab==='route'){
@@ -3201,11 +3320,22 @@ function renderDash(){
   else if(dashTab==='truck'){
     const tk=Object.keys(A.truck).map(k=>[k,A.truck[k]]).sort((a,b)=>b[1]-a[1]);
     const low=tk.slice().reverse().slice(0,8);
+    const zeroDs=dashPickDay||(A.daily.length?A.daily[A.daily.length-1].ds:'');
     body=`<div class="dgrid4">
       ${card('รถที่ออกงาน',Object.keys(A.trucksSeen).length,'จาก '+config.length+' คันในกองรถ','hero')}
       ${card('เที่ยวรวม',A.trips,'เฉลี่ย '+A.tripsPerDay.toFixed(1)+' เที่ยว/วัน')}
       ${card('เฉลี่ยต่อคัน',(Object.keys(A.trucksSeen).length?(A.trips/Object.keys(A.trucksSeen).length).toFixed(1):'0'),'เที่ยว/คัน ในช่วงนี้')}
       ${card('ครบ '+TARGET_ROUNDS+' รอบ',A.hitTrucks,'ครั้ง (นับรายวัน)')}
+    </div>
+    <div class="dpanel">
+      <h3>รายงานเที่ยวที่ปิดงานแล้วต่อคัน — 3 / 2 / 1 เที่ยว/วัน <span class="cno">(นับเฉพาะเที่ยวที่ปิดงานแล้ว)</span></h3>
+      <div class="dseg" style="margin:0 0 12px">${FLEET_GROUPS.map(g=>`<button class="${dashFleetGroup===g.k?'on':''}" data-dfleet="${g.k}">${esc(g.lab)} <span class="cno">(${g.n})</span></button>`).join('')}</div>
+      ${dGroupedBars(A.daily,dashFleetGroup)}
+    </div>
+    <div class="dpanel" style="border-color:var(--accent)">
+      <h3>รถ 0 เที่ยว(ปิดงาน) — วันที่ ${esc(zeroDs)}
+        <span class="cno">${dashPickDay?'(กดแท่งกราฟด้านบนเพื่อดูวันอื่น)':'— วันล่าสุดในช่วงนี้ (กดแท่งกราฟด้านบนเพื่อดูวันอื่น)'}</span></h3>
+      ${zeroDs?dZeroPanel(A.daily,dashFleetGroup,zeroDs):'<div class="cno">ไม่มีข้อมูล</div>'}
     </div>
     <div class="dtwo">
       <div class="dpanel"><h3>รถที่วิ่งมากสุด <span class="cno">(เที่ยว)</span></h3>${dBars(A.truck,10,'#2b6cb0')}</div>
@@ -3284,6 +3414,19 @@ document.getElementById('view').addEventListener('change',e=>{
     if(a&&b&&a.value&&b.value){dashFrom=a.value;dashTo=b.value;dashLoad();renderDash();}
     return;
   }
+  /* หมายเหตุรถ 0 เที่ยว (หน้า 6 · แท็บเที่ยวรถ) — แก้แล้วออกจากช่อง = บันทึกไปยังวันที่นั้นโดยตรง (ไม่ใช่ curDate) */
+  const tn=e.target.closest('[data-tnote]');
+  if(tn){
+    const no=tn.dataset.tnote, ds=tn.dataset.tds, v=tn.value;
+    tn.disabled=true;
+    dayPatch(ds,[{k:'flat',s:'truckNote',key:no,v:v}]).then(newVal=>{
+      tn.disabled=false;
+      if(newVal){try{const o=JSON.parse(newVal);if(o&&typeof o==='object')dashCache[ds]=o;}catch(err){}}
+      else{ dashCache[ds]=dashCache[ds]||blankDay(); dashCache[ds].truckNote=dashCache[ds].truckNote||{}; dashCache[ds].truckNote[no]=v; }
+      renderDash();
+    }).catch(()=>{tn.disabled=false;});
+    return;
+  }
 });
 /* ---------- ปุ่มต่าง ๆ ของหน้า 6 ---------- */
 document.getElementById('view').addEventListener('click',e=>{
@@ -3295,6 +3438,8 @@ document.getElementById('view').addEventListener('click',e=>{
   if(dp){dashPickDay=(dashPickDay===dp.dataset.dd)?'':dp.dataset.dd;renderDash();return;}
   const dt=e.target.closest('[data-dtab]');
   if(dt){dashTab=dt.dataset.dtab;renderDash();return;}
+  const df=e.target.closest('[data-dfleet]');
+  if(df){dashFleetGroup=df.dataset.dfleet;renderDash();return;}
   if(e.target.closest('#dRefresh')){dashLoad(true);return;}
   if(e.target.closest('#dPrint')){window.print();return;}
   if(e.target.closest('#dCopy')){
