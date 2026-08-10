@@ -146,6 +146,10 @@
   .dtwo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   .dsvg{display:block}         /* ไม่ยืด width:100% แล้ว — ใช้ขนาดจริงตาม viewBox เท่านั้น กันจุด/ตัวเลข/เส้นถูกขยายเบลอเวลาข้อมูลน้อยวัน */
   .dscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}   /* กราฟกว้างกว่ากล่อง (วันมาก) เลื่อนดูได้ ไม่บีบจนอ่านไม่ออก */
+  .zerohead{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:0 0 8px;flex-wrap:wrap}
+  .zerohead .cno:first-child{margin-right:auto}   /* ข้อความจำนวนรถชิดซ้าย · ปุ่มเลือกไปอยู่มุมขวา */
+  .zerowrap{overflow:auto;-webkit-overflow-scrolling:touch}
+  .zerowrap thead th{position:sticky;top:0;z-index:2;background:var(--card,#fff);box-shadow:0 1px 0 #e4e9f0}
   .dpt{cursor:pointer}
   .dpt rect{pointer-events:all}
   .dpt:hover circle{r:5.5}
@@ -1005,6 +1009,21 @@ function kpis(){
   return {running,present,absent,leave,off,ot,late,unchecked,total,scheduled,actual,dispatched,pendingDispatch};
 }
 const STATUS_FILTERS={present:1,late:1,absent:1,leave:1,ot:1};
+/* ตัวกรองสถานะการจ่ายงานของหน้า 1 (มา/สายแล้ว -> จ่ายแผนงานเที่ยวแรกไปแล้วหรือยัง) */
+const DISPATCH_FILTERS={dispatched:1,todispatch:1};
+function dispatchedSetOf(){
+  const set=new Set();
+  (day.jobs||[]).forEach(j=>set.add(String(j.mainTruck||j.truck)+'|'+String(j.shift)));
+  return set;
+}
+/* คนนี้เข้าเกณฑ์การ์ด "จ่ายงานแล้ว"/"เหลือรอจ่ายงาน" หรือไม่ (ต้องตรงกับวิธีนับใน kpis) */
+function dispatchState(t,d,set){
+  if(!t||!d||t.type==='trainee')return '';
+  if(isOff(t,d,curDate))return '';
+  const v=attStat(t,d);
+  if(v!=='present'&&v!=='late')return '';
+  return set.has(String(t.truckNo)+'|'+String(d.pos))?'dispatched':'todispatch';
+}
 function summaryBar(){
   const k=kpis();
   const bx=(f,cls,lab,val)=>`<div class="stat boardbox ${cls} ${filter===f?'sel':''}" data-f="${f}" title="กดเพื่อกรองเฉพาะ ${lab}"><div class="lab">${lab}</div><div class="val mono">${val}</div></div>`;
@@ -1018,8 +1037,8 @@ function summaryBar(){
     ${bx('leave','lv','ลา',k.leave)}
     ${bx('off','','วันหยุดวันนี้ (ตามตารางกะ)',k.off)}
     ${bx('incomplete','gap','ยังไม่เช็ก',k.unchecked)}
-    <div class="stat go" title="พจส. ที่บันทึกว่า มา+สาย ทั้งหมด ${checkedIn} คน — จ่ายแผนงานเที่ยวแรกไปแล้ว ${k.dispatched} คน"><div class="lab">จ่ายงานแล้ว</div><div class="val mono">${k.dispatched}<small>/${checkedIn}</small></div></div>
-    <div class="stat${k.pendingDispatch?' miss':''}" title="พจส. ที่มา/สายแล้ว แต่ยังไม่ได้จ่ายแผนงานเที่ยวแรก (ไปจ่ายที่ปุ่ม “จ่ายแผน →” ในตารางด้านล่าง)"><div class="lab">เหลือรอจ่ายงาน</div><div class="val mono">${k.pendingDispatch}</div></div>
+    <div class="stat go boardbox ${filter==='dispatched'?'sel':''}" data-f="dispatched" title="กดเพื่อกรองเฉพาะคนที่จ่ายแผนงานเที่ยวแรกไปแล้ว (จาก พจส. ที่มา+สาย ${checkedIn} คน)"><div class="lab">จ่ายงานแล้ว</div><div class="val mono">${k.dispatched}<small>/${checkedIn}</small></div></div>
+    <div class="stat${k.pendingDispatch?' miss':''} boardbox ${filter==='todispatch'?'sel':''}" data-f="todispatch" title="กดเพื่อกรองเฉพาะคนที่มา/สายแล้วแต่ยังไม่ได้จ่ายแผนงานเที่ยวแรก"><div class="lab">เหลือรอจ่ายงาน</div><div class="val mono">${k.pendingDispatch}</div></div>
   </section>`;
 }
 
@@ -1109,7 +1128,7 @@ function renderRoster(){
       <button class="pill ${filter==='work'?'active':''}" data-f="work">ต้องมาทำงาน</button>
       <button class="pill ${filter==='off'?'active':''}" data-f="off" title="พจส. ที่หยุดวัน${esc(dayName(curDate))}">วันหยุด (${esc(dayName(curDate))})</button>
       <button class="pill ${filter==='incomplete'?'active':''}" data-f="incomplete">ยังไม่เช็ก</button>
-      ${STATUS_FILTERS[filter]?'<button class="btn" data-f="all">✕ ล้างตัวกรอง</button>':''}
+      ${(STATUS_FILTERS[filter]||DISPATCH_FILTERS[filter])?'<button class="btn" data-f="all">✕ ล้างตัวกรอง</button>':''}
       ${sortActive('roster')?'<button class="btn" id="clearSort">↩ กลับไปจัดกลุ่มตามชั่วโมง</button>':''}
       <button class="btn" id="editBtn">✎ แก้ไขรายชื่อ/เบอร์รถ</button>
       <button class="btn" id="importBtn">⬆ อัปโหลดตารางกะใหม่</button>
@@ -1136,6 +1155,7 @@ function scrollToCurrentHour(){
 function updateRosterArea(){const ra=document.getElementById('rosterArea');if(ra)ra.innerHTML=editMode?editorTable():rollCallTable();}
 
 function rollCallTable(){
+  const dsSet=DISPATCH_FILTERS[filter]?dispatchedSetOf():null;
   let list=[];
   for(const t of config)for(const d of (t.drivers||[]))list.push({t,d,startMin:parseStart(rowShift(t,d))});
   list=list.filter(r=>{
@@ -1144,6 +1164,7 @@ function rollCallTable(){
     if(filter==='off'&&!off)return false;
     if(filter==='incomplete'){const cur=attStat(r.t,r.d);if(off||cur)return false;}
     if(STATUS_FILTERS[filter]){const cur=attStat(r.t,r.d);if(cur!==filter)return false;}
+    if(DISPATCH_FILTERS[filter]){if(dispatchState(r.t,r.d,dsSet)!==filter)return false;}
     if(search){const q=search.toLowerCase();if(!((r.t.truckNo+' '+r.t.routeGroup+' '+r.d.name+' '+(r.d.code||'')).toLowerCase().includes(q)))return false;}
     return true;
   });
@@ -3201,6 +3222,8 @@ const FLEET_GROUPS=[
   {k:'spare', lab:'สำรอง + VT',   n:4,  test:t=>t.type==='vt'||t.type==='spare'}
 ];
 let dashFleetGroup='all';
+let zeroRows=10;                  /* หน้า 6: จำนวนแถวที่ให้เห็นในกรอบตารางรถ 0 เที่ยว (เกินกว่านี้เลื่อนดูได้) */
+const ZERO_ROW_OPTS=[10,50,100];
 /* ---------- รวมข้อมูลทั้งช่วง ---------- */
 function dashAgg(){
   const dates=dashDateList();
@@ -3434,6 +3457,16 @@ function dMultiBars(daily,series){
   return chGroupedBars(items,series,series.map(sr=>sr.label).join(' / ')+' รายวัน')+chLegend(series,'');
 }
 /* รายชื่อรถ 0 เที่ยว(ปิดงาน) ของวันที่เลือก + ช่องบันทึกหมายเหตุ (แก้แล้วเซฟอัตโนมัติ) */
+/* ปุ่มเลือกจำนวนแถวที่ให้เห็นในกรอบ — ไม่ได้ตัดข้อมูลออก ที่เกินยังเลื่อนดูได้ครบ */
+function zeroRowsPicker(total){
+  const more=total>zeroRows;
+  return `<div class="zerohead">
+    <span class="cno">ทั้งหมด ${total} คัน${more?' · เลื่อนดูในตารางได้ครบทุกคัน':''}</span>
+    <span class="cno">แสดง</span>
+    <div class="dseg">${ZERO_ROW_OPTS.map(n=>`<button class="${zeroRows===n?'on':''}" data-zrows="${n}" title="ให้เห็น ${n} แถวในกรอบ ถ้ามีมากกว่านั้นเลื่อนดูได้">${n}</button>`).join('')}</div>
+    <span class="cno">แถว</span>
+  </div>`;
+}
 function dZeroPanel(daily,group,ds){
   const r=daily.find(x=>x.ds===ds);
   if(!r)return '<div class="cno">เลือกวันบนกราฟด้านบนเพื่อดูรายละเอียด</div>';
@@ -3443,7 +3476,10 @@ function dZeroPanel(daily,group,ds){
   const rows=b.zero.map(z=>`<tr>
       <td class="plate">${esc(z.truckNo)}</td><td class="cno">${esc(z.route||'-')}</td>
       <td><input class="noteinp" style="width:280px" data-tnote="${esc(z.truckNo)}" data-tds="${esc(ds)}" value="${esc(z.note)}" placeholder="เหตุผล เช่น ส่งซ่อม / รออะไหล่ / ไม่มีคนขับ…"></td></tr>`).join('');
-  return `<div class="tablewrap"><table style="min-width:560px">
+  /* ความสูงกรอบ = หัวตาราง + จำนวนแถวที่เลือก (แถวละ ~41px) ที่เกินเลื่อนดูในกรอบได้ */
+  const maxH=42+Math.min(zeroRows,b.zero.length)*41;
+  return zeroRowsPicker(b.zero.length)
+    +`<div class="tablewrap zerowrap" style="max-height:${maxH}px"><table style="min-width:560px">
     <thead><tr><th>เบอร์รถ</th><th>ต้นทาง</th><th>หมายเหตุ</th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
 }
@@ -3654,6 +3690,8 @@ document.getElementById('view').addEventListener('click',e=>{
   if(dp){dashPickDay=(dashPickDay===dp.dataset.dd)?'':dp.dataset.dd;renderDash();return;}
   const dt=e.target.closest('[data-dtab]');
   if(dt){dashTab=dt.dataset.dtab;renderDash();return;}
+  const zr=e.target.closest('[data-zrows]');
+  if(zr){zeroRows=parseInt(zr.dataset.zrows,10)||10;renderDash();return;}
   const df=e.target.closest('[data-dfleet]');
   if(df){dashFleetGroup=df.dataset.dfleet;renderDash();return;}
   if(e.target.closest('#dRefresh')){dashLoad(true);return;}
