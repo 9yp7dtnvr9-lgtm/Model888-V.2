@@ -439,12 +439,13 @@ function seedRoutes(){
 }
 function validRoutes(a){return Array.isArray(a)&&a.every(r=>r&&typeof r==='object'&&'product' in r);}
 async function loadRoutes(){
+  routesDelLoad();                       /* คำสั่งลบที่ค้างจากรอบก่อน (เช่นลบตอนเน็ตหลุดแล้วรีเฟรช) */
   /* ลำดับ: ชีต -> คีย์เดิมบนระบบกลาง -> สำรองในเครื่อง -> ชุดตัวอย่าง */
   if(backendURL){
     try{
       const r=await fetch(backendURL+'?routes=live&t='+Date.now()+tk());
       const d=await r.json();
-      if(d&&Array.isArray(d.list)&&d.list.length){routes=d.list;routesRev=d.rev||'';lsSet('fleetdb:fleet:routes',JSON.stringify(routes));return;}
+      if(d&&Array.isArray(d.list)&&d.list.length){routes=routesStripDeleted(d.list);routesRev=d.rev||'';lsSet('fleetdb:fleet:routes',JSON.stringify(routes));return;}
     }catch(e){}
   }
   let raw=null;
@@ -463,20 +464,30 @@ async function loadRoutes(){
    เซิร์ฟเวอร์เทียบ 3 ฝ่าย (สำเนาเงา / ชีต / เว็บ) แล้วรวมให้ ไม่เขียนทับกันทั้งก้อน
    ถ้าต่อระบบกลางไม่ได้ ยังแก้ต่อได้ในเครื่อง แล้วค่อยซิงก์ขึ้นเมื่อกลับมาต่อได้ */
 let routesRev='', routesSyncing=false, routesDirty=false, routesLastMsg='';
+/* รายการเส้นทางที่ CC สั่งลบแล้วแต่ยังไม่ได้ยืนยันกับชีต — ส่งเป็นคำสั่งลบตรง ๆ
+   เก็บลงเครื่องด้วย เผื่อลบตอนเน็ตหลุดแล้วรีเฟรชหน้า คำสั่งลบต้องไม่หาย */
+let routesDel=[];
+function routesDelLoad(){try{const v=lsGet('fleetdb:fleet:routes:del');const a=v?JSON.parse(v):[];if(Array.isArray(a))routesDel=a;}catch(e){}}
+function routesDelSave(){try{lsSet('fleetdb:fleet:routes:del',JSON.stringify(routesDel));}catch(e){}}
+function routesMarkDeleted(id){id=String(id||'');if(!id)return;if(routesDel.indexOf(id)<0)routesDel.push(id);routesDelSave();}
+/* กันแถวที่สั่งลบไว้แล้วโผล่กลับมาจากชีต ระหว่างที่คำสั่งลบยังไม่ถึงเซิร์ฟเวอร์ */
+function routesStripDeleted(list){return (Array.isArray(list)?list:[]).filter(r=>r&&routesDel.indexOf(String(r.id))<0);}
 async function routesSyncNow(){
   if(!backendURL){await store.set('fleet:routes',JSON.stringify(routes));routesDirty=false;return true;}
   if(routesSyncing){routesDirty=true;return false;}
   routesSyncing=true;
   try{
     const r=await fetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({routesSync:JSON.stringify(routes),by:adminName||'',tk:API_TOKEN})});
+      body:JSON.stringify({routesSync:JSON.stringify(routes),routesDel:JSON.stringify(routesDel),by:adminName||'',tk:API_TOKEN})});
     const d=await r.json();
     routesSyncing=false;
     if(!d||d.error||d.ok===false){lastWriteErr=String((d&&(d.error||d.message))||'ซิงก์แผนเส้นทางไม่สำเร็จ');return false;}
     if(Array.isArray(d.list)){routes=d.list;routesRev=d.rev||'';}
+    routesDel=[];routesDelSave();          /* เซิร์ฟเวอร์รับคำสั่งลบไปแล้ว ล้างคิวได้ */
     routesDirty=false;
     lsSet('fleetdb:fleet:routes',JSON.stringify(routes));        /* สำรองในเครื่อง เผื่อเน็ตหลุดครั้งต่อไป */
     const bits=[];
+    if(d.deleted)bits.push('ลบออกจากชีต '+d.deleted+' เส้นทาง');
     if(d.fromSheet)bits.push('รับจากชีต '+d.fromSheet+' รายการ');
     if(d.conflicts)bits.push('แก้ช่องเดียวกันทั้งสองฝั่ง '+d.conflicts+' ช่อง (ใช้ค่าจากหน้าเว็บ)');
     routesLastMsg=bits.join(' · ');
@@ -517,7 +528,7 @@ async function pullRoutesFromSheet(){
     const d=await r.json();
     if(!d||d.ok===false||d.error){flag('err');alert('ดึงจากชีตไม่สำเร็จ: '+((d&&(d.message||d.error))||'ไม่ทราบสาเหตุ'));return;}
     if(!Array.isArray(d.list)){flag('err');alert('ชีตตอบข้อมูลไม่ถูกรูปแบบ');return;}
-    routes=d.list;routesRev=d.rev||'';routesLastMsg='ดึงจากชีตแล้ว '+routes.length+' เส้นทาง';
+    routes=routesStripDeleted(d.list);routesRev=d.rev||'';routesLastMsg='ดึงจากชีตแล้ว '+routes.length+' เส้นทาง';
     lsSet('fleetdb:fleet:routes',JSON.stringify(routes));
     flag('ok');renderPlan();
   }catch(e){flag('err');alert('ต่อระบบกลางไม่ได้');}
@@ -534,8 +545,9 @@ async function pollRoutes(){
     const r2=await fetch(backendURL+'?routes=live&t='+Date.now()+tk());
     const d2=await r2.json();
     if(d2&&Array.isArray(d2.list)){
-      const changed=JSON.stringify(d2.list)!==JSON.stringify(routes);
-      routes=d2.list;routesRev=d2.rev||'';
+      const fresh=routesStripDeleted(d2.list);
+      const changed=JSON.stringify(fresh)!==JSON.stringify(routes);
+      routes=fresh;routesRev=d2.rev||'';
       lsSet('fleetdb:fleet:routes',JSON.stringify(routes));
       if(changed){
         routesLastMsg='มีการแก้ในชีต — โหลดชุดล่าสุดแล้ว';
@@ -874,7 +886,7 @@ async function doSaveNow(){
       if(g.ds===curDate){                                 /* ผลที่ได้เป็นของวันที่กำลังดูอยู่ จึงเอามาใช้ได้ */
         try{const o=JSON.parse(merged);
           if(o&&typeof o==='object'){
-            normDay(o);day=o;
+            normDay(o);day=o;dayLoaded=true;              /* เซิร์ฟเวอร์คืนข้อมูลรวมของวันนั้นมา = ของจริง */
             reapplyPending();                             /* ที่พิมพ์ระหว่างรอ ยังอยู่ครบ */
           }
         }catch(e){}
@@ -889,7 +901,7 @@ async function doSaveNow(){
       if(!st)st=setTimeout(()=>{st=null;doSaveNow();},Math.min(30000,1500*Math.pow(2,saveRetry-1)));
       flag('err');
     }else{
-      saveRetry=0;
+      saveRetry=0;lastWriteErr='';        /* เขียนสำเร็จแล้ว ล้างสถานะผิดพลาดค้าง ไม่ให้ไปปิดฟีเจอร์อื่นค้างไว้ */
       if(!pendingOps.length)dirty=false;
       flag('ok');
     }
@@ -996,12 +1008,19 @@ function seed(){const r=ROSTER.map(t=>({...t,routeGroup:(t.routeGroup||'').trim(
 /* กันผลที่ล้าสมัย: ถ้ากดเปลี่ยนวันรวดเร็วหลายครั้ง คำตอบของวันเก่าอาจกลับมาหลังวันใหม่
    ต้องทิ้งคำตอบที่ไม่ใช่วันที่กำลังดูอยู่ ไม่ให้ day เป็นข้อมูลของอีกวันขณะที่หัวจอบอกอีกวัน */
 let loadSeq=0;
+/* dayLoaded = ยืนยันได้ว่าข้อมูลของวันที่กำลังดู "โหลดมาจริง" แล้ว
+   ถ้าต่อระบบกลางไม่ได้ day จะกลายเป็นวันเปล่า ซึ่งไม่ใช่สถานะจริงของวันนั้น
+   ห้ามให้ระบบตัดสินใจอะไรที่เขียนข้อมูลทับ (เช่นปิดยอดเป็น "ขาด") ตอนที่ยังไม่รู้ของจริง */
+let dayLoaded=false;
 async function loadDay(){
   const ds=curDate, my=++loadSeq;
   let raw=null;
   if(backendURL){try{raw=await dayFetch(ds);}catch(e){raw=null;}if(raw!==null)lastSyncTxt=nowHM();else flag('err');}
   if(raw===null){try{raw=await store.get('fleet:day:'+ds);}catch(e){raw=null;}}
   if(my!==loadSeq||ds!==curDate)return;                  /* มีการโหลดวันอื่นแซงไปแล้ว ทิ้งผลนี้ */
+  /* '' = โหลดสำเร็จแต่วันนั้นยังไม่มีข้อมูล (ถือว่ารู้ของจริงแล้ว) · null = โหลดไม่ได้ (ยังไม่รู้ของจริง)
+     ถ้าไม่ได้ตั้ง URL ระบบกลาง ข้อมูลในเครื่องคือของจริงอยู่แล้ว */
+  dayLoaded = backendURL ? (raw!==null&&raw!==undefined) : true;
   if(raw){try{day=JSON.parse(raw);}catch(e){day=blankDay();}}else day=blankDay();
   if(!isPlain(day))day=blankDay();
   day=normDay(day);dirty=false;
@@ -2533,7 +2552,12 @@ const ALARM_LEAD   = 30;      /* แจ้งเตือนล่วงหน�
 const ALERT_GRACE  = 10;      /* ถึงเวลาแล้วเกินกี่นาทีถือว่าไม่รายงานตัว */
 const ALERT_WINDOW = 180;     /* ไม่ย้อนแจ้งเตือน/ตีขาด ย้อนหลังเกินกี่นาที */
 const WIDGET_MS    = 60000;   /* วิดเจทเด้งค้างไว้ 1 นาที */
-const AUTO_CLOSE_SHIFT = true;  /* จบกะแล้วยังไม่มีใครเช็ก ให้ปิดยอดเป็น "ขาด" อัตโนมัติ (false = ให้ CC ใส่เองทั้งหมด) */
+/* ปิดฟีเจอร์ "ปิดยอดเป็นขาดอัตโนมัติเมื่อจบกะ" ตามที่ผู้ใช้สั่ง (2026-08-10)
+   เหตุผล: ตัวนี้เคยเขียน "ขาด" ทับคนที่ CC บันทึกว่ามาแล้วจริง (ตอนโหลดข้อมูลของวันไม่สำเร็จ
+   day กลายเป็นวันเปล่า ระบบจึงเข้าใจว่าไม่มีใครเช็ก) — ตอนนี้ให้ CC เป็นคนใส่สถานะเองทั้งหมด
+   ระบบจะไม่เขียนข้อมูลเช็คชื่อของหน้า 1 เองอีกเลย เหลือแค่ "แจ้งเตือน" ซึ่งไม่แตะข้อมูล
+   (ถ้าจะเปิดกลับ เปลี่ยนเป็น true — เงื่อนไขกันเขียนทับใน tickAlarms ยังอยู่ครบ) */
+const AUTO_CLOSE_SHIFT = false;
 
 let alarmList=[], alertList=[], alarmSeen={}, alertSeen={}, sweptSeen={};
 let alarmTimer=null, alertTimer=null, tickTimer=null;
@@ -2573,6 +2597,13 @@ function tickAlarms(){
   if(!config||!day)return;
   if(curDate!==todayStr()){updateBells();return;}     /* ดูวันย้อนหลัง ไม่ต้องเตือน */
   const now=nowMin();
+  /* ปิดยอดอัตโนมัติได้ ต่อเมื่อมั่นใจว่ารู้สถานะจริงของวันนี้แล้วเท่านั้น
+     (เดิม: ถ้าโหลดข้อมูลของวันไม่สำเร็จ day จะเป็นวันเปล่า แล้วระบบจะเขียน "ขาด"
+      ทับคนที่ CC บันทึกว่ามาแล้ว — เห็นเวลามาจริงอยู่แต่สถานะเป็นขาด) */
+  /* ตอนนี้ AUTO_CLOSE_SHIFT = false จึงเป็น false เสมอ = ระบบไม่เขียนข้อมูลหน้า 1 เองเลย
+     เงื่อนไขที่เหลือคงไว้ เผื่อวันหน้าจะเปิดฟีเจอร์นี้กลับ จะได้ปลอดภัยตั้งแต่ต้น */
+  const canSweep = AUTO_CLOSE_SHIFT && dayLoaded && !dirty && !saveBusy && !pendingOps.length && !lastWriteErr;
+  const dispSet = canSweep ? dispatchedSetOf() : null;
   let na=0, nl=0, swept=0, marked=false;
   for(const t of config){
     for(const d of (t.drivers||[])){
@@ -2591,7 +2622,12 @@ function tickAlarms(){
       /* จบกะแล้วยังไม่มีใครเช็ก -> ปิดยอดเป็น "ขาด" เงียบ ๆ ไม่เด้งวิดเจท
          (ใช้ flag คนละตัวกับ Alert เพื่อให้คนที่เคยถูกเตือนแล้วยังถูกปิดยอดตอนจบกะ) */
       const dur=shiftDuration(shiftOf(d,curDate));
-      if(AUTO_CLOSE_SHIFT && dur!==null && now>=sm && (now-sm)>=dur && !sweptSeen[k]){
+      if(canSweep && dur!==null && now>=sm && (now-sm)>=dur && !sweptSeen[k]){
+        /* มีหลักฐานว่ามาทำงาน ห้ามปิดยอดเป็น "ขาด" เด็ดขาด
+           - มีเวลามาจริงในช่อง = CC คีย์ไว้แล้ว
+           - จ่ายแผนงานให้คนนี้ไปแล้ว = มาแน่นอน */
+        if(attArr(t,d)){ sweptSeen[k]=1; continue; }
+        if(dispSet&&dispSet.has(String(t.truckNo)+'|'+String(d.pos))){ sweptSeen[k]=1; continue; }
         sweptSeen[k]=1; swept++;
         setAttend(t.truckNo,d.pos,'absent');                       /* ใช้ setAttend เพื่อประทับเจ้าของช่อง (attMeta) ด้วย */
         setCell('attendBy',t.truckNo,d.pos,'ระบบ (จบกะแล้วไม่มีการเช็ก)');
@@ -2700,6 +2736,7 @@ document.getElementById('view').addEventListener('click',e=>{
     const msg='ลบ "'+p+'" ออกจากทะเบียนเส้นทาง (หน้า 5)?'
       +(used?('\n\nวันนี้มีงานที่ใช้สินค้านี้อยู่ '+used+' เที่ยว งานเดิมจะไม่ถูกลบ แต่จะขึ้นป้าย “นอกทะเบียน”'):'');
     if(!confirm(msg))return;
+    routes.filter(r=>r.product===p&&(r.type||'main')===g).forEach(r=>routesMarkDeleted(r.id));
     routes=routes.filter(r=>!(r.product===p&&(r.type||'main')===g));
     if(day.plan&&day.plan[g+'|'+p]!==undefined){setFlat('plan',g+'|'+p,'');saveDay();}
     scheduleRoutesSave();renderSummary();
@@ -2794,6 +2831,7 @@ document.getElementById('view').addEventListener('click',e=>{
   if(rtd){
     const r=routes.find(x=>x.id===rtd.dataset.rtdel);
     if(r&&confirm('ลบเส้นทาง "'+(r.product||'(ไม่มีชื่อ)')+'" ?')){
+      routesMarkDeleted(rtd.dataset.rtdel);            /* บันทึกเป็นคำสั่งลบ ไม่ต้องรอให้เซิร์ฟเวอร์เดาจากเงา */
       routes=routes.filter(x=>x.id!==rtd.dataset.rtdel);scheduleRoutesSave();renderPlan();
     }
     return;
@@ -3234,6 +3272,7 @@ async function pollDay(){
     try{
       const o=JSON.parse(raw);
       /* รับเฉพาะข้อมูลที่ "ใหม่กว่า" ของในเครื่องเท่านั้น กันของเก่าทับของใหม่ */
+      dayLoaded=true;                                 /* ดึงข้อมูลของวันนี้จากระบบกลางได้แล้ว */
       if(o&&(o._rev||0)>(day._rev||0)){
         normDay(o);day=o;
         reapplyPending();                               /* ของที่เรายังไม่ได้ส่ง ต้องไม่หาย */
