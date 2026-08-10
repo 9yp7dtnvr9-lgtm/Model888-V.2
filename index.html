@@ -439,8 +439,17 @@ function seedRoutes(){
 }
 function validRoutes(a){return Array.isArray(a)&&a.every(r=>r&&typeof r==='object'&&'product' in r);}
 async function loadRoutes(){
+  /* ลำดับ: ชีต -> คีย์เดิมบนระบบกลาง -> สำรองในเครื่อง -> ชุดตัวอย่าง */
+  if(backendURL){
+    try{
+      const r=await fetch(backendURL+'?routes=live&t='+Date.now()+tk());
+      const d=await r.json();
+      if(d&&Array.isArray(d.list)&&d.list.length){routes=d.list;routesRev=d.rev||'';lsSet('fleetdb:fleet:routes',JSON.stringify(routes));return;}
+    }catch(e){}
+  }
   let raw=null;
   try{raw=await store.get('fleet:routes');}catch(e){raw=null;}
+  if(raw===null||raw===undefined||raw===''){try{raw=lsGet('fleetdb:fleet:routes');}catch(e){}}
   let r=null; if(raw){try{r=JSON.parse(raw);}catch(e){r=null;}}
   if(validRoutes(r)&&r.length){routes=r;return;}
   /* แก้บัคเดียวกับตารางกะ (2026-08-06): เดิมถ้าดึงพลาด/ยังไม่มีข้อมูล จะ seed แล้วบันทึกทับระบบกลางทันที —
@@ -449,9 +458,92 @@ async function loadRoutes(){
   if(routes.length)return;
   routes=seedRoutes();      /* ไม่มีอะไรเลยจริง ๆ -> แสดง seed ไปก่อน จะบันทึกจริงตอนผู้ใช้แก้ไข/เพิ่มเส้นทางเอง */
 }
-async function saveRoutes(){return await store.set('fleet:routes',JSON.stringify(routes));}
-let rsT=null;
-function scheduleRoutesSave(){flag('saving');clearTimeout(rsT);rsT=setTimeout(async()=>{const ok=await saveRoutes();flag(ok?'ok':'err');},400);}
+/* ===== แผนเส้นทางเก็บที่ Google Sheet (แท็บ "แผนเส้นทาง (BU4)" ในไฟล์ตารางกะ) =====
+   แก้ได้สองทาง: CC แก้ที่หน้านี้ หรือมีคนไปแก้ในชีตตรง ๆ ก็ได้
+   เซิร์ฟเวอร์เทียบ 3 ฝ่าย (สำเนาเงา / ชีต / เว็บ) แล้วรวมให้ ไม่เขียนทับกันทั้งก้อน
+   ถ้าต่อระบบกลางไม่ได้ ยังแก้ต่อได้ในเครื่อง แล้วค่อยซิงก์ขึ้นเมื่อกลับมาต่อได้ */
+let routesRev='', routesSyncing=false, routesDirty=false, routesLastMsg='';
+async function routesSyncNow(){
+  if(!backendURL){await store.set('fleet:routes',JSON.stringify(routes));routesDirty=false;return true;}
+  if(routesSyncing){routesDirty=true;return false;}
+  routesSyncing=true;
+  try{
+    const r=await fetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({routesSync:JSON.stringify(routes),by:adminName||'',tk:API_TOKEN})});
+    const d=await r.json();
+    routesSyncing=false;
+    if(!d||d.error||d.ok===false){lastWriteErr=String((d&&(d.error||d.message))||'ซิงก์แผนเส้นทางไม่สำเร็จ');return false;}
+    if(Array.isArray(d.list)){routes=d.list;routesRev=d.rev||'';}
+    routesDirty=false;
+    lsSet('fleetdb:fleet:routes',JSON.stringify(routes));        /* สำรองในเครื่อง เผื่อเน็ตหลุดครั้งต่อไป */
+    const bits=[];
+    if(d.fromSheet)bits.push('รับจากชีต '+d.fromSheet+' รายการ');
+    if(d.conflicts)bits.push('แก้ช่องเดียวกันทั้งสองฝั่ง '+d.conflicts+' ช่อง (ใช้ค่าจากหน้าเว็บ)');
+    routesLastMsg=bits.join(' · ');
+    return true;
+  }catch(e){routesSyncing=false;lastWriteErr='ต่อระบบกลางไม่ได้';return false;}
+}
+async function saveRoutes(){
+  const ok=await routesSyncNow();
+  if(!ok){routesDirty=true;try{lsSet('fleetdb:fleet:routes',JSON.stringify(routes));}catch(e){}}
+  return ok;
+}
+let rsT=null,rsRetry=0;
+function scheduleRoutesSave(){
+  flag('saving');clearTimeout(rsT);
+  rsT=setTimeout(async()=>{
+    rsT=null;
+    const ok=await saveRoutes();
+    flag(ok?'ok':'err');
+    updatePlanHint();
+    if(ok){
+      rsRetry=0;
+      /* วาดตารางใหม่เฉพาะเมื่อ CC ไม่ได้พิมพ์อยู่ (เซิร์ฟเวอร์อาจรวมค่าจากชีตกลับมาด้วย) */
+      if(tab==='plan'&&!planBusyTyping()){renderPlan();}
+      else if(tab==='plan'){renderPlanCounts();}
+    }
+    else{                                        /* ล้มเหลวต้องลองใหม่เอง ไม่ปล่อยค้าง */
+      rsRetry=Math.min(rsRetry+1,6);
+      if(!rsT)rsT=setTimeout(()=>{rsT=null;scheduleRoutesSave();},Math.min(30000,2000*Math.pow(2,rsRetry-1)));
+    }
+  },400);
+}
+/* ดึงแผนเส้นทางจากชีตมาใช้ (ปุ่มกดเอง) */
+async function pullRoutesFromSheet(){
+  if(!backendURL){alert('ยังไม่ได้ตั้ง URL ระบบกลาง');return;}
+  flag('saving');
+  try{
+    const r=await fetch(backendURL+'?routes=live&t='+Date.now()+tk());
+    const d=await r.json();
+    if(!d||d.ok===false||d.error){flag('err');alert('ดึงจากชีตไม่สำเร็จ: '+((d&&(d.message||d.error))||'ไม่ทราบสาเหตุ'));return;}
+    if(!Array.isArray(d.list)){flag('err');alert('ชีตตอบข้อมูลไม่ถูกรูปแบบ');return;}
+    routes=d.list;routesRev=d.rev||'';routesLastMsg='ดึงจากชีตแล้ว '+routes.length+' เส้นทาง';
+    lsSet('fleetdb:fleet:routes',JSON.stringify(routes));
+    flag('ok');renderPlan();
+  }catch(e){flag('err');alert('ต่อระบบกลางไม่ได้');}
+}
+/* เช็คเป็นระยะว่ามีคนแก้ในชีตหรือไม่ (ใช้แค่ลายเซ็นสั้น ๆ ไม่ดึงทั้งก้อน) */
+async function pollRoutes(){
+  if(!backendURL||editMode||routesSyncing||routesDirty)return;
+  if(busyTyping())return;      /* เพิ่งพิมพ์ไม่ถึง 8 วิ อย่าไปกวน (ไม่ใช้การเช็คโฟกัส เพราะถ้า CC ทิ้งเคอร์เซอร์ค้างไว้จะไม่ดึงจากชีตเลย) */
+  let d=null;
+  try{const r=await fetch(backendURL+'?routesrev=1&t='+Date.now()+tk());d=await r.json();}catch(e){return;}
+  if(!d||d.ok===false||!d.rev)return;
+  if(routesRev&&d.rev===routesRev)return;
+  try{
+    const r2=await fetch(backendURL+'?routes=live&t='+Date.now()+tk());
+    const d2=await r2.json();
+    if(d2&&Array.isArray(d2.list)){
+      const changed=JSON.stringify(d2.list)!==JSON.stringify(routes);
+      routes=d2.list;routesRev=d2.rev||'';
+      lsSet('fleetdb:fleet:routes',JSON.stringify(routes));
+      if(changed){
+        routesLastMsg='มีการแก้ในชีต — โหลดชุดล่าสุดแล้ว';
+        if(tab==='plan'&&!planBusyTyping())renderPlan(); else updatePlanHint();
+      }
+    }
+  }catch(e){}
+}
 function routeProducts(type){
   const out=[];
   routes.forEach(r=>{if(r.product&&(!type||r.type===type)&&out.indexOf(r.product)<0)out.push(r.product);});
@@ -1952,13 +2044,24 @@ function renderPlan(){
       ${JOBTYPES.map(x=>`<button class="pill ${planFilter===x.k?'active':''}" data-pf="${x.k}" title="${esc(x.f)}">${esc(x.s)} <span class="mono">${cnt(x.k)}</span></button>`).join('')}
       ${(planFilter!=='all'||routeSearch)?'<button class="btn" id="clearPf">✕ ล้างตัวกรอง</button>':''}
       <button class="btn primary" id="addRoute">＋ เพิ่มเส้นทางใหม่</button>
+      <button class="btn" id="pullRoutes" title="ดึงแผนเส้นทางล่าสุดจากแท็บ &quot;แผนเส้นทาง (BU4)&quot; ใน Google Sheet">🔄 ดึงจาก Google Sheet</button>
       <button class="btn" id="expRoutes" title="ส่งออกรายการที่แสดงอยู่เป็นไฟล์ Excel">⬇ ส่งออก Excel</button>
       ${routeSort.key!=='seq'?'<button class="btn" id="clearRtSort">↩ กลับไปเรียงตามลำดับที่เพิ่ม</button>':''}
       <span class="cno" id="planCount">แสดง ${data.length} จาก ${routes.length} เส้นทาง</span>
     </div>
+    <div class="hint" style="margin:0 0 10px">แผนเส้นทางเก็บอยู่ที่แท็บ <b>แผนเส้นทาง (BU4)</b> ในไฟล์ Google Sheet เดียวกับตารางกะ ·
+      แก้ที่หน้านี้ได้เลย ระบบเขียนขึ้นชีตให้เอง และถ้ามีคนแก้ในชีตตรง ๆ ระบบจะดึงลงมารวมให้อัตโนมัติ<span id="planSyncHint">${planSyncHintHTML()}</span></div>
     <div id="planArea">${planTableHTML(data,dir)}</div>`;
   restore();
 }
+/* สถานะการซิงก์กับชีต — แยกเป็นชิ้นเล็ก อัปเดตได้เองไม่ต้องวาดหน้าใหม่ (กันแย่งโฟกัสตอน CC พิมพ์) */
+function planSyncHintHTML(){
+  return (routesDirty?'<b style="color:#c0392b"> · ยังซิงก์ขึ้นชีตไม่สำเร็จ กำลังลองใหม่ให้เอง</b>':'')
+    +(routesLastMsg?('<b style="color:#2f8f6b"> · '+esc(routesLastMsg)+'</b>'):'');
+}
+function updatePlanHint(){const el=document.getElementById('planSyncHint');if(el)el.innerHTML=planSyncHintHTML();}
+/* CC กำลังพิมพ์อยู่ในตารางหน้า 5 หรือช่องค้นหา -> ห้ามวาดหน้าใหม่ */
+function planBusyTyping(){const a=document.activeElement;return !!(a&&a.dataset&&(a.dataset.rt!==undefined||a.id==='routeSearch'));}
 /* อัปเดตเลขบนการ์ดสรุปและปุ่มกรอง เมื่อประเภทงานของแถวถูกแก้ (ไม่ล้างทั้งหน้า ให้แถวอยู่ที่เดิม) */
 function renderPlanCounts(){
   const cnt=k=>routes.filter(r=>(r.type||'main')===k).length;
@@ -2675,6 +2778,7 @@ document.getElementById('view').addEventListener('click',e=>{
   if(prn){window.print();return;}
   if(del){delJobOp(String(del.dataset.deljob));saveDay();renderDispatch();return;}
   if(now){const j=day.jobs.find(x=>String(x.id)===now.dataset.stampnow);if(j){setJobField(j,now.dataset.field,nowHM());saveDay();renderBoard();}return;}
+  if(e.target.closest('#pullRoutes')){pullRoutesFromSheet();return;}
   if(e.target.closest('#expRoutes')){exportRoutes();return;}
   if(e.target.closest('#addRoute')){
     const nr={id:ruid(),product:'',origin:'',dest:'',distance:'',type:'main',wo:''};
@@ -3152,7 +3256,7 @@ async function pollRoster(){
 }
 function startPoll(){
   clearInterval(pollTimer);
-  if(backendURL)pollTimer=setInterval(()=>{pollDay();if((++pollN%4)===0)pollRoster();},15000);
+  if(backendURL)pollTimer=setInterval(()=>{pollDay();if((++pollN%4)===0){pollRoster();pollRoutes();}},15000);   /* นาทีละครั้ง: ตารางกะ + แผนเส้นทาง */
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollDay();});
 
