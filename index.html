@@ -487,6 +487,7 @@ async function routesSyncNow(){
     routesDirty=false;
     lsSet('fleetdb:fleet:routes',JSON.stringify(routes));        /* สำรองในเครื่อง เผื่อเน็ตหลุดครั้งต่อไป */
     const bits=[];
+    if(d.sheetWiped)bits.push('แท็บในชีตว่าง/ถูกล้าง — เขียนขึ้นใหม่จากหน้าเว็บ '+(d.rows||routes.length)+' เส้นทาง');
     if(d.deleted)bits.push('ลบออกจากชีต '+d.deleted+' เส้นทาง');
     if(d.fromSheet)bits.push('รับจากชีต '+d.fromSheet+' รายการ');
     if(d.conflicts)bits.push('แก้ช่องเดียวกันทั้งสองฝั่ง '+d.conflicts+' ช่อง (ใช้ค่าจากหน้าเว็บ)');
@@ -1097,8 +1098,14 @@ function isRunning(no){return !!day.running[no];}
 function kpis(){
   let running=0,present=0,absent=0,leave=0,off=0,ot=0,late=0,unchecked=0,total=0;
   let dispatched=0,pendingDispatch=0;    /* พจส. ที่มา/สายแล้ว: จ่ายแผนงานเที่ยวแรกไปแล้วกี่คน / เหลืออีกกี่คน */
+  let disp2=0,disp3=0;                   /* จ่ายถึงเที่ยวที่ 2 / 3 แล้วกี่คน */
   const dispatchedSet=new Set();
-  (day.jobs||[]).forEach(j=>dispatchedSet.add(String(j.mainTruck||j.truck)+'|'+String(j.shift)));
+  const dispCount={};                    /* นับจำนวนงานที่จ่ายให้ รถ|กะ นั้น = จ่ายไปกี่เที่ยว */
+  (day.jobs||[]).forEach(j=>{
+    const k=String(j.mainTruck||j.truck)+'|'+String(j.shift);
+    dispatchedSet.add(k);
+    dispCount[k]=(dispCount[k]||0)+1;
+  });
   for(const t of config){
     if(isRunning(t.truckNo))running++;
     for(const d of (t.drivers||[])){
@@ -1109,7 +1116,10 @@ function kpis(){
         if(v==='present')present++; else late++;
         /* พจส.ใหม่/รอเบอร์รถ (trainee) ยังไม่มีรถให้จ่ายงานจริง จึงไม่นับเข้าการ์ด "จ่ายงานแล้ว/เหลือรอจ่ายงาน" */
         if(t.type!=='trainee'){
-          if(dispatchedSet.has(String(t.truckNo)+'|'+String(d.pos)))dispatched++; else pendingDispatch++;
+          const nDone=dispCount[String(t.truckNo)+'|'+String(d.pos)]||0;
+          if(nDone)dispatched++; else pendingDispatch++;
+          if(nDone>=2)disp2++;
+          if(nDone>=3)disp3++;
         }
       }
       else if(v==='absent')absent++;else if(v==='leave')leave++;else if(v==='ot')ot++;else unchecked++;
@@ -1117,7 +1127,7 @@ function kpis(){
   }
   const scheduled=total-off;      // ต้องมาทำงานวันนี้ (ตามตารางกะ)
   const actual=present+late+ot;   // มาทำงานจริงทั้งหมด (รวมสาย + OT)
-  return {running,present,absent,leave,off,ot,late,unchecked,total,scheduled,actual,dispatched,pendingDispatch};
+  return {running,present,absent,leave,off,ot,late,unchecked,total,scheduled,actual,dispatched,pendingDispatch,disp2,disp3};
 }
 const STATUS_FILTERS={present:1,late:1,absent:1,leave:1,ot:1};
 /* ตัวกรองสถานะการจ่ายงานของหน้า 1 (มา/สายแล้ว -> จ่ายแผนงานเที่ยวแรกไปแล้วหรือยัง) */
@@ -1148,7 +1158,8 @@ function summaryBar(){
     ${bx('leave','lv','ลา',k.leave)}
     ${bx('off','','วันหยุดวันนี้ (ตามตารางกะ)',k.off)}
     ${bx('incomplete','gap','ยังไม่เช็ก',k.unchecked)}
-    <div class="stat go boardbox ${filter==='dispatched'?'sel':''}" data-f="dispatched" title="กดเพื่อกรองเฉพาะคนที่จ่ายแผนงานเที่ยวแรกไปแล้ว (จาก พจส. ที่มา+สาย ${checkedIn} คน)"><div class="lab">จ่ายงานแล้ว</div><div class="val mono">${k.dispatched}<small>/${checkedIn}</small></div></div>
+    <div class="stat go boardbox ${filter==='dispatched'?'sel':''}" data-f="dispatched" title="กดเพื่อกรองเฉพาะคนที่จ่ายแผนงานเที่ยวแรกไปแล้ว (จาก พจส. ที่มา+สาย ${checkedIn} คน)"><div class="lab">จ่ายงานแล้ว</div><div class="val mono">${k.dispatched}<small>/${checkedIn}</small></div>
+      <div class="cno" style="margin-top:2px;line-height:1.5">เที่ยว 2 แล้ว <b class="mono">${k.disp2}</b> คน${k.disp3?(' · เที่ยว 3 <b class="mono">'+k.disp3+'</b>'):''}</div></div>
     <div class="stat${k.pendingDispatch?' miss':''} boardbox ${filter==='todispatch'?'sel':''}" data-f="todispatch" title="กดเพื่อกรองเฉพาะคนที่มา/สายแล้วแต่ยังไม่ได้จ่ายแผนงานเที่ยวแรก"><div class="lab">เหลือรอจ่ายงาน</div><div class="val mono">${k.pendingDispatch}</div></div>
   </section>`;
 }
@@ -2075,8 +2086,17 @@ function renderPlan(){
 }
 /* สถานะการซิงก์กับชีต — แยกเป็นชิ้นเล็ก อัปเดตได้เองไม่ต้องวาดหน้าใหม่ (กันแย่งโฟกัสตอน CC พิมพ์) */
 function planSyncHintHTML(){
-  return (routesDirty?'<b style="color:#c0392b"> · ยังซิงก์ขึ้นชีตไม่สำเร็จ กำลังลองใหม่ให้เอง</b>':'')
-    +(routesLastMsg?('<b style="color:#2f8f6b"> · '+esc(routesLastMsg)+'</b>'):'');
+  /* ต้องบอกสาเหตุจริงด้วย ไม่ใช่บอกแค่ว่า "ไม่สำเร็จ" — ที่พบบ่อยคือยังไม่ได้อัปไฟล์ .gs ตัวใหม่
+     ซึ่งเซิร์ฟเวอร์จะตอบว่า missing key เพราะยังไม่รู้จักคำสั่งซิงก์แผนเส้นทาง */
+  let warn='';
+  if(routesDirty){
+    const e=String(lastWriteErr||'');
+    const hint=/missing key|unauthorized|bad json/i.test(e)
+      ? ' — ระบบกลางยังไม่รู้จักคำสั่งซิงก์แผนเส้นทาง แปลว่ายังไม่ได้อัปไฟล์ .gs ตัวใหม่ (Deploy → Manage deployments → Edit → New version)'
+      : (e?(' — '+e):'');
+    warn='<b style="color:#c0392b"> · ยังซิงก์ขึ้นชีตไม่สำเร็จ กำลังลองใหม่ให้เอง'+esc(hint)+'</b>';
+  }
+  return warn+(routesLastMsg?('<b style="color:#2f8f6b"> · '+esc(routesLastMsg)+'</b>'):'');
 }
 function updatePlanHint(){const el=document.getElementById('planSyncHint');if(el)el.innerHTML=planSyncHintHTML();}
 /* CC กำลังพิมพ์อยู่ในตารางหน้า 5 หรือช่องค้นหา -> ห้ามวาดหน้าใหม่ */
@@ -3599,6 +3619,16 @@ function dMultiBars(daily,series){
   });
   return chGroupedBars(items,series,series.map(sr=>sr.label).join(' / ')+' รายวัน')+chLegend(series,'');
 }
+/* กล่อง "รายละเอียดวันที่" ที่เด้งขึ้นเมื่อกดแท่ง/จุดบนกราฟ
+   วางไว้ "เหนือกราฟที่กด" ไม่ใช่บนสุดของหน้า เพื่อให้ CC ไม่ต้องเลื่อนขึ้นไปดู */
+function dPickPanel(A){
+  if(!dashPickDay)return '';
+  const r=(A.daily||[]).find(x=>x.ds===dashPickDay);
+  if(!r)return '';
+  return '<div class="dpanel dpickpanel" style="border-color:var(--accent)">'
+    +'<h3>รายละเอียดวันที่ '+esc(dashPickDay)+' <button class="btn mini" id="dPickClear" style="margin-left:auto">✕ ปิด</button></h3>'
+    +'<div style="font-size:13.5px;line-height:1.85;white-space:pre-line">'+esc(dayDetailText(r).split('\n').slice(1).join('\n'))+'</div></div>';
+}
 /* รายชื่อรถ 0 เที่ยว(ปิดงาน) ของวันที่เลือก + ช่องบันทึกหมายเหตุ (แก้แล้วเซฟอัตโนมัติ) */
 /* ปุ่มเลือกจำนวนแถวที่ให้เห็นในกรอบ — ไม่ได้ตัดข้อมูลออก ที่เกินยังเลื่อนดูได้ครบ */
 function zeroRowsPicker(total){
@@ -3666,6 +3696,7 @@ function renderDash(){
       ${card('เวลาทำงานเฉลี่ย',A.hoursAvg.toFixed(1),'ชม./เที่ยว · เกินเกณฑ์ '+A.over8+' เที่ยว')}
       ${card('รถที่ครบ '+TARGET_ROUNDS+' รอบ',A.hitTrucks,'นับรวมทุกวันในช่วง')}
     </div>
+    ${dPickPanel(A)}
     <div class="dtwo">
       <div class="dpanel"><h3>เที่ยวงานรายวัน</h3>${dTrend(A.daily,r=>r.trips,'เที่ยวรายวัน','#2b6cb0')}</div>
       <div class="dpanel"><h3>พจส. มาทำงานรายวัน</h3>${dTrend(A.daily,r=>r.present,'มาทำงานรายวัน','#2f8f6b')}</div>
@@ -3692,6 +3723,7 @@ function renderDash(){
       <div class="dpanel"><h3>พจส. ที่ขาดงานบ่อยสุด <span class="cno">(ครั้ง)</span></h3>
         ${abs.length?dBars((function(){const o={};abs.forEach(x=>o[x.name+(x.code?(' · '+x.code):'')]=x.absent);return o;})(),8,'#c0392b'):'<div class="cno">ไม่มีคนขาดงานในช่วงนี้</div>'}</div>
     </div>
+    ${dPickPanel(A)}
     <div class="dpanel"><h3>ขาด / สาย / ลา รายวัน</h3>${dMultiBars(A.daily,[
       {key:'late',  label:'สาย', color:'#b8860b', pick:r=>r.late},
       {key:'absent',label:'ขาด', color:'#c0392b', pick:r=>r.absent},
@@ -3706,6 +3738,7 @@ function renderDash(){
       ${card('เที่ยวรวม',A.trips,'ในช่วงที่เลือก')}
       ${card('เฉลี่ยต่อเส้นทาง',(Object.keys(A.prod).length?(A.trips/Object.keys(A.prod).length).toFixed(1):'0'),'เที่ยว/เส้นทาง')}
     </div>
+    ${dPickPanel(A)}
     <div class="dtwo">
       <div class="dpanel"><h3>สินค้า / เส้นทาง <span class="cno">(เที่ยว)</span></h3>${dBars(A.prod,10)}</div>
       <div class="dpanel"><h3>ต้นทาง <span class="cno">(เที่ยว)</span></h3>${dBars(A.origin,10,'#7b5599')}</div>
@@ -3722,6 +3755,7 @@ function renderDash(){
       ${card('เฉลี่ยต่อคัน',(Object.keys(A.trucksSeen).length?(A.trips/Object.keys(A.trucksSeen).length).toFixed(1):'0'),'เที่ยว/คัน ในช่วงนี้')}
       ${card('ครบ '+TARGET_ROUNDS+' รอบ',A.hitTrucks,'ครั้ง (นับรายวัน)')}
     </div>
+    ${dPickPanel(A)}
     <div class="dpanel">
       <h3>รายงานเที่ยวที่ปิดงานแล้วต่อคัน — 3 / 2 / 1 เที่ยว/วัน <span class="cno">(นับเฉพาะเที่ยวที่ปิดงานแล้ว)</span></h3>
       <div class="dseg" style="margin:0 0 12px">${FLEET_GROUPS.map(g=>`<button class="${dashFleetGroup===g.k?'on':''}" data-dfleet="${g.k}">${esc(g.lab)} <span class="cno">(${g.n})</span></button>`).join('')}</div>
@@ -3755,6 +3789,7 @@ function renderDash(){
       ${WT_GROUPS.map(x=>card(x.name+' ผ่านเกณฑ์',okpc(x.k),'ไม่เกิน '+g(x.k).ok+' · เกิน '+g(x.k).over+' · เฉลี่ย '+(g(x.k).n?(g(x.k).sum/g(x.k).n).toFixed(1):'-')+' ชม.')).join('')}
       ${card('เกินเกณฑ์รวม',A.over8,pct(A.over8,A.hours.length)+'% ของเที่ยวที่ปิดงาน')}
     </div>
+    ${dPickPanel(A)}
     <div class="dtwo">
       <div class="dpanel"><h3>ไม่เกิน / เกิน แยกตามเกณฑ์ <span class="cno">(เที่ยว)</span></h3>${rows}</div>
       <div class="dpanel"><h3>เวลาทำงานเฉลี่ยรายวัน <span class="cno">(ชม.)</span></h3>
@@ -3785,14 +3820,6 @@ function renderDash(){
       </span>
     </div>
     ${prog}
-    ${(function(){
-      if(!dashPickDay)return '';
-      const r=A.daily.find(x=>x.ds===dashPickDay);
-      if(!r)return '';
-      return '<div class="dpanel" style="border-color:var(--accent)">'
-        +'<h3>รายละเอียดวันที่ '+esc(dashPickDay)+' <button class="btn mini" id="dPickClear" style="margin-left:auto">✕ ปิด</button></h3>'
-        +'<div style="font-size:13.5px;line-height:1.85;white-space:pre-line">'+esc(dayDetailText(r).split('\n').slice(1).join('\n'))+'</div></div>';
-    })()}
     <div class="dbar" style="padding:8px 12px">
       <span class="dseg">${tabBtn('overview','ภาพรวม')}${tabBtn('people','คน')}${tabBtn('route','เส้นทาง')}${tabBtn('truck','เที่ยวรถ')}${tabBtn('time','เวลา')}</span>
       <span class="cno" style="margin-left:auto">ข้อมูลจากหน้า 4 · อัปเดต ${nowHM()} น.</span>
@@ -3830,7 +3857,14 @@ document.getElementById('view').addEventListener('click',e=>{
   if(e.target.closest('#dClear')){dashFrom='';dashTo='';dashLoad();renderDash();return;}
   if(e.target.closest('#dPickClear')){dashPickDay='';renderDash();return;}
   const dp=e.target.closest('[data-dd]');
-  if(dp){dashPickDay=(dashPickDay===dp.dataset.dd)?'':dp.dataset.dd;renderDash();return;}
+  if(dp){
+    dashPickDay=(dashPickDay===dp.dataset.dd)?'':dp.dataset.dd;renderDash();
+    /* ถ้ากล่องรายละเอียดอยู่นอกจอ ให้เลื่อนมาให้เห็นพอดี (ไม่กระโดดไปบนสุดของหน้า) */
+    if(dashPickDay){const pp=document.querySelector('.dpickpanel');
+      if(pp){const r=pp.getBoundingClientRect();
+        if(r.top<70||r.bottom>window.innerHeight)pp.scrollIntoView({block:'center',behavior:'smooth'});}}
+    return;
+  }
   const dt=e.target.closest('[data-dtab]');
   if(dt){dashTab=dt.dataset.dtab;renderDash();return;}
   const zr=e.target.closest('[data-zrows]');
