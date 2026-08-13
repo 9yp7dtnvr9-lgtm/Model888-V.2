@@ -843,13 +843,52 @@ function sortBy(tbl,arr,getters){
 function sortActive(tbl){const st=tsort[tbl];return !!(st&&st.key);}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function blankDay(){return {attend:{},running:{},jobs:[],seq:0,arrive:{},attendBy:{},plan:{},dnote:{},truckNote:{},attMeta:{},deleted:[],_rev:0};}
-function truckByNo(no){return config.find(t=>t.truckNo===no);}
+/* เทียบเบอร์รถแบบทนช่องว่าง/ตัวพิมพ์ ("EV1-095 " กับ "ev1-095" ต้องถือเป็นคันเดียวกัน)
+   เพราะเบอร์รถที่บันทึกติดไปกับงานมาจากตารางกะชุดที่ใช้ตอนนั้น อาจมีช่องว่างติดมาจาก Excel */
+function normNo(v){return String(v==null?'':v).replace(/\s+/g,'').toUpperCase();}
+function truckByNo(no){const k=normNo(no);return (config||[]).find(t=>t&&normNo(t.truckNo)===k);}
 /* เทียบตำแหน่งกะแบบทนชนิดข้อมูล: ตารางกะที่ดึงจาก Google Sheet เคยบันทึก pos เป็นตัวเลข (number)
    ขณะที่ทั้งระบบใช้ string ทำให้เทียบแบบ === ไม่เจอคนขับ -> จ่ายงานไม่ได้ (เหตุการณ์ 2026-08-08)
    แก้ให้ครอบ String() ทั้งสองข้าง จะใช้กับตารางกะชุดที่บันทึกไว้แล้วได้เลยไม่ต้อง import ใหม่ */
-/* เบอร์รถนี้มีอยู่ในกองรถของวันนั้นไหม (ใช้เตือนพิมพ์ผิด ไม่ใช่ห้าม เพราะอาจยืมรถ BU อื่นมาวิ่งจริง) */
-function knownTruck(no){no=String(no||'').trim();if(!no)return false;return (config||[]).some(t=>String(t.truckNo)===no);}
 function driverAt(t,pos){return (t&&t.drivers||[]).find(d=>d&&String(d.pos)===String(pos));}
+
+/* ===== ล็อก "งานที่จ่ายแล้ว" ไว้กับตัวคน ไม่ใช่แค่ตำแหน่งกะ =====
+   ตอนจ่ายงาน ระบบเก็บ job.shift = ตำแหน่งกะ ณ ตอนนั้น และ job.code = รหัส พจส.
+   ถ้าดึงตารางกะชุดใหม่แล้วตำแหน่งกะสลับกัน การเทียบด้วยตำแหน่งกะเพียว ๆ จะพลาด 2 ทาง
+     1) คนที่ได้รับงานจริง เด้งกลับเป็น "จ่ายแผน →" เหมือนยังไม่จ่าย  (อาการที่ CC เจอ)
+     2) คนที่ยังไม่ได้รับงาน กลายเป็น "จ่ายแล้ว" เพราะไปเกาะงานของคนอื่น
+   วิธีแก้: ยึด "รหัส พจส." ก่อน · ถอยไปใช้ตำแหน่งกะเฉพาะกรณีงานนั้นไม่มีรหัส
+   หรือรหัสนั้นไม่อยู่ในรถคันนี้แล้ว (ข้อมูลเก่า / คนย้ายออก) -> ข้อมูลย้อนหลังทำงานเหมือนเดิม */
+let jobIdx={src:null,n:-1,map:null};
+function jobsByTruck(){                       /* แยกงานตามเบอร์รถไว้ครั้งเดียว ไม่ต้องวนทั้งวันซ้ำทุกแถว */
+  const list=(day&&Array.isArray(day.jobs))?day.jobs:[];
+  if(jobIdx.src===list&&jobIdx.n===list.length&&jobIdx.map)return jobIdx.map;
+  const map={};
+  list.forEach(j=>{if(!j)return;const k=normNo(j.mainTruck||j.truck);(map[k]=map[k]||[]).push(j);});
+  jobIdx={src:list,n:list.length,map:map};
+  return map;
+}
+/* งานทั้งหมดที่จ่ายให้ พจส. คนนี้ บนรถคันนี้ (เรียงตามลำดับที่จ่าย) */
+function jobsFor(t,d){
+  if(!t||!d)return [];
+  const bucket=jobsByTruck()[normNo(t.truckNo)];
+  if(!bucket||!bucket.length)return [];
+  const code=String(d.code||'').trim();
+  const here={};                              /* รหัส พจส. ที่ยังอยู่บนรถคันนี้ตามตารางกะชุดปัจจุบัน */
+  (t.drivers||[]).forEach(x=>{const c=String(x&&x.code||'').trim();if(c)here[c]=1;});
+  return bucket.filter(j=>{
+    const jc=String(j.code||'').trim();
+    if(jc&&here[jc])return !!code&&jc===code;  /* คนในงานยังอยู่รถคันนี้ -> ยึดตัวคนเท่านั้น */
+    return String(j.shift)===String(d.pos);    /* ไม่มีรหัส / ย้ายออกแล้ว -> ใช้ตำแหน่งกะเหมือนเดิม */
+  });
+}
+/* พจส. เจ้าของงานนี้ตามตารางกะชุดปัจจุบัน (ยึดรหัสก่อน แล้วถอยไปตำแหน่งกะ) */
+function driverOfJob(t,j){
+  if(!t||!j)return undefined;
+  const jc=String(j.code||'').trim();
+  if(jc){const hit=(t.drivers||[]).find(x=>x&&String(x.code||'').trim()===jc);if(hit)return hit;}
+  return driverAt(t,j.shift);
+}
 
 /* save */
 let st=null;
@@ -1101,13 +1140,6 @@ function kpis(){
   let running=0,present=0,absent=0,leave=0,off=0,ot=0,late=0,unchecked=0,total=0;
   let dispatched=0,pendingDispatch=0;    /* พจส. ที่มา/สายแล้ว: จ่ายแผนงานเที่ยวแรกไปแล้วกี่คน / เหลืออีกกี่คน */
   let disp2=0,disp3=0;                   /* จ่ายถึงเที่ยวที่ 2 / 3 แล้วกี่คน */
-  const dispatchedSet=new Set();
-  const dispCount={};                    /* นับจำนวนงานที่จ่ายให้ รถ|กะ นั้น = จ่ายไปกี่เที่ยว */
-  (day.jobs||[]).forEach(j=>{
-    const k=String(j.mainTruck||j.truck)+'|'+String(j.shift);
-    dispatchedSet.add(k);
-    dispCount[k]=(dispCount[k]||0)+1;
-  });
   for(const t of config){
     if(isRunning(t.truckNo))running++;
     for(const d of (t.drivers||[])){
@@ -1118,7 +1150,7 @@ function kpis(){
         if(v==='present')present++; else late++;
         /* พจส.ใหม่/รอเบอร์รถ (trainee) ยังไม่มีรถให้จ่ายงานจริง จึงไม่นับเข้าการ์ด "จ่ายงานแล้ว/เหลือรอจ่ายงาน" */
         if(t.type!=='trainee'){
-          const nDone=dispCount[String(t.truckNo)+'|'+String(d.pos)]||0;
+          const nDone=jobsFor(t,d).length;   /* จับคู่งานด้วยรหัส พจส. ให้ตรงกับปุ่มในตารางหน้า 1 */
           if(nDone)dispatched++; else pendingDispatch++;
           if(nDone>=2)disp2++;
           if(nDone>=3)disp3++;
@@ -1134,18 +1166,13 @@ function kpis(){
 const STATUS_FILTERS={present:1,late:1,absent:1,leave:1,ot:1};
 /* ตัวกรองสถานะการจ่ายงานของหน้า 1 (มา/สายแล้ว -> จ่ายแผนงานเที่ยวแรกไปแล้วหรือยัง) */
 const DISPATCH_FILTERS={dispatched:1,todispatch:1};
-function dispatchedSetOf(){
-  const set=new Set();
-  (day.jobs||[]).forEach(j=>set.add(String(j.mainTruck||j.truck)+'|'+String(j.shift)));
-  return set;
-}
 /* คนนี้เข้าเกณฑ์การ์ด "จ่ายงานแล้ว"/"เหลือรอจ่ายงาน" หรือไม่ (ต้องตรงกับวิธีนับใน kpis) */
-function dispatchState(t,d,set){
+function dispatchState(t,d){
   if(!t||!d||t.type==='trainee')return '';
   if(isOff(t,d,curDate))return '';
   const v=attStat(t,d);
   if(v!=='present'&&v!=='late')return '';
-  return set.has(String(t.truckNo)+'|'+String(d.pos))?'dispatched':'todispatch';
+  return jobsFor(t,d).length?'dispatched':'todispatch';
 }
 function summaryBar(){
   const k=kpis();
@@ -1279,7 +1306,6 @@ function scrollToCurrentHour(){
 function updateRosterArea(){const ra=document.getElementById('rosterArea');if(ra)ra.innerHTML=editMode?editorTable():rollCallTable();}
 
 function rollCallTable(){
-  const dsSet=DISPATCH_FILTERS[filter]?dispatchedSetOf():null;
   let list=[];
   for(const t of config)for(const d of (t.drivers||[]))list.push({t,d,startMin:parseStart(rowShift(t,d))});
   list=list.filter(r=>{
@@ -1288,7 +1314,7 @@ function rollCallTable(){
     if(filter==='off'&&!off)return false;
     if(filter==='incomplete'){const cur=attStat(r.t,r.d);if(off||cur)return false;}
     if(STATUS_FILTERS[filter]){const cur=attStat(r.t,r.d);if(cur!==filter)return false;}
-    if(DISPATCH_FILTERS[filter]){if(dispatchState(r.t,r.d,dsSet)!==filter)return false;}
+    if(DISPATCH_FILTERS[filter]){if(dispatchState(r.t,r.d)!==filter)return false;}
     if(search){const q=search.toLowerCase();if(!((r.t.truckNo+' '+r.t.routeGroup+' '+r.d.name+' '+(r.d.code||'')).toLowerCase().includes(q)))return false;}
     return true;
   });
@@ -1321,7 +1347,9 @@ function rollCallTable(){
 }
 function rollRow(r){
   const t=r.t,d=r.d,off=isOff(t,d,curDate),cur=attStat(t,d),sc=shiftCls(d.pos);
-  const nDone=(day.jobs||[]).filter(j=>String(j.mainTruck||j.truck)===String(t.truckNo)&&String(j.shift)===String(d.pos)).length;
+  /* งานของ "คนในแถวนี้" — จับคู่ด้วยรหัส พจส. ไม่ใช่ตำแหน่งกะ ตารางกะเปลี่ยนแล้วไม่เด้งกลับ */
+  const jl=jobsFor(t,d), nDone=jl.length;
+  const jMoved=jl.filter(j=>String(j.shift)!==String(d.pos));
   const av=attArr(t,d);
   let statusCell;
   if(off&&cur!=='ot')statusCell=`<span class="offbadge">วันหยุด (${esc(dayOffLabel(d)||d.dayOff)})</span> <button class="otbtn" data-ot="${esc(t.truckNo)}" data-pos="${esc(d.pos)}">＋ มาทำ OT</button>`;
@@ -1340,7 +1368,8 @@ function rollRow(r){
     <td>${hmField(av,'data-arrive="'+esc(t.truckNo)+'" data-pos="'+d.pos+'"')}</td>
     <td>${(()=>{
       /* จ่ายไปแล้ว -> ล็อกปุ่มไว้ให้เห็นสถานะ (แม้เป็นวันหยุด) */
-      if(nDone)return '<button class="planlink done" disabled title="จ่ายไปแล้ว '+nDone+' เที่ยว — ถ้าต้องจ่ายเที่ยวถัดไป ให้ไปจ่ายที่หน้า 2 รายละเอียดงาน">จ่ายแล้ว'+(nDone>1?(' '+nDone+' เที่ยว'):'')+'</button>';
+      if(nDone)return '<button class="planlink done" disabled title="จ่ายไปแล้ว '+nDone+' เที่ยว — ถ้าต้องจ่ายเที่ยวถัดไป ให้ไปจ่ายที่หน้า 2 รายละเอียดงาน">จ่ายแล้ว'+(nDone>1?(' '+nDone+' เที่ยว'):'')+'</button>'
+        +(jMoved.length?'<div class="cno" style="color:#b8860b" title="งานนี้จ่ายไว้ตอนที่ พจส. คนนี้อยู่กะ '+esc(jMoved.map(j=>j.shift).join(', '))+' · ตารางกะชุดปัจจุบันย้ายมาอยู่กะ '+esc(d.pos)+' — ระบบจับคู่ให้จากรหัส พจส. งานจึงไม่หาย">⚠ จ่ายไว้ตอนอยู่กะ '+esc(jMoved.map(j=>j.shift).join(', '))+'</div>':'');
       /* ขาด / ลา / วันหยุด (ที่ยังไม่กดมาทำ OT) -> จ่ายงานไม่ได้ */
       const blocked = (cur==='absent') ? 'ขาด' : (cur==='leave') ? 'ลา' : ((off&&cur!=='ot') ? 'วันหยุด' : '');
       if(blocked)return '<span class="cno">— จ่ายแผนไม่ได้ ('+blocked+')</span>';
@@ -1418,14 +1447,19 @@ function normWorkList(raw){
     .join(',');
 }
 function omsPayload(j){
-  const t=truckByNo(j.mainTruck||j.truck), d=driverAt(t,j.shift);
-  const empId=String((d&&d.code)||j.code||'').trim();
-  const truckId=String(j.mainTruck||j.truck||'').trim();
+  const t=truckByNo(j.mainTruck||j.truck), d=driverOfJob(t,j);
+  /* ต้องยึด "รหัสที่บันทึกไว้ตอนจ่ายงาน" ก่อนเสมอ — ถ้าไปหยิบจากตารางกะตามตำแหน่งกะ
+     แล้วตารางกะชุดใหม่สลับตำแหน่ง จะส่งรหัส พจส. ของคนอื่นไป OMS (บัคที่พบ 2026-08-13) */
+  const empId=String(j.code||(d&&d.code)||'').trim();
+  /* เบอร์รถที่ส่งไป OMS = "เบอร์รถที่วิ่งจริง" ที่ CC กรอกไว้เสมอ ไม่ใช่รถประจำตัว/ประจำกะ
+     เพราะวันที่สับรถ รถที่วิ่งงานจริงคือคันที่ CC กรอก · CC กรอกเบอร์ไหน ส่งเบอร์นั้นไปตรง ๆ
+     ถอยไปใช้รถประจำตัวเฉพาะกรณีช่องวิ่งจริงว่าง (ข้อมูลเก่าก่อนมีช่องนี้) */
+  const truckId=String(j.actualTruck||j.mainTruck||j.truck||'').trim();
   const wo=woOf(j);
   const workList=normWorkList(wo);
   const miss=[], warn=[];
   if(!empId)  miss.push('รหัส พจส.');
-  if(!truckId)miss.push('เบอร์รถ');
+  if(!truckId)miss.push('เบอร์รถที่วิ่งจริง');
   if(!workList)miss.push('เลขที่ใบงาน (ตั้งที่หน้า 5)');
   /* เตือนถ้าไม่มีเลขห้อยท้าย — OMS ต้องมี เช่น WOO5000000:11 */
   const noSuffix=workList.split(',').filter(x=>x&&x.indexOf(':')<0);
@@ -1483,7 +1517,9 @@ async function openOmsDialog(id){
     <div class="modal-head"><h2>ส่งแผนงานไประบบ OMS</h2><button class="modal-x" id="closeModal">✕</button></div>
     <div class="dgrid">
       ${row('พจส.', esc(j.driver||'-')+' <span class="cno">รหัส '+esc(p.empId||'—')+'</span>')}
-      ${row('เบอร์รถ','<span class="plate">'+esc(p.truckId||'—')+'</span>')}
+      ${row('เบอร์รถที่วิ่งจริง (ส่งเบอร์นี้ไป OMS)','<span class="plate">'+esc(p.truckId||'—')+'</span>'
+        +((j.actualTruck&&String(j.actualTruck).trim()!==String(j.mainTruck||j.truck||'').trim())
+          ?' <span class="tag" style="background:var(--m-bg);color:var(--off)">สับรถ — รถประจำกะคือ '+esc(j.mainTruck||j.truck||'-')+'</span>':''))}
       ${row('สินค้า / เส้นทาง', esc(j.product||'-')+' <span class="cno">'+esc(j.origin||'')+'</span>')}
       ${row('เลขที่ใบงาน', p.wo?('<b>'+esc(p.wo)+'</b>'):'<span style="color:var(--absent)">ยังไม่ได้ตั้งที่หน้า 5</span>')}
       ${row('workList ที่จะส่ง','<span class="mono" style="font-weight:600">'+esc(p.workList||'—')+'</span>')}
@@ -1513,7 +1549,7 @@ function omsBadge(j){
 /* เวลามาจริง = ค่าที่ CC คีย์ไว้ในหน้า 1 (day.arrive[เบอร์รถ][กะ]) */
 function jobArrive(j){
   const no=j.mainTruck||j.truck||'';
-  const t=truckByNo(no), d=driverAt(t,j.shift);
+  const t=truckByNo(no), d=driverOfJob(t,j);
   if(t&&d)return attArr(t,d);                       /* ผ่านตัวจับคู่ตามรหัส พจส. */
   const a=(day.arrive&&day.arrive[no])||{};
   return a[j.shift]||'';
@@ -1581,7 +1617,7 @@ function renderDispatch(){
     <td class="mono">${esc(j.code||'')}</td>
     <td>${esc(j.driver||'')}</td>
     <td class="mono">${esc(j.mainTruck||j.truck||'')}</td>
-    <td><input class="actualin" data-actual="${j.id}" value="${esc(j.actualTruck||j.mainTruck||j.truck||'')}"${knownTruck(j.actualTruck||j.mainTruck||j.truck)?'':' style="border-color:var(--absent);background:#fff7f6" title="เบอร์รถนี้ไม่มีอยู่ในกองรถของวันนี้ — ตรวจว่าพิมพ์ถูกไหม"'}></td>
+    <td><input class="actualin" data-actual="${j.id}" value="${esc(j.actualTruck||j.mainTruck||j.truck||'')}" title="เบอร์รถที่วิ่งจริง — เบอร์นี้คือเบอร์ที่ส่งไป OMS · แก้ได้อิสระ ใส่เบอร์รถจากที่อื่นได้"></td>
     <td class="mono" style="text-align:center">${esc(j.trip||'')}</td>
     <td>${jtBadgeJ(j)}</td>
     ${arriveCell(j)}
@@ -1716,7 +1752,7 @@ async function doLogin(){
 function stampBy(){day.by=adminName;}
 function syncActual(){const a=document.getElementById('j_actual');if(a&&!a.dataset.touched)a.value=document.getElementById('j_truck').value;}
 function syncDriverInfo(){const t=truckByNo(document.getElementById('j_truck').value);const d=driverAt(t,document.getElementById('j_shift').value);const el=document.getElementById('j_drvinfo');if(el)el.value=d?((d.code?d.code+' · ':'')+d.name):'(ยังไม่กำหนดคนขับ)';}
-function syncTrip(){const no=document.getElementById('j_truck').value;const n=day.jobs.filter(j=>(j.mainTruck||j.truck)===no).length+1;const el=document.getElementById('j_trip');if(el&&!el.dataset.touched)el.value=n;}
+function syncTrip(){const no=document.getElementById('j_truck').value;const n=(jobsByTruck()[normNo(no)]||[]).length+1;const el=document.getElementById('j_trip');if(el&&!el.dataset.touched)el.value=n;}
 function saveJob(){
   const g=id=>document.getElementById(id);
   const no=g('j_truck').value,t=truckByNo(no),pos=g('j_shift').value,d=driverAt(t,pos);
@@ -1732,9 +1768,10 @@ function saveJob(){
   if(!trip)miss.push('เที่ยววิ่งงาน');
   if(!adminName)miss.push('กรุณาเข้าสู่ระบบก่อน (ระบุชื่อผู้บันทึก)');
   if(miss.length){alert('กรุณากรอกให้ครบก่อนบันทึก:\n• '+miss.join('\n• '));return;}
-  /* กันพิมพ์เบอร์รถที่วิ่งจริงผิด (เช่นใช้ตัว O แทนเลข 0) เพราะเบอร์นี้จะไปโผล่ในรายงานหน้า 6 เป็นรถผี */
-  if(!knownTruck(actual)&&!confirm('เบอร์รถที่วิ่งจริง "'+actual+'" ไม่มีอยู่ในกองรถ '+(config||[]).length+' คันของวันนี้\n\n'
-      +'ถ้าพิมพ์ผิด กดยกเลิกเพื่อกลับไปแก้ · ถ้ายืมรถจากที่อื่นมาวิ่งจริง กดตกลงเพื่อใช้เบอร์นี้ต่อ'))return;
+  /* ไม่มีการยืนยัน/ห้ามเบอร์รถที่วิ่งจริงแล้ว (ถอดออก 2026-08-13 ตามที่ผู้ใช้สั่ง)
+     เดิมมีกล่องยืนยันถ้าเบอร์นั้นไม่อยู่ในกองรถของวันนั้น -> เด้งขึ้นเกือบทุกครั้งที่ยืมรถมาวิ่ง
+     ถ้า CC กดยกเลิกในกล่องนั้น งานจะไม่ถูกบันทึก ทำให้หน้า 1 ยังขึ้น "จ่ายแผน →" เหมือนยังไม่จ่าย
+     ตอนนี้: CC กรอกเบอร์ไหน บันทึกเบอร์นั้น และส่งเบอร์นั้นไป OMS ตรง ๆ */
   day.seq++;
   const newJob={id:uid(),date:curDate,truck:no,mainTruck:no,actualTruck:actual,shift:pos,code:d?(d.code||''):'',driver:d?d.name:'',product,route:product,origin,dest,distance:dist,type:g('j_type').value,trip,depart:'',by:adminName,note:'',chargeStart:'',chargeEnd:'',ret:''};
   addJobOp(newJob);
@@ -1764,7 +1801,7 @@ function openJobDetail(id){
   const st=runStatus(j);
   const tm=travelMin(j), eta=addMin(j.depart,tm), p=chargerPlan(day.jobs)[j.id]||{};
   const wb=workBreakdown(j);
-  const t=truckByNo(j.mainTruck||j.truck), d=driverAt(t,j.shift);
+  const t=truckByNo(j.mainTruck||j.truck), d=driverOfJob(t,j);
   const omsP=omsPayload(j);
   const row=(lb,v)=>`<div class="lb">${lb}</div><div>${v}</div>`;
   const tval=v=>v?('<span class="mono">'+esc(v)+'</span> <span class="cno">น.</span>'):'<span class="cno">— ยังไม่ระบุ</span>';
@@ -2628,7 +2665,6 @@ function tickAlarms(){
   /* ตอนนี้ AUTO_CLOSE_SHIFT = false จึงเป็น false เสมอ = ระบบไม่เขียนข้อมูลหน้า 1 เองเลย
      เงื่อนไขที่เหลือคงไว้ เผื่อวันหน้าจะเปิดฟีเจอร์นี้กลับ จะได้ปลอดภัยตั้งแต่ต้น */
   const canSweep = AUTO_CLOSE_SHIFT && dayLoaded && !dirty && !saveBusy && !pendingOps.length && !lastWriteErr;
-  const dispSet = canSweep ? dispatchedSetOf() : null;
   let na=0, nl=0, swept=0, marked=false;
   for(const t of config){
     for(const d of (t.drivers||[])){
@@ -2652,7 +2688,7 @@ function tickAlarms(){
            - มีเวลามาจริงในช่อง = CC คีย์ไว้แล้ว
            - จ่ายแผนงานให้คนนี้ไปแล้ว = มาแน่นอน */
         if(attArr(t,d)){ sweptSeen[k]=1; continue; }
-        if(dispSet&&dispSet.has(String(t.truckNo)+'|'+String(d.pos))){ sweptSeen[k]=1; continue; }
+        if(jobsFor(t,d).length){ sweptSeen[k]=1; continue; }
         sweptSeen[k]=1; swept++;
         setAttend(t.truckNo,d.pos,'absent');                       /* ใช้ setAttend เพื่อประทับเจ้าของช่อง (attMeta) ด้วย */
         setCell('attendBy',t.truckNo,d.pos,'ระบบ (จบกะแล้วไม่มีการเช็ก)');
