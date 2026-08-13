@@ -1136,48 +1136,96 @@ function setArrive(no,p,v){
 function isRunning(no){return !!day.running[no];}
 
 /* ---------- KPIs ---------- */
+/* ใครอยู่ใน "ฐานการจ่ายงาน" ของวันนี้ = คนที่มาทำงานจริง (มา / มาสาย / มาทำ OT วันหยุด)
+   และมีรถให้วิ่งจริง (ไม่ใช่ trainee ที่ยังรอเบอร์รถ) · ต้องใช้เกณฑ์เดียวกันทั้ง kpis และ dispatchState */
+function inDispatchBase(t,d){
+  if(!t||!d||t.type==='trainee')return false;
+  const v=attStat(t,d);
+  return v==='present'||v==='late'||v==='ot';
+}
 function kpis(){
   let running=0,present=0,absent=0,leave=0,off=0,ot=0,late=0,unchecked=0,total=0;
-  let dispatched=0,pendingDispatch=0;    /* พจส. ที่มา/สายแล้ว: จ่ายแผนงานเที่ยวแรกไปแล้วกี่คน / เหลืออีกกี่คน */
-  let disp2=0,disp3=0;                   /* จ่ายถึงเที่ยวที่ 2 / 3 แล้วกี่คน */
+  let dispatched=0,pendingDispatch=0;    /* คนในฐาน: จ่ายเที่ยวแรกไปแล้วกี่คน / เหลืออีกกี่คน */
+  let baseHead=0;                        /* จำนวนคนในฐานการจ่ายงาน (ตัวหารของการ์ด "จ่ายงานแล้ว") */
+  let disp2=0,disp3=0;                   /* จ่ายถึงเที่ยวที่ 2 / 3 แล้วกี่คน (เก็บไว้ให้ของเดิมใช้ได้) */
+  const inBaseIds=new Set();             /* id ใบงานที่มีเจ้าของอยู่ในฐาน — ใช้ Set กันนับซ้ำ */
   for(const t of config){
     if(isRunning(t.truckNo))running++;
     for(const d of (t.drivers||[])){
       total++;
       const v=attStat(t,d);            /* ต้องผ่านตัวจับคู่ตามรหัส พจส. ให้ตรงกับตารางหน้า 1 */
-      if(isOff(t,d,curDate)){ off++; if(v==='ot')ot++; continue; }   // วันหยุด fix ตามตารางกะ ไม่หัก OT
-      if(v==='present'||v==='late'){
-        if(v==='present')present++; else late++;
-        /* พจส.ใหม่/รอเบอร์รถ (trainee) ยังไม่มีรถให้จ่ายงานจริง จึงไม่นับเข้าการ์ด "จ่ายงานแล้ว/เหลือรอจ่ายงาน" */
-        if(t.type!=='trainee'){
-          const nDone=jobsFor(t,d).length;   /* จับคู่งานด้วยรหัส พจส. ให้ตรงกับปุ่มในตารางหน้า 1 */
-          if(nDone)dispatched++; else pendingDispatch++;
-          if(nDone>=2)disp2++;
-          if(nDone>=3)disp3++;
-        }
+      if(isOff(t,d,curDate)){ off++; if(v==='ot')ot++; }               // วันหยุด fix ตามตารางกะ ไม่หัก OT
+      else if(v==='present')present++; else if(v==='late')late++;
+      else if(v==='absent')absent++; else if(v==='leave')leave++;
+      else if(v==='ot')ot++; else unchecked++;
+      /* วันหยุดที่กด "มาทำ OT" ก็คือคนมาทำงานและรับงานได้จริง จึงต้องอยู่ในฐานด้วย
+         (ก่อน 2026-08-13 ถูก continue ข้ามไป ทำให้งานของเขาหลุดจากยอดการ์ดหน้า 1) */
+      if(inDispatchBase(t,d)){
+        baseHead++;
+        const arr=jobsFor(t,d);            /* จับคู่งานด้วยรหัส พจส. ให้ตรงกับปุ่มในตารางหน้า 1 */
+        const nDone=arr.length;
+        if(nDone)dispatched++; else pendingDispatch++;
+        if(nDone>=2)disp2++;
+        if(nDone>=3)disp3++;
+        arr.forEach(j=>{if(j&&j.id!==undefined)inBaseIds.add(j.id);});
       }
-      else if(v==='absent')absent++;else if(v==='leave')leave++;else if(v==='ot')ot++;else unchecked++;
     }
   }
   const scheduled=total-off;      // ต้องมาทำงานวันนี้ (ตามตารางกะ)
   const actual=present+late+ot;   // มาทำงานจริงทั้งหมด (รวมสาย + OT)
-  return {running,present,absent,leave,off,ot,late,unchecked,total,scheduled,actual,dispatched,pendingDispatch,disp2,disp3};
+  /* ---- การกระทบยอดใบงานให้ตรงกับหน้า 3 ----
+     jobsTotal = firstTrips + extraTrips + jobsOutside  (ปิดยอดพอดีทุกกรณีโดยโครงสร้าง)
+     firstTrips = dispatched (คนในฐานที่มีงาน นับคนละ 1 ใบแรก)
+     extraTrips = ใบที่เกินเที่ยวแรกของคนในฐาน (รวมเที่ยว 3, 4, … ไม่ต้องพึ่ง disp2/disp3)
+     jobsOutside = ใบงานที่เจ้าของไม่อยู่ในฐาน หรือหาแถวเจ้าของไม่เจอ */
+  const jobsTotal=(day&&Array.isArray(day.jobs))?day.jobs.length:0;
+  const jobsInBase=inBaseIds.size;
+  const extraTrips=Math.max(0,jobsInBase-dispatched);
+  const jobsOutside=Math.max(0,jobsTotal-jobsInBase);
+  return {running,present,absent,leave,off,ot,late,unchecked,total,scheduled,actual,
+          dispatched,pendingDispatch,disp2,disp3,
+          baseHead,jobsTotal,jobsInBase,extraTrips,jobsOutside};
+}
+/* ใบงานที่ไม่อยู่ในฐาน + เหตุผล — ใช้ทั้งในหน้าต่างรายละเอียดและการกระทบยอด */
+function outsideJobs(){
+  const jobs=(day&&Array.isArray(day.jobs))?day.jobs:[];
+  const inBase=new Set();
+  (config||[]).forEach(t=>(t.drivers||[]).forEach(d=>{
+    if(inDispatchBase(t,d))jobsFor(t,d).forEach(j=>{if(j&&j.id!==undefined)inBase.add(j.id);});
+  }));
+  return jobs.filter(j=>j&&!inBase.has(j.id)).map(j=>{
+    const t=truckByNo(j.mainTruck||j.truck);
+    let why;
+    if(!t)why='เบอร์รถ "'+(j.mainTruck||j.truck||'(ว่าง)')+'" ไม่มีอยู่ในตารางกะของวันนี้';
+    else if(t.type==='trainee')why='อยู่บนรถ trainee (พจส. ใหม่ / รอเบอร์รถ)';
+    else{
+      const d=(t.drivers||[]).find(x=>jobsFor(t,x).some(y=>y.id===j.id));
+      if(!d)why='ไม่มีแถวไหนในหน้า 1 จับคู่ใบงานนี้ได้ (รหัส พจส. "'+(j.code||'(ว่าง)')+'" ไม่อยู่บนรถคันนี้ และไม่มีคนอยู่กะ '+j.shift+')';
+      else{
+        const v=attStat(t,d);
+        if(isOff(t,d,curDate))
+          why='พจส. '+(d.name||'')+' วันนี้เป็นวันหยุดตามตารางกะ และยังไม่ได้กด "＋ มาทำ OT"';
+        else{
+          const th={absent:'ขาด',leave:'ลา','':'ยังไม่เช็กสถานะการมาทำงาน'}[v]||v;
+          why='พจส. '+(d.name||'')+' สถานะวันนี้คือ "'+th+'" จึงไม่อยู่ในฐานคนที่มาทำงาน';
+        }
+      }
+    }
+    return {j:j,why:why};
+  });
 }
 const STATUS_FILTERS={present:1,late:1,absent:1,leave:1,ot:1};
 /* ตัวกรองสถานะการจ่ายงานของหน้า 1 (มา/สายแล้ว -> จ่ายแผนงานเที่ยวแรกไปแล้วหรือยัง) */
 const DISPATCH_FILTERS={dispatched:1,todispatch:1};
 /* คนนี้เข้าเกณฑ์การ์ด "จ่ายงานแล้ว"/"เหลือรอจ่ายงาน" หรือไม่ (ต้องตรงกับวิธีนับใน kpis) */
 function dispatchState(t,d){
-  if(!t||!d||t.type==='trainee')return '';
-  if(isOff(t,d,curDate))return '';
-  const v=attStat(t,d);
-  if(v!=='present'&&v!=='late')return '';
+  if(!inDispatchBase(t,d))return '';        /* ใช้เกณฑ์ฐานเดียวกับ kpis เป๊ะ ๆ ตัวกรองจึงตรงกับเลขบนการ์ด */
   return jobsFor(t,d).length?'dispatched':'todispatch';
 }
 function summaryBar(){
   const k=kpis();
   const bx=(f,cls,lab,val)=>`<div class="stat boardbox ${cls} ${filter===f?'sel':''}" data-f="${f}" title="กดเพื่อกรองเฉพาะ ${lab}"><div class="lab">${lab}</div><div class="val mono">${val}</div></div>`;
-  const checkedIn=k.present+k.late;      /* พจส. ที่บันทึกว่า มา+สาย ทั้งหมด */
+  const checkedIn=k.baseHead;      /* ฐานการจ่ายงาน = คนที่มาทำงานจริง (มา+สาย+OT) และมีรถให้วิ่ง */
   return `<section class="summary">
     <div class="stat hero boardbox ${filter==='all'?'sel':''}" data-f="all" title="กดเพื่อดูทั้งหมด"><div class="lab">สรุปการมาทำงาน</div><div class="val mono">${k.actual}/${k.scheduled}</div><div class="bar" style="width:${k.scheduled?Math.min(100,k.actual/k.scheduled*100):0}%"></div></div>
     ${bx('present','go','มา (ปกติ)',k.present)}
@@ -1187,8 +1235,9 @@ function summaryBar(){
     ${bx('leave','lv','ลา',k.leave)}
     ${bx('off','','วันหยุดวันนี้ (ตามตารางกะ)',k.off)}
     ${bx('incomplete','gap','ยังไม่เช็ก',k.unchecked)}
-    <div class="stat go boardbox ${filter==='dispatched'?'sel':''}" data-f="dispatched" title="กดเพื่อกรองเฉพาะคนที่จ่ายแผนงานเที่ยวแรกไปแล้ว (จาก พจส. ที่มา+สาย ${checkedIn} คน)"><div class="lab">จ่ายงานแล้ว</div><div class="val mono">${k.dispatched}<small>/${checkedIn}</small></div>
-      <div class="cno" style="margin-top:2px;line-height:1.5">เที่ยว 2 แล้ว <b class="mono">${k.disp2}</b> คน${k.disp3?(' · เที่ยว 3 <b class="mono">'+k.disp3+'</b>'):''}</div></div>
+    <div class="stat go boardbox ${filter==='dispatched'?'sel':''}" data-f="dispatched" title="กดเพื่อกรองเฉพาะคนที่จ่ายแผนงานเที่ยวแรกไปแล้ว (จากคนที่มาทำงานจริงวันนี้ ${checkedIn} คน — มา + มาสาย + มาทำ OT)"><div class="lab">จ่ายงานแล้ว</div><div class="val mono">${k.dispatched}<small>/${checkedIn}</small></div>
+      <div class="cno" style="margin-top:2px;line-height:1.5" title="กระทบยอดกับหน้า 3 &quot;งานที่จ่ายวันนี้&quot; ให้ตรงกันเสมอ&#10;เที่ยวแรก = คนที่ได้รับงานแล้ว คนละ 1 ใบ&#10;ถัดไป = ใบที่เกินเที่ยวแรก (เที่ยว 2, 3, 4 …)&#10;นอกฐาน = ใบที่เจ้าของไม่ได้อยู่ในฐานคนมาทำงานวันนี้"><b class="mono">${k.jobsTotal}</b> ใบ = เที่ยวแรก <b class="mono">${k.dispatched}</b> + ถัดไป <b class="mono">${k.extraTrips}</b>${
+        k.jobsOutside?(' + <button class="linkish" id="outsideBtn" style="color:#b8860b;font-weight:700" title="ใบงานที่เจ้าของไม่อยู่ในฐานคนมาทำงานวันนี้ — กดเพื่อดูว่าเป็นใบไหน ของใคร เพราะอะไร">นอกฐาน '+k.jobsOutside+'</button>'):''}</div></div>
     <div class="stat${k.pendingDispatch?' miss':''} boardbox ${filter==='todispatch'?'sel':''}" data-f="todispatch" title="กดเพื่อกรองเฉพาะคนที่มา/สายแล้วแต่ยังไม่ได้จ่ายแผนงานเที่ยวแรก"><div class="lab">เหลือรอจ่ายงาน</div><div class="val mono">${k.pendingDispatch}</div></div>
   </section>`;
 }
@@ -1349,7 +1398,6 @@ function rollRow(r){
   const t=r.t,d=r.d,off=isOff(t,d,curDate),cur=attStat(t,d),sc=shiftCls(d.pos);
   /* งานของ "คนในแถวนี้" — จับคู่ด้วยรหัส พจส. ไม่ใช่ตำแหน่งกะ ตารางกะเปลี่ยนแล้วไม่เด้งกลับ */
   const jl=jobsFor(t,d), nDone=jl.length;
-  const jMoved=jl.filter(j=>String(j.shift)!==String(d.pos));
   const av=attArr(t,d);
   let statusCell;
   if(off&&cur!=='ot')statusCell=`<span class="offbadge">วันหยุด (${esc(dayOffLabel(d)||d.dayOff)})</span> <button class="otbtn" data-ot="${esc(t.truckNo)}" data-pos="${esc(d.pos)}">＋ มาทำ OT</button>`;
@@ -1368,8 +1416,9 @@ function rollRow(r){
     <td>${hmField(av,'data-arrive="'+esc(t.truckNo)+'" data-pos="'+d.pos+'"')}</td>
     <td>${(()=>{
       /* จ่ายไปแล้ว -> ล็อกปุ่มไว้ให้เห็นสถานะ (แม้เป็นวันหยุด) */
-      if(nDone)return '<button class="planlink done" disabled title="จ่ายไปแล้ว '+nDone+' เที่ยว — ถ้าต้องจ่ายเที่ยวถัดไป ให้ไปจ่ายที่หน้า 2 รายละเอียดงาน">จ่ายแล้ว'+(nDone>1?(' '+nDone+' เที่ยว'):'')+'</button>'
-        +(jMoved.length?'<div class="cno" style="color:#b8860b" title="งานนี้จ่ายไว้ตอนที่ พจส. คนนี้อยู่กะ '+esc(jMoved.map(j=>j.shift).join(', '))+' · ตารางกะชุดปัจจุบันย้ายมาอยู่กะ '+esc(d.pos)+' — ระบบจับคู่ให้จากรหัส พจส. งานจึงไม่หาย">⚠ จ่ายไว้ตอนอยู่กะ '+esc(jMoved.map(j=>j.shift).join(', '))+'</div>':'');
+      /* ไม่แสดงป้ายเตือน "จ่ายไว้ตอนอยู่กะ N" แล้ว (ถอดออก 2026-08-13 ตามที่ผู้ใช้สั่ง — CC สับสน)
+         การจับคู่งานด้วยรหัส พจส. ใน jobsFor() ยังทำงานเหมือนเดิม งานไม่หายและไม่สลับคน */
+      if(nDone)return '<button class="planlink done" disabled title="จ่ายไปแล้ว '+nDone+' เที่ยว — ถ้าต้องจ่ายเที่ยวถัดไป ให้ไปจ่ายที่หน้า 2 รายละเอียดงาน">จ่ายแล้ว'+(nDone>1?(' '+nDone+' เที่ยว'):'')+'</button>';
       /* ขาด / ลา / วันหยุด (ที่ยังไม่กดมาทำ OT) -> จ่ายงานไม่ได้ */
       const blocked = (cur==='absent') ? 'ขาด' : (cur==='leave') ? 'ลา' : ((off&&cur!=='ot') ? 'วันหยุด' : '');
       if(blocked)return '<span class="cno">— จ่ายแผนไม่ได้ ('+blocked+')</span>';
@@ -1597,17 +1646,29 @@ function jselDest(j){
   if(ds.indexOf(cur)<0)ds.unshift(cur);
   return '<select class="jsel" data-jf="dest" data-id="'+j.id+'" title="แก้ปลายทาง">'+ds.map(o=>jopt(o,cur)).join('')+'</select>';
 }
+/* คีย์เรียงคอลัมน์ของหน้า 2 — แชร์กันระหว่างตารางบนหน้าจอกับไฟล์ส่งออก
+   เพื่อให้ไฟล์ Excel เรียงเหมือนที่ CC เห็นตรงหน้าเป๊ะ ๆ ไม่ใช่ลำดับดิบ */
+const DISPATCH_SORTKEYS={
+  date:x=>x.j.date||curDate, seq:x=>x.i+1, product:x=>x.j.product||'',
+  origin:x=>x.j.origin||'', dest:x=>x.j.dest||'', code:x=>x.j.code||'',
+  driver:x=>x.j.driver||'', mtruck:x=>x.j.mainTruck||x.j.truck||'',
+  atruck:x=>x.j.actualTruck||'', trip:x=>+x.j.trip||0, type:x=>jtFull(jobType(x.j)),
+  arrive:x=>jobArrive(x.j)||'~', depart:x=>x.j.depart||'~', by:x=>x.j.by||'',
+  oms:x=>x.j.omsDoc?'1':(x.j.omsState==='err'?'2':'3')
+};
+/* แถวของหน้า 2 ตามลำดับที่แสดงอยู่จริง — ใช้ทั้งวาดตารางและส่งออก Excel */
+function dispatchRows(){return sortBy('dispatch',day.jobs.map((j,i)=>({j,i})),DISPATCH_SORTKEYS);}
+/* สถานะ "ส่ง OMS" เป็นข้อความ (ไฟล์ Excel ใส่ badge HTML ไม่ได้) */
+function omsText(j){
+  if(j.omsDoc)return 'ส่งแล้ว'+(j.omsAt?(' '+j.omsAt):'');
+  if(j.omsState==='sending')return 'กำลังส่ง…';
+  if(j.omsState==='err')return 'ไม่สำเร็จ'+(j.omsMsg?(' — '+j.omsMsg):'');
+  return 'ยังไม่ได้ส่ง';
+}
 function renderDispatch(){
   const hadBox=!!document.querySelector('#view .tablewrap');
   const restore=keepScroll();
-  const list=sortBy('dispatch',day.jobs.map((j,i)=>({j,i})),{
-    date:x=>x.j.date||curDate, seq:x=>x.i+1, product:x=>x.j.product||'',
-    origin:x=>x.j.origin||'', dest:x=>x.j.dest||'', code:x=>x.j.code||'',
-    driver:x=>x.j.driver||'', mtruck:x=>x.j.mainTruck||x.j.truck||'',
-    atruck:x=>x.j.actualTruck||'', trip:x=>+x.j.trip||0, type:x=>jtFull(jobType(x.j)),
-    arrive:x=>jobArrive(x.j)||'~', depart:x=>x.j.depart||'~', by:x=>x.j.by||'',
-    oms:x=>x.j.omsDoc?'1':(x.j.omsState==='err'?'2':'3')
-  });
+  const list=dispatchRows();
   const rows=list.map(({j,i})=>`<tr class="jrow" data-jobrow="${j.id}" title="กดเพื่อดูรายละเอียดแผนงานเที่ยวนี้">
     <td class="mono">${esc(j.date||curDate)}</td>
     <td class="mono" style="text-align:center">${i+1}</td>
@@ -1709,6 +1770,33 @@ function openModal(truck,pos){
   preselectRoute();fillOrigins();syncActual();syncDriverInfo();syncTrip();
 }
 function closeModal(){const m=document.getElementById('modal');m.style.display='none';m.innerHTML='';}
+/* หน้าต่างรายการ "ใบงานนอกฐาน" — ใบที่หน้า 3 นับ แต่ไม่มีเจ้าของอยู่ในฐานคนมาทำงานของหน้า 1 */
+function openOutsideJobs(){
+  const list=outsideJobs(), k=kpis();
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="modal-card" style="max-width:900px">
+    <div class="modal-head"><h2>ใบงานนอกฐาน ${list.length} ใบ</h2><button class="modal-x" id="closeModal">✕</button></div>
+    <div class="hint" style="margin-bottom:10px">การกระทบยอดวันที่ ${esc(curDate)} · หน้า 3 "งานที่จ่ายวันนี้" <b>${k.jobsTotal}</b> ใบ
+      = เที่ยวแรก <b>${k.dispatched}</b> + เที่ยวถัดไป <b>${k.extraTrips}</b> + นอกฐาน <b>${k.jobsOutside}</b><br>
+      ใบงานเหล่านี้ <b>ไม่ได้หายและไม่ได้ผิด</b> — แค่เจ้าของไม่ได้อยู่ในฐาน ${k.baseHead} คนที่มาทำงานวันนี้ จึงไม่ถูกนับในการ์ด "จ่ายงานแล้ว"</div>
+    <div class="tablewrap" style="max-height:52vh"><table style="min-width:900px">
+      <thead><tr><th>เบอร์รถหลัก</th><th>วิ่งจริง</th><th style="text-align:center">กะ</th><th>รหัส พจส.</th><th>ชื่อ พจส.</th><th>สินค้า</th><th style="text-align:center">เที่ยว</th><th>ผู้บันทึก</th><th>สาเหตุที่ไม่ถูกนับ</th></tr></thead>
+      <tbody>${list.length?list.map(x=>`<tr>
+        <td><span class="plate">${esc(x.j.mainTruck||x.j.truck||'')}</span></td>
+        <td><span class="plate">${esc(x.j.actualTruck||'')}</span></td>
+        <td style="text-align:center">${esc(x.j.shift)}</td>
+        <td class="mono">${esc(x.j.code||'')}</td>
+        <td>${esc(x.j.driver||'')}</td>
+        <td>${esc(x.j.product||'')}</td>
+        <td style="text-align:center">${esc(x.j.trip||'')}</td>
+        <td>${esc(x.j.by||'')}</td>
+        <td style="color:#b8860b">${esc(x.why)}</td></tr>`).join('')
+        :'<tr><td colspan="9" class="empty-note">ยอดตรงกันทุกใบ ไม่มีใบงานนอกฐาน</td></tr>'}</tbody>
+    </table></div>
+    <div class="modal-actions"><button class="btn primary" id="cancelJob">ปิด</button></div>
+  </div>`;
+  m.style.display='flex';
+}
 function updateAdminChip(){const el=document.getElementById('adminChip');if(!el)return;el.innerHTML=adminName?`👤 ${esc(adminName)} <button class="linkish" id="changeAdmin" title="เปลี่ยนชื่อผู้บันทึก / ตั้งค่า URL ระบบกลาง">⚙ ตั้งค่า</button>`:`<button class="loginbtn" id="loginBtn">เข้าสู่ระบบ</button>`;}
 function openLogin(){
   const m=document.getElementById('modal');
@@ -2788,6 +2876,7 @@ document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.cl
 document.getElementById('dateInput').addEventListener('change',async e=>{await flushSaveBeforeSwitch();curDate=e.target.value||todayStr();applyRosterForDate();await loadDay();closeWidget('alarm');closeWidget('alert');loadNotify();tickAlarms();render();if(tab==='roster')scrollToCurrentHour();});
 
 document.getElementById('view').addEventListener('click',e=>{
+  if(e.target.closest('#outsideBtn')){openOutsideJobs();return;}   /* กดเลข "นอกฐาน" บนการ์ดหน้า 1 */
   const tg=e.target.closest('[data-grp]');
   if(tg){const g=tg.dataset.grp;sumProdOpen[g]=!sumProdOpen[g];lsSet('fleet:sumprod',JSON.stringify(sumProdOpen));renderSummary();return;}
   const dp=e.target.closest('[data-delprod]');
@@ -3094,17 +3183,32 @@ document.getElementById('view').addEventListener('change',e=>{
   }
 });
 
-/* ---------- Excel export ---------- */
-function exportExcel(){
-  const wb=XLSX.utils.book_new();
+/* ---------- Excel export ----------
+   ชีต "จ่ายงาน" = ข้อมูลหน้า 2 (รายละเอียดงาน) ครบทุกคอลัมน์ที่ CC เห็น รวม "ส่ง OMS" และเรียงตามที่แสดงอยู่
+   ชีต "เช็กคนขับ" = ข้อมูลหน้า 1
+   ลำดับชีตขึ้นกับว่ากดปุ่มจากหน้าไหน — กดจากหน้า 2 ชีตจ่ายงานต้องมาก่อน ไม่ใช่เปิดไฟล์แล้วเจอหน้า 1
+   (แก้ 2026-08-13 ตามที่ผู้ใช้แจ้งว่ากดในหน้า 2 แต่ได้ข้อมูลหน้า 1) */
+function sheetAttend(){
   const att=[['เบอร์รถ','ต้นทาง','กะ','คนขับ','สถานะ','เวลามาจริง','ผู้บันทึก','วันหยุด','เวลากะที่ใช้','เปลี่ยนเป็น','หมายเหตุ']];
   const ST={present:'มา',late:'สาย',absent:'ขาด',leave:'ลา',ot:'มา OT (วันหยุด)','':''};
   for(const t of config)for(const d of (t.drivers||[])){const off=isOff(t,d,curDate);const cur=attStat(t,d);const status=cur==='ot'?'มา OT (วันหยุด)':(off?'วันหยุด':ST[cur]);const av=attArr(t,d);const by=attBy(t,d);att.push([t.truckNo,t.routeGroup,d.pos,d.name,status,av,by,dayOffLabel(d)||d.dayOff,rowShift(t,d),d.shift2?(d.shift2+' ตั้งแต่ '+(d.shiftFrom||'-')):'',(day.dnote[t.truckNo]||{})[d.pos]||'']);}
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(att),'เช็กคนขับ');
-  const jb=[['วันที่','ลำดับ','ชื่อสินค้า','ต้นทาง','ปลายทาง','รหัส พจส.','ชื่อ พจส.','เบอร์รถหลัก','เบอร์รถที่วิ่งจริง','เที่ยว','ประเภทงาน','เวลามาจริง','เวลาออก','ผู้จ่ายงาน','เวลาชาร์จ','ชาร์จเสร็จ','เวลากลับ','เวลาปิดงาน','รวมเวลาทำงาน (ชม.)','สาเหตุเกิน 8 ชม.','หมายเหตุ']];
-  day.jobs.forEach((j,i)=>jb.push([j.date||curDate,i+1,j.product,j.origin,j.dest,j.code||'',j.driver,j.mainTruck||j.truck,j.actualTruck||j.mainTruck||j.truck,j.trip||'',jtFull(jobType(j)),jobArrive(j),j.depart,j.by||'',j.chargeStart,j.chargeEnd,j.ret,j.closed||'',workHoursText(j),j.overNote||'',j.note||'']));
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(jb),'จ่ายงาน');
-  XLSX.writeFile(wb,'รายงานงานขนส่ง-'+curDate+'.xlsx');
+  return att;
+}
+function sheetDispatch(){
+  const jb=[['วันที่','ลำดับ','ชื่อสินค้า','ต้นทาง','ปลายทาง','รหัส พจส.','ชื่อ พจส.','เบอร์รถหลัก','เบอร์รถที่วิ่งจริง','เที่ยว','ประเภทงาน','เวลามาจริง','เวลาออก','หมายเหตุ','ส่ง OMS','เลขที่เอกสาร OMS','ผู้บันทึก (CC)','เวลาชาร์จ','ชาร์จเสร็จ','เวลากลับ','เวลาปิดงาน','รวมเวลาทำงาน (ชม.)','สาเหตุเกิน 8 ชม.']];
+  dispatchRows().forEach(({j,i})=>jb.push([j.date||curDate,i+1,j.product,j.origin,j.dest,j.code||'',j.driver,
+    j.mainTruck||j.truck,j.actualTruck||j.mainTruck||j.truck,j.trip||'',jtFull(jobType(j)),jobArrive(j),j.depart,
+    j.note||'',omsText(j),j.omsDoc||'',j.by||'',
+    j.chargeStart,j.chargeEnd,j.ret,j.closed||'',workHoursText(j),j.overNote||'']));
+  return jb;
+}
+function exportExcel(){
+  const wb=XLSX.utils.book_new();
+  const add=(name,aoa)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),name);
+  const fromDispatch=(tab==='dispatch');
+  if(fromDispatch){ add('จ่ายงาน',sheetDispatch()); add('เช็กคนขับ',sheetAttend()); }
+  else{ add('เช็กคนขับ',sheetAttend()); add('จ่ายงาน',sheetDispatch()); }
+  XLSX.writeFile(wb,(fromDispatch?'จ่ายงาน-':'รายงานงานขนส่ง-')+curDate+'.xlsx');
 }
 
 /* ---------- Excel import (monthly roster) ---------- */
