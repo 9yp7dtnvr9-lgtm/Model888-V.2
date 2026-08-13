@@ -847,6 +847,8 @@ function truckByNo(no){return config.find(t=>t.truckNo===no);}
 /* เทียบตำแหน่งกะแบบทนชนิดข้อมูล: ตารางกะที่ดึงจาก Google Sheet เคยบันทึก pos เป็นตัวเลข (number)
    ขณะที่ทั้งระบบใช้ string ทำให้เทียบแบบ === ไม่เจอคนขับ -> จ่ายงานไม่ได้ (เหตุการณ์ 2026-08-08)
    แก้ให้ครอบ String() ทั้งสองข้าง จะใช้กับตารางกะชุดที่บันทึกไว้แล้วได้เลยไม่ต้อง import ใหม่ */
+/* เบอร์รถนี้มีอยู่ในกองรถของวันนั้นไหม (ใช้เตือนพิมพ์ผิด ไม่ใช่ห้าม เพราะอาจยืมรถ BU อื่นมาวิ่งจริง) */
+function knownTruck(no){no=String(no||'').trim();if(!no)return false;return (config||[]).some(t=>String(t.truckNo)===no);}
 function driverAt(t,pos){return (t&&t.drivers||[]).find(d=>d&&String(d.pos)===String(pos));}
 
 /* save */
@@ -1579,7 +1581,7 @@ function renderDispatch(){
     <td class="mono">${esc(j.code||'')}</td>
     <td>${esc(j.driver||'')}</td>
     <td class="mono">${esc(j.mainTruck||j.truck||'')}</td>
-    <td><input class="actualin" data-actual="${j.id}" value="${esc(j.actualTruck||j.mainTruck||j.truck||'')}"></td>
+    <td><input class="actualin" data-actual="${j.id}" value="${esc(j.actualTruck||j.mainTruck||j.truck||'')}"${knownTruck(j.actualTruck||j.mainTruck||j.truck)?'':' style="border-color:var(--absent);background:#fff7f6" title="เบอร์รถนี้ไม่มีอยู่ในกองรถของวันนี้ — ตรวจว่าพิมพ์ถูกไหม"'}></td>
     <td class="mono" style="text-align:center">${esc(j.trip||'')}</td>
     <td>${jtBadgeJ(j)}</td>
     ${arriveCell(j)}
@@ -1730,6 +1732,9 @@ function saveJob(){
   if(!trip)miss.push('เที่ยววิ่งงาน');
   if(!adminName)miss.push('กรุณาเข้าสู่ระบบก่อน (ระบุชื่อผู้บันทึก)');
   if(miss.length){alert('กรุณากรอกให้ครบก่อนบันทึก:\n• '+miss.join('\n• '));return;}
+  /* กันพิมพ์เบอร์รถที่วิ่งจริงผิด (เช่นใช้ตัว O แทนเลข 0) เพราะเบอร์นี้จะไปโผล่ในรายงานหน้า 6 เป็นรถผี */
+  if(!knownTruck(actual)&&!confirm('เบอร์รถที่วิ่งจริง "'+actual+'" ไม่มีอยู่ในกองรถ '+(config||[]).length+' คันของวันนี้\n\n'
+      +'ถ้าพิมพ์ผิด กดยกเลิกเพื่อกลับไปแก้ · ถ้ายืมรถจากที่อื่นมาวิ่งจริง กดตกลงเพื่อใช้เบอร์นี้ต่อ'))return;
   day.seq++;
   const newJob={id:uid(),date:curDate,truck:no,mainTruck:no,actualTruck:actual,shift:pos,code:d?(d.code||''):'',driver:d?d.name:'',product,route:product,origin,dest,distance:dist,type:g('j_type').value,trip,depart:'',by:adminName,note:'',chargeStart:'',chargeEnd:'',ret:''};
   addJobOp(newJob);
