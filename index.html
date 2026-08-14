@@ -3565,7 +3565,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollDay();
 
 /* ==================== TAB 6: Dashboard ====================
    ดึงข้อมูลรายวันหลายวันมารวม แล้วสรุปเป็นภาพ · ไม่แตะหน้า 1-5 */
-let dashDays=7, dashTab='overview', dashCache={}, dashBusy=false, dashDone=0, dashNeed=0;
+let dashDays=7, dashTab='truck', dashCache={}, dashBusy=false, dashDone=0, dashNeed=0;
 let dashPickDay='';
 let dashFrom='', dashTo='';        /* ถ้ากรอกครบทั้งคู่ = ใช้ช่วงที่เลือกเอง */
 const DASH_MAX_DAYS=92;            /* กันเลือกช่วงยาวเกินจนโหลดหนัก */
@@ -3629,8 +3629,6 @@ const FLEET_GROUPS=[
   {k:'spare', lab:'สำรอง + VT',   n:4,  test:t=>t.type==='vt'||t.type==='spare'}
 ];
 let dashFleetGroup='all';
-let zeroRows=10;                  /* หน้า 6: จำนวนแถวที่ให้เห็นในกรอบตารางรถ 0 เที่ยว (เกินกว่านี้เลื่อนดูได้) */
-const ZERO_ROW_OPTS=[10,50,100];
 /* ---------- รวมข้อมูลทั้งช่วง ---------- */
 function dashAgg(){
   const dates=dashDateList();
@@ -3851,7 +3849,7 @@ function dGroupedBars(daily,group){
   const items=daily.map((r,i)=>({ds:r.ds,vals:[rows[i].b3,rows[i].b2,rows[i].b1],
     tip:r.ds+' — 3 เที่ยว '+rows[i].b3+' คัน · 2 เที่ยว '+rows[i].b2+' คัน · 1 เที่ยว '+rows[i].b1+' คัน · 0 เที่ยว '+rows[i].zero.length+' คัน'}));
   return chGroupedBars(items,SER,'เที่ยวที่ปิดงานแล้วต่อคัน 3/2/1 เที่ยวต่อวัน')
-    +chLegend(SER,'กดแท่งวันไหนก็ได้ เพื่อดู/บันทึกหมายเหตุรถ 0 เที่ยวของวันนั้น');
+    +chLegend(SER,'กดแท่งวันไหนก็ได้ เพื่อดูรายละเอียดของวันนั้น');
 }
 /* ---------- กราฟแท่งกลุ่มทั่วไป N ชุด/วัน (ใช้กับ "ขาด/สาย/ลา รายวัน" หน้า 6 แท็บคน) ----------
    series: [{key,label,color,pick:r=>ค่าของวันนั้น}, ...] */
@@ -3874,33 +3872,7 @@ function dPickPanel(A){
     +'<div style="font-size:13.5px;line-height:1.85;white-space:pre-line">'+esc(dayDetailText(r).split('\n').slice(1).join('\n'))+'</div></div>';
 }
 /* รายชื่อรถ 0 เที่ยว(ปิดงาน) ของวันที่เลือก + ช่องบันทึกหมายเหตุ (แก้แล้วเซฟอัตโนมัติ) */
-/* ปุ่มเลือกจำนวนแถวที่ให้เห็นในกรอบ — ไม่ได้ตัดข้อมูลออก ที่เกินยังเลื่อนดูได้ครบ */
-function zeroRowsPicker(total){
-  const more=total>zeroRows;
-  return `<div class="zerohead">
-    <span class="cno">ทั้งหมด ${total} คัน${more?' · เลื่อนดูในตารางได้ครบทุกคัน':''}</span>
-    <span class="cno">แสดง</span>
-    <div class="dseg">${ZERO_ROW_OPTS.map(n=>`<button class="${zeroRows===n?'on':''}" data-zrows="${n}" title="ให้เห็น ${n} แถวในกรอบ ถ้ามีมากกว่านั้นเลื่อนดูได้">${n}</button>`).join('')}</div>
-    <span class="cno">แถว</span>
-  </div>`;
-}
-function dZeroPanel(daily,group,ds){
-  const r=daily.find(x=>x.ds===ds);
-  if(!r)return '<div class="cno">เลือกวันบนกราฟด้านบนเพื่อดูรายละเอียด</div>';
-  if(r.noData)return '<div class="cno">ไม่มีข้อมูลวันที่ '+esc(ds)+'</div>';
-  const b=tripBucketCounts(r,group);
-  if(!b.zero.length)return '<div class="cno">วันที่ '+esc(ds)+' — ไม่มีรถ 0 เที่ยวในกลุ่มนี้ 🎉</div>';
-  const rows=b.zero.map(z=>`<tr>
-      <td class="plate">${esc(z.truckNo)}</td><td class="cno">${esc(z.route||'-')}</td>
-      <td><input class="noteinp" style="width:280px" data-tnote="${esc(z.truckNo)}" data-tds="${esc(ds)}" value="${esc(z.note)}" placeholder="เหตุผล เช่น ส่งซ่อม / รออะไหล่ / ไม่มีคนขับ…"></td></tr>`).join('');
-  /* ความสูงกรอบ = หัวตาราง + จำนวนแถวที่เลือก (แถวละ ~41px) ที่เกินเลื่อนดูในกรอบได้ */
-  const maxH=42+Math.min(zeroRows,b.zero.length)*41;
-  return zeroRowsPicker(b.zero.length)
-    +`<div class="tablewrap zerowrap" style="max-height:${maxH}px"><table style="min-width:560px">
-    <thead><tr><th>เบอร์รถ</th><th>ต้นทาง</th><th>หมายเหตุ</th></tr></thead>
-    <tbody>${rows}</tbody></table></div>`;
-}
-/* ---------- ข้อความสรุปสำหรับคัดลอก ---------- */
+/* ฟังก์ชัน dZeroPanel (ตาราง "รถ 0 เที่ยว") ถูกลบออก 2026-08-14 ตามที่ผู้ใช้สั่ง */
 function dashText(A){
   const L=[];
   L.push('สรุปงานขนส่ง EV — BU4');
@@ -3929,28 +3901,12 @@ function renderDash(){
   const pct=(a,b)=>b?Math.round(a/b*100):0;
   const card=(k,v,s2,cls)=>`<div class="dcard ${cls||''}"><div class="k">${k}</div><div class="v">${v}</div>${s2?('<div class="s">'+s2+'</div>'):''}</div>`;
 
-  /* --- ภาพรวม --- */
-  let body='';
-  if(dashTab==='overview'){
-    body=`<div class="dgrid4">
-      ${card('เที่ยวงานรวม',A.trips,'เฉลี่ย '+A.tripsPerDay.toFixed(1)+' เที่ยว/วัน','hero')}
-      ${card('เทียบแผน',(A.plan?pct(A.trips,A.plan)+'%':'—'),A.plan?('แผน '+A.plan+' · จริง '+A.trips):'ยังไม่ได้ตั้งแผน')}
-      ${card('พจส. มาทำงาน',A.attRate.toFixed(1)+'%',A.att.present+' จาก '+A.att.sched+' คน-วัน')}
-      ${card('ปิดงานแล้ว',A.closed,pct(A.closed,A.trips)+'% ของเที่ยวทั้งหมด')}
-      ${card('เวลาทำงานเฉลี่ย',A.hoursAvg.toFixed(1),'ชม./เที่ยว · เกินเกณฑ์ '+A.over8+' เที่ยว')}
-      ${card('รถที่ครบ '+TARGET_ROUNDS+' รอบ',A.hitTrucks,'นับรวมทุกวันในช่วง')}
-    </div>
-    ${dPickPanel(A)}
-    <div class="dtwo">
-      <div class="dpanel"><h3>เที่ยวงานรายวัน</h3>${dTrend(A.daily,r=>r.trips,'เที่ยวรายวัน','#2b6cb0')}</div>
-      <div class="dpanel"><h3>พจส. มาทำงานรายวัน</h3>${dTrend(A.daily,r=>r.present,'มาทำงานรายวัน','#2f8f6b')}</div>
-    </div>
-    <div class="dpanel"><h3>แยกตามประเภทงาน</h3>
-      ${dBars((function(){const o={};JOBTYPES.forEach(t=>{if(A.byType[t.k])o[t.f]=A.byType[t.k];});return o;})(),6)}
-    </div>`;
-  }
+  /* แท็บ "ภาพรวม" ถูกถอดออกทั้งแท็บ 2026-08-14 ตามที่ผู้ใช้สั่ง
+     (เดิมมีการ์ดตัวเลข 6 ใบ + กราฟเที่ยวงานรายวัน + กราฟ พจส. มาทำงานรายวัน + กราฟแยกตามประเภทงาน)
+     แท็บเริ่มต้นของหน้า Dashboard เปลี่ยนเป็น "เที่ยวรถ" (dashTab='truck') */
   /* --- คน --- */
-  else if(dashTab==='people'){
+  let body='';
+  if(dashTab==='people'){
     const late=Object.keys(A.driver).map(k=>A.driver[k]).filter(x=>x.late).sort((a,b)=>b.late-a.late).slice(0,8);
     const abs=Object.keys(A.driver).map(k=>A.driver[k]).filter(x=>x.absent).sort((a,b)=>b.absent-a.absent).slice(0,8);
     body=`<div class="dgrid4">
@@ -3992,7 +3948,6 @@ function renderDash(){
   else if(dashTab==='truck'){
     const tk=Object.keys(A.truck).map(k=>[k,A.truck[k]]).sort((a,b)=>b[1]-a[1]);
     const low=tk.slice().reverse().slice(0,8);
-    const zeroDs=dashPickDay||(A.daily.length?A.daily[A.daily.length-1].ds:'');
     body=`<div class="dgrid4">
       ${card('รถที่ออกงาน',Object.keys(A.trucksSeen).length,'จาก '+config.length+' คันในกองรถ','hero')}
       ${card('เที่ยวรวม',A.trips,'เฉลี่ย '+A.tripsPerDay.toFixed(1)+' เที่ยว/วัน')}
@@ -4004,11 +3959,6 @@ function renderDash(){
       <h3>รายงานเที่ยวที่ปิดงานแล้วต่อคัน — 3 / 2 / 1 เที่ยว/วัน <span class="cno">(นับเฉพาะเที่ยวที่ปิดงานแล้ว)</span></h3>
       <div class="dseg" style="margin:0 0 12px">${FLEET_GROUPS.map(g=>`<button class="${dashFleetGroup===g.k?'on':''}" data-dfleet="${g.k}">${esc(g.lab)} <span class="cno">(${g.n})</span></button>`).join('')}</div>
       ${dGroupedBars(A.daily,dashFleetGroup)}
-    </div>
-    <div class="dpanel" style="border-color:var(--accent)">
-      <h3>รถ 0 เที่ยว(ปิดงาน) — วันที่ ${esc(zeroDs)}
-        <span class="cno">${dashPickDay?'(กดแท่งกราฟด้านบนเพื่อดูวันอื่น)':'— วันล่าสุดในช่วงนี้ (กดแท่งกราฟด้านบนเพื่อดูวันอื่น)'}</span></h3>
-      ${zeroDs?dZeroPanel(A.daily,dashFleetGroup,zeroDs):'<div class="cno">ไม่มีข้อมูล</div>'}
     </div>
     <div class="dtwo">
       <div class="dpanel"><h3>รถที่วิ่งมากสุด <span class="cno">(เที่ยว)</span></h3>${dBars(A.truck,10,'#2b6cb0')}</div>
@@ -4065,7 +4015,8 @@ function renderDash(){
     </div>
     ${prog}
     <div class="dbar" style="padding:8px 12px">
-      <span class="dseg">${tabBtn('overview','ภาพรวม')}${tabBtn('people','คน')}${tabBtn('route','เส้นทาง')}${tabBtn('truck','เที่ยวรถ')}${tabBtn('time','เวลา')}</span>
+      <!-- แท็บ "ภาพรวม" ถูกถอดออก 2026-08-14 ตามที่ผู้ใช้สั่ง · แท็บเริ่มต้นเปลี่ยนเป็น "เที่ยวรถ" -->
+      <span class="dseg">${tabBtn('people','คน')}${tabBtn('route','เส้นทาง')}${tabBtn('truck','เที่ยวรถ')}${tabBtn('time','เวลา')}</span>
       <span class="cno" style="margin-left:auto">ข้อมูลจากหน้า 4 · อัปเดต ${nowHM()} น.</span>
     </div>
     ${body}
@@ -4080,19 +4031,8 @@ document.getElementById('view').addEventListener('change',e=>{
     if(a&&b&&a.value&&b.value){dashFrom=a.value;dashTo=b.value;dashLoad();renderDash();}
     return;
   }
-  /* หมายเหตุรถ 0 เที่ยว (หน้า 6 · แท็บเที่ยวรถ) — แก้แล้วออกจากช่อง = บันทึกไปยังวันที่นั้นโดยตรง (ไม่ใช่ curDate) */
-  const tn=e.target.closest('[data-tnote]');
-  if(tn){
-    const no=tn.dataset.tnote, ds=tn.dataset.tds, v=tn.value;
-    tn.disabled=true;
-    dayPatch(ds,[{k:'flat',s:'truckNote',key:no,v:v}]).then(newVal=>{
-      tn.disabled=false;
-      if(newVal){try{const o=JSON.parse(newVal);if(o&&typeof o==='object')dashCache[ds]=o;}catch(err){}}
-      else{ dashCache[ds]=dashCache[ds]||blankDay(); dashCache[ds].truckNote=dashCache[ds].truckNote||{}; dashCache[ds].truckNote[no]=v; }
-      renderDash();
-    }).catch(()=>{tn.disabled=false;});
-    return;
-  }
+  /* ตัวบันทึก "หมายเหตุรถ 0 เที่ยว" ถูกถอดออก 2026-08-14 พร้อมกับตารางที่มันอยู่
+     ข้อมูล day.truckNote ที่ CC เคยพิมพ์ไว้ยังอยู่ในระบบครบ ไม่ได้ถูกลบ แค่ไม่มีที่แสดง/แก้บนหน้าจอ */
 });
 /* ---------- ปุ่มต่าง ๆ ของหน้า 6 ---------- */
 document.getElementById('view').addEventListener('click',e=>{
@@ -4111,8 +4051,6 @@ document.getElementById('view').addEventListener('click',e=>{
   }
   const dt=e.target.closest('[data-dtab]');
   if(dt){dashTab=dt.dataset.dtab;renderDash();return;}
-  const zr=e.target.closest('[data-zrows]');
-  if(zr){zeroRows=parseInt(zr.dataset.zrows,10)||10;renderDash();return;}
   const df=e.target.closest('[data-dfleet]');
   if(df){dashFleetGroup=df.dataset.dfleet;renderDash();return;}
   if(e.target.closest('#dRefresh')){dashLoad(true);return;}
