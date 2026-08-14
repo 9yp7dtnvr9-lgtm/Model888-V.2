@@ -136,7 +136,9 @@
   .dcard.hero{background:linear-gradient(135deg,var(--nav),#20406b);border-color:var(--nav)}
   .dcard.hero .k,.dcard.hero .s{color:#c9d7ea}
   .dcard.hero .v{color:#fff}
-  .dpanel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  /* min-width:0 สำคัญมาก — ไม่มีอันนี้ กล่องจะยืดตามความกว้างกราฟ (flex/grid min-width:auto)
+     ทำให้กราฟวันมาก ๆ ดันหน้าเว็บทะลุออกข้างทั้งหน้า แทนที่จะเลื่อนอยู่ในกล่องของตัวเอง */
+  .dpanel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;min-width:0;overflow:hidden}
   .dpanel h3{margin:0 0 10px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
   .dpanel h3 .cno{font-weight:400}
   .drow{display:grid;grid-template-columns:1fr 62px;gap:8px;align-items:center;padding:5px 0;font-size:13px}
@@ -144,8 +146,15 @@
   .dbar2 i{display:block;height:100%;border-radius:6px;background:var(--accent)}
   .dnum{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;font-size:12px}
   .dtwo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .dtwo>*,.dgrid4>*{min-width:0}                 /* กันช่องกริดยืดตามเนื้อหาที่กว้างเกิน */
+  .dwrap>*{min-width:0}
   .dsvg{display:block}         /* ไม่ยืด width:100% แล้ว — ใช้ขนาดจริงตาม viewBox เท่านั้น กันจุด/ตัวเลข/เส้นถูกขยายเบลอเวลาข้อมูลน้อยวัน */
-  .dscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}   /* กราฟกว้างกว่ากล่อง (วันมาก) เลื่อนดูได้ ไม่บีบจนอ่านไม่ออก */
+  /* กราฟกว้างกว่ากล่อง (วันมาก) = เลื่อนดูข้างได้ ไม่บีบจนอ่านไม่ออก และไม่ดันหน้าเว็บทะลุ */
+  .dscroll{overflow-x:auto;overflow-y:hidden;max-width:100%;min-width:0;-webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;scrollbar-color:#c3cbd8 transparent;padding-bottom:2px}
+  .dscroll::-webkit-scrollbar{height:9px}
+  .dscroll::-webkit-scrollbar-thumb{background:#c3cbd8;border-radius:6px}
+  .dscroll::-webkit-scrollbar-track{background:transparent}
   .zerohead{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:0 0 8px;flex-wrap:wrap}
   .zerohead .cno:first-child{margin-right:auto}   /* ข้อความจำนวนรถชิดซ้าย · ปุ่มเลือกไปอยู่มุมขวา */
   .zerowrap{overflow:auto;-webkit-overflow-scrolling:touch}
@@ -257,6 +266,10 @@
   .hicon{position:relative;border:0;border-radius:10px;padding:7px 11px;font-size:17px;cursor:pointer;line-height:1;font-family:inherit}
   .hicon.alarm{background:var(--accent2);color:#20130a}
   .hicon.alert{background:var(--absent);color:#fff}
+  .hicon.omsdoc{background:var(--n);color:#fff}
+  td.omsname{cursor:pointer}
+  td.omsname:hover{background:#eef4fb}
+  .omsdot{color:var(--a);font-size:11px;vertical-align:1px}
   .hicon:disabled{opacity:.35;cursor:default}
   .hbadge{position:absolute;top:-5px;right:-5px;background:var(--nav);color:#fff;border-radius:20px;font-size:10.5px;font-weight:600;padding:1px 5px;min-width:16px}
   .hicon.alarm .hbadge{background:#20130a}
@@ -339,8 +352,11 @@
   <div class="topspace"></div>
   <button class="hicon alarm" id="alarmBtn" title="ติดตาม พจส. (Alarm)" style="display:none">⏰<span class="hbadge" id="alarmCount">0</span></button>
   <button class="hicon alert" id="alertBtn" title="พจส. ยังไม่รายงานตัว (Alert)" style="display:none">🔔<span class="hbadge" id="alertCount">0</span></button>
+  <!-- งานจาก OMS ที่จับคู่ใบงานในระบบไม่ได้ (2026-08-14) · โผล่เฉพาะเมื่อมีรายการ เหมือน Alarm/Alert -->
+  <button class="hicon omsdoc" id="omsDocBtn" title="งานจาก OMS ที่จับคู่ใบงานไม่ได้" style="display:none">📄<span class="hbadge" id="omsDocCount">0</span></button>
   <div class="datebox"><label>วันที่</label><input type="date" id="dateInput"></div>
   <button class="btn" id="refreshBtn" style="background:var(--nav2);color:#dfe7f1;border-color:var(--nav2)">⟳ ดึงข้อมูลล่าสุด</button>
+  <button class="btn" id="omsPullBtn" style="background:var(--nav2);color:#dfe7f1;border-color:var(--nav2)" title="ดึงงานที่จ่ายไปแล้วจาก OMS มาเติมเวลาจริง (ระบบดึงเองทุก 5 นาทีอยู่แล้ว)">📥 ดึงงานจาก OMS</button>
   <div class="adminchip" id="adminChip"></div>
   <div class="saveflag" id="saveFlag">● พร้อม</div>
 </header>
@@ -728,6 +744,11 @@ function applyOpLocal(doc,op){
     doc.deleted=doc.deleted||[];
     if(doc.deleted.indexOf(String(op.id))<0)doc.deleted.push(String(op.id));
     doc.jobs=(doc.jobs||[]).filter(x=>String(x.id)!==String(op.id));
+  }else if(op.k==='omsignore'){
+    doc.omsIgnore=doc.omsIgnore||[];
+    if(doc.omsIgnore.indexOf(String(op.id))<0)doc.omsIgnore.push(String(op.id));
+  }else if(op.k==='omsunignore'){
+    doc.omsIgnore=(doc.omsIgnore||[]).filter(x=>String(x)!==String(op.id));
   }else if(op.k==='seq'){doc.seq=Math.max(Number(doc.seq)||0,Number(op.v)||0);}
 }
 /* ทุก op ต้องจำ "วันที่ที่แก้จริง" ติดไปด้วย (op.ds)
@@ -809,6 +830,7 @@ function normDay(d){
   ['attend','running','arrive','attendBy','plan','dnote','truckNote','attMeta'].forEach(k=>{if(!isPlain(d[k]))d[k]={};});
   if(!Array.isArray(d.jobs))d.jobs=[];
   if(!Array.isArray(d.deleted))d.deleted=[];
+  if(!Array.isArray(d.omsIgnore))d.omsIgnore=[];   /* เลขเอกสาร OMS ที่ CC สั่งทิ้งจากลิสต์จับคู่ไม่ได้ */
   d.jobs=d.jobs.filter(j=>j&&typeof j==='object'&&j.id!==undefined);
   if(typeof d.seq!=='number'||!isFinite(d.seq))d.seq=0;
   return d;
@@ -907,7 +929,7 @@ function sortBy(tbl,arr,getters){
 }
 function sortActive(tbl){const st=tsort[tbl];return !!(st&&st.key);}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
-function blankDay(){return {attend:{},running:{},jobs:[],seq:0,arrive:{},attendBy:{},plan:{},dnote:{},truckNote:{},attMeta:{},deleted:[],_rev:0};}
+function blankDay(){return {attend:{},running:{},jobs:[],seq:0,arrive:{},attendBy:{},plan:{},dnote:{},truckNote:{},attMeta:{},deleted:[],omsIgnore:[],_rev:0};}
 /* เทียบเบอร์รถแบบทนช่องว่าง/ตัวพิมพ์ ("EV1-095 " กับ "ev1-095" ต้องถือเป็นคันเดียวกัน)
    เพราะเบอร์รถที่บันทึกติดไปกับงานมาจากตารางกะชุดที่ใช้ตอนนั้น อาจมีช่องว่างติดมาจาก Excel */
 function normNo(v){return String(v==null?'':v).replace(/\s+/g,'').toUpperCase();}
@@ -1223,6 +1245,318 @@ function setArrive(no,p,v){
   saveDay();renderRoster();
 }
 function isRunning(no){return !!day.running[no];}
+
+/* ============================================================================
+   ดึง "งานที่จ่ายไปแล้ว" กลับมาจาก OMS แล้วเติมเวลาจริงให้เอง (2026-08-14)
+   API: GetWorkAppBU4?dateSend=YYYY-MM-DD  เรียกผ่าน Apps Script เป็นตัวกลาง
+        (เรียกตรงจากเบราว์เซอร์ไม่ได้ เพราะปลายทางเป็น http:// และไม่มี CORS)
+
+   กติกาที่ตกลงกับผู้ใช้ไว้
+   1) ดึงอัตโนมัติทุก 5 นาที (วันนี้ + วันวาน กันกะข้ามเที่ยงคืน) และ CC กดปุ่มดึงเองได้
+   2) จับคู่ยึด omsDoc = woheader_docid ก่อน · ไม่เจอใช้ (เบอร์รถ+รหัส พจส.) · ไม่เจอใช้ (เบอร์รถ+ชื่อ พจส.)
+   3) เติม "เฉพาะช่องที่ยังว่าง" ช่องที่ CC กรอกเองแล้วไม่แตะ
+        work_open_at   -> เวลาออก (depart)
+        work_source_at -> เวลากลับ (ret)
+        work_close_at  -> เวลาปิดงาน (closed)
+   4) driver_report_at -> เวลามาจริงหน้า 1 ของ "วันตามค่าจริง" แล้วให้ระบบตั้ง มา/สาย/OT ด้วยกฎเดิม
+      ถ้าไม่มีค่าเวลาไม่ทำอะไรเลย
+   5) เอกสารใบเดียวมีหลายรายการย่อย -> เรียงตาม woitem_docid จับกับเที่ยว 1,2,3 ตามลำดับ
+      ตอนถอยไปใช้รถ+รหัส/ชื่อ และคนนั้นวิ่งหลายเที่ยว -> เรียงตาม work_plan_at จับกับเที่ยว 1,2,3
+   6) แถวที่จับคู่ไม่ได้ไปรวมที่ปุ่มเอกสารในหัวเว็บ · กดถังขยะแล้วจำถาวร (day.omsIgnore) ไม่ให้กลับมา
+   ============================================================================ */
+const OMS_WORK_EVERY = 300000;               /* 5 นาที */
+let omsWorkRows = {};                        /* { 'YYYY-MM-DD': [row,...] } ดิบจาก OMS */
+let omsWorkByJob = {};                       /* { jobId: row } ผลจับคู่รอบล่าสุด — ใช้เปิดหน้าต่างข้อมูล */
+let omsWorkOrphans = [];                     /* [{ds,row}] จับคู่ไม่ได้ และยังไม่ถูกสั่งทิ้ง */
+let omsWorkTimer = null, omsWorkBusy = false, omsWorkAt = '', omsWorkMsg = '';
+
+function omsHM(iso){const m=String(iso||'').match(/T(\d{2}):(\d{2})/);return m?(m[1]+':'+m[2]):'';}
+function omsDay(iso){const m=String(iso||'').match(/^(\d{4}-\d{2}-\d{2})/);return m?m[1]:'';}
+/* ชื่อจาก OMS มีเว้นวรรคซ้อน เช่น "ออมสิน  ศรีเจริญ" ต้องยุบก่อนเทียบ */
+function normName(v){return String(v||'').replace(/\s+/g,' ').trim();}
+function omsRowKey(r){return String(r&&r.woheader_docid||'')+':'+String(r&&r.woitem_docid||'');}
+function prevDayStr(ds){const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()-1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+/* ---- จับคู่แถวจาก OMS กับใบงานของวันนั้น ---- */
+function omsMatch(rows,jobs){
+  const pairs=[], usedJob={}, usedRow={};
+  const byPlan=(a,b)=>String(a.work_plan_at||'').localeCompare(String(b.work_plan_at||''));
+  const byItem=(a,b)=>String(a.woitem_docid||'').localeCompare(String(b.woitem_docid||''));
+  const byTrip=(a,b)=>((+a.trip||0)-(+b.trip||0));
+  /* จับเป็นกลุ่ม: คีย์เดียวกันมีหลายแถว/หลายใบ ให้เรียงแล้วจับตามลำดับ */
+  const zip=(rowKey,jobKey,rowSort)=>{
+    const R={},J={};
+    rows.forEach((r,i)=>{if(usedRow[i])return;const k=rowKey(r);if(!k)return;(R[k]=R[k]||[]).push({r:r,i:i});});
+    jobs.forEach(j=>{if(usedJob[j.id])return;const k=jobKey(j);if(!k)return;(J[k]=J[k]||[]).push(j);});
+    Object.keys(R).forEach(k=>{
+      if(!J[k])return;
+      const rs=R[k].slice().sort((x,y)=>rowSort(x.r,y.r));
+      const js=J[k].slice().sort(byTrip);
+      for(let n=0;n<Math.min(rs.length,js.length);n++){
+        pairs.push({row:rs[n].r,job:js[n]});usedRow[rs[n].i]=1;usedJob[js[n].id]=1;
+      }
+    });
+  };
+  /* ชั้น 1 — เลขที่เอกสาร OMS (แม่นที่สุด) */
+  zip(r=>String(r.woheader_docid||'').trim(), j=>String(j.omsDoc||'').trim(), byItem);
+  /* ชั้น 2 — เบอร์รถ + รหัส พจส. */
+  zip(r=>{const t=normNo(r.truck_id),c=String(r.driver_id||'').trim();return (t&&c)?(t+'|'+c):'';},
+      j=>{const t=normNo(j.mainTruck||j.truck),c=String(j.code||'').trim();return (t&&c)?(t+'|'+c):'';}, byPlan);
+  /* ชั้น 3 — เบอร์รถ + ชื่อ พจส. */
+  zip(r=>{const t=normNo(r.truck_id),n=normName(r.driver_name);return (t&&n)?(t+'|'+n):'';},
+      j=>{const t=normNo(j.mainTruck||j.truck),n=normName(j.driver);return (t&&n)?(t+'|'+n):'';}, byPlan);
+  const orphans=rows.filter((r,i)=>!usedRow[i]);
+  return {pairs:pairs,orphans:orphans};
+}
+
+/* ---- คำนวณว่าจะเติมช่องไหนของใบงาน (เฉพาะช่องว่าง) ---- */
+function omsJobFills(j,row){
+  const out=[];
+  const blank=v=>!String(v===undefined||v===null?'':v).trim();
+  const put=(f,v)=>{if(v&&blank(j[f]))out.push([f,v]);};
+  put('depart', omsHM(row.work_open_at));
+  put('ret',    omsHM(row.work_source_at));
+  put('closed', omsHM(row.work_close_at));
+  /* จับคู่ติดด้วยชั้น 2/3 -> เขียนเลขเอกสารลงใบงาน รอบหน้าจะจับคู่ชั้น 1 ได้ทันที */
+  put('omsDoc', String(row.woheader_docid||''));
+  return out;
+}
+
+/* ---- เวลามาจริง + สถานะ (มา/สาย/OT) สำหรับวันใดก็ได้ ----
+   คืนชุด ops ที่ต้องเขียน หรือ [] ถ้าไม่ต้องทำอะไร (ไม่มีเวลา หรือช่องมีค่าอยู่แล้ว) */
+function omsArriveOps(ds,row,dayDoc,cfg){
+  const hm=omsHM(row.driver_report_at); if(!hm)return [];
+  const tno=normNo(row.truck_id); if(!tno)return [];
+  const t=(cfg||[]).find(x=>normNo(x.truckNo)===tno); if(!t)return [];
+  const code=String(row.driver_id||'').trim(), nm=normName(row.driver_name);
+  const d=(t.drivers||[]).find(x=>code&&String(x.code||'').trim()===code)
+        ||(t.drivers||[]).find(x=>nm&&normName(x.name)===nm);
+  if(!d)return [];
+  const cur=((dayDoc.arrive||{})[t.truckNo]||{})[d.pos]||'';
+  if(String(cur).trim())return [];                       /* CC กรอกไว้แล้ว ไม่แตะ */
+  const ops=[{k:'cell',s:'arrive',t:String(t.truckNo),p:String(d.pos),v:hm},
+             {k:'cell',s:'attendBy',t:String(t.truckNo),p:String(d.pos),v:'OMS'},
+             {k:'cell',s:'attMeta',t:String(t.truckNo),p:String(d.pos),v:String(d.code||'').trim()+'|'+(shiftOf(d,ds)||'')}];
+  /* ตั้งสถานะด้วยกฎเดิมของระบบ: วันหยุด -> OT · ไม่ใช่วันหยุดเทียบเวลาเข้ากะ สายเกิน LATE_GRACE -> สาย
+     คนที่ถูกตั้งเป็น "ลา" ไว้ ไม่แตะ (ตรงกับ setArrive) */
+  const st=((dayDoc.attend||{})[t.truckNo]||{})[d.pos]||'';
+  if(isOff(t,d,ds)){ if(st!=='ot')ops.push({k:'cell',s:'attend',t:String(t.truckNo),p:String(d.pos),v:'ot'}); }
+  else if(st===''||st==='absent'||st==='present'||st==='late'){
+    ops.push({k:'cell',s:'attend',t:String(t.truckNo),p:String(d.pos),v:
+      isLateArrival(d,hm,shiftOf(d,ds))?'late':'present'});
+  }
+  return ops;
+}
+
+/* ---- ดึง 1 วันจากระบบกลาง ---- */
+async function omsWorkFetchDay(ds){
+  if(!backendURL)return {ok:false,ds:ds,rows:[],message:'ยังไม่ได้ตั้ง URL ระบบกลาง'};
+  try{
+    const r=await fetch(backendURL+'?omswork='+encodeURIComponent(ds)+'&t='+Date.now()+tk());
+    const d=await r.json();
+    return (d&&typeof d==='object')?d:{ok:false,ds:ds,rows:[],message:'คำตอบจากระบบกลางไม่ถูกต้อง'};
+  }catch(e){return {ok:false,ds:ds,rows:[],message:'ต่อระบบกลางไม่ได้'};}
+}
+
+/* ---- รอบดึงหลัก: วันนี้ + วันวาน ---- */
+async function omsWorkPull(manual){
+  if(omsWorkBusy)return;
+  /* ดึงอัตโนมัติ: ข้ามถ้า CC กำลังพิมพ์ / มีของค้างรอบันทึก / แท็บถูกซ่อน (เกณฑ์เดียวกับ pollDay) */
+  if(!manual&&(document.hidden||editMode||dirty||saveBusy||busyTyping()))return;
+  if(!backendURL){if(manual)alert('ยังไม่ได้ตั้ง URL ระบบกลาง');return;}
+  omsWorkBusy=true;
+  try{
+    const today=curDate, yst=prevDayStr(curDate);
+    const dates=[today,yst];
+    const got=await Promise.all(dates.map(ds=>omsWorkFetchDay(ds)));
+    omsWorkMsg=got.filter(x=>x&&!x.ok&&x.message).map(x=>x.message)[0]||'';
+    const orphans=[]; let filled=0;
+    for(let n=0;n<dates.length;n++){
+      const ds=dates[n], res=got[n]||{};
+      const rows=Array.isArray(res.rows)?res.rows:[];
+      omsWorkRows[ds]=rows;
+      if(!rows.length)continue;
+      const isCur=(ds===curDate);
+      /* ข้อมูลของวันนั้น: วันที่เปิดอยู่ใช้ตัวในหน่วยความจำ วันอื่นดึงเอกสารมาอ่าน */
+      let doc=day, cfg=config;
+      if(!isCur){
+        const raw=await dayFetch(ds);
+        try{ doc=normDay(raw?JSON.parse(raw):{}); }catch(e){ doc=normDay({}); }
+        const rv=rosterFor(ds); cfg=(rv&&validConfig(rv.roster))?normRoster(rv.roster):config;
+      }
+      const ign={}; (doc.omsIgnore||[]).forEach(x=>ign[String(x)]=1);
+      const m=omsMatch(rows,doc.jobs||[]);
+      const ops=[];
+      m.pairs.forEach(({row,job})=>{
+        omsWorkByJob[String(job.id)]=row;
+        const fills=omsJobFills(job,row);
+        fills.forEach(([f,v])=>{
+          filled++;
+          if(isCur)setJobField(job,f,v); else ops.push({k:'jobset',id:String(job.id),f:f,v:v});
+        });
+      });
+      /* เวลามาจริง — ทุกแถว (ไม่ว่าจับคู่ใบงานได้หรือไม่) ลงวันตามค่าจริงของ driver_report_at */
+      rows.forEach(row=>{
+        const rds=omsDay(row.driver_report_at); if(!rds)return;
+        if(rds===ds){
+          const a=omsArriveOps(ds,row,doc,cfg);
+          a.forEach(op=>{ filled++; if(isCur)pushOp(op); else ops.push(op); });
+        }
+      });
+      m.orphans.forEach(row=>{ if(!ign[omsRowKey(row)])orphans.push({ds:ds,row:row}); });
+      if(!isCur&&ops.length)await dayPatch(ds,ops);
+    }
+    omsWorkOrphans=orphans;
+    omsWorkAt=nowHM();
+    if(filled)saveDay();
+    updateOmsDocBtn();
+    if(!document.hidden)render();
+    if(manual){
+      const n=omsWorkOrphans.length;
+      if(omsWorkMsg)alert('ดึงข้อมูลจาก OMS ไม่สำเร็จ\n\n'+omsWorkMsg);
+      else alert('ดึงข้อมูลจาก OMS แล้ว\n\nเติมข้อมูลให้ '+filled+' ช่อง'+(n?('\nมี '+n+' รายการที่จับคู่ใบงานไม่ได้ ดูที่ปุ่ม 📄 บนหัวเว็บ'):''));
+    }
+  }finally{ omsWorkBusy=false; }
+}
+function startOmsWork(){
+  clearInterval(omsWorkTimer);
+  if(!backendURL)return;
+  omsWorkTimer=setInterval(()=>omsWorkPull(false),OMS_WORK_EVERY);
+  setTimeout(()=>omsWorkPull(false),3000);      /* เปิดหน้ามาดึงรอบแรกหลังหน้าวาดเสร็จ */
+}
+
+/* ---------- หน้าจอฝั่ง OMS: ปุ่มเอกสาร · ลิสต์จับคู่ไม่ได้ · จับคู่เอง · ถังขยะ ---------- */
+function updateOmsDocBtn(){
+  const b=document.getElementById('omsDocBtn'), c=document.getElementById('omsDocCount');
+  if(!b||!c)return;
+  const n=omsWorkOrphans.length;
+  c.textContent=String(n);
+  b.style.display=n?'':'none';
+  b.title='งานจาก OMS ที่จับคู่ใบงานไม่ได้ '+n+' รายการ'+(omsWorkAt?(' · ดึงล่าสุด '+omsWorkAt):'');
+}
+/* ค่าที่โชว์ในหน้าต่างข้อมูล — ป้ายไทยเรียงตามลำดับที่อ่านง่าย */
+const OMS_FIELDS=[
+  ['work_plan_at','เวลาจ่ายงาน (OMS)'],['woheader_docid','เลขที่เอกสาร'],['woitem_docid','รายการย่อย'],
+  ['woheader_status','สถานะเอกสาร'],['truck_id','เบอร์รถ'],['tail_id','เบอร์หาง'],
+  ['driver_id','รหัส พจส.'],['driver_name','ชื่อ พจส.'],
+  ['driver_report_at','เวลารายงานตัว'],['work_open_at','เวลาเปิดงาน / ออก'],
+  ['work_source_at','ถึงต้นทาง'],['work_close_at','เวลาปิดงาน'],
+  ['pro_name','สินค้า'],['pro_id','รหัสสินค้า'],
+  ['source_name','ต้นทาง'],['source_id','รหัสต้นทาง'],
+  ['dest_name','ปลายทาง'],['dest_id','รหัสปลายทาง']
+];
+function omsRowTable(row){
+  return '<div class="dgrid">'+OMS_FIELDS.map(([k,lab])=>{
+    const v=row[k];
+    return '<div class="lb">'+esc(lab)+'</div><div>'+(v===null||v===undefined||v===''?'<span class="cno">—</span>':'<span class="mono">'+esc(String(v))+'</span>')+'</div>';
+  }).join('')+'</div>';
+}
+/* หน้าต่างข้อมูล OMS ของใบงานหนึ่งใบ (กดจากช่องชื่อ พจส. หน้า 3) */
+function openOmsJobInfo(jobId){
+  const j=(day.jobs||[]).find(x=>String(x.id)===String(jobId));
+  const row=omsWorkByJob[String(jobId)];
+  const m=document.getElementById('modal');
+  m.innerHTML='<div class="modal-card" style="max-width:720px">'
+    +'<div class="modal-head"><h2>ข้อมูลจาก OMS</h2><button class="modal-x" id="closeModal">✕</button></div>'
+    +(row?('<div class="hint" style="margin-bottom:10px">ใบงานของ <b>'+esc(j?(j.driver||''):'')+'</b> เบอร์รถ <b>'+esc(j?(j.mainTruck||j.truck||''):'')+'</b> เที่ยว <b>'+esc(j?(j.trip||''):'')+'</b><br>'
+        +'ชื่อสินค้า/ต้นทาง/ปลายทางฝั่ง OMS อาจไม่ตรงกับทะเบียนเส้นทางหน้า 5 แต่<b>เลขที่เอกสารตรงกันแน่นอน</b></div>'
+        +omsRowTable(row))
+       :('<div class="hint" style="color:var(--absent)">ยังไม่มีข้อมูลจาก OMS สำหรับใบงานนี้<br>'
+        +'อาจเป็นเพราะยังไม่ได้ดึง (ระบบดึงเองทุก 5 นาที) หรือ OMS ยังไม่มีงานใบนี้ · กดปุ่ม 📥 ดึงงานจาก OMS บนหัวเว็บเพื่อดึงเดี๋ยวนี้</div>'))
+    +'<div class="modal-actions"><button class="btn primary" id="cancelJob">ปิด</button></div></div>';
+  m.style.display='flex';
+}
+/* ลิสต์รายการที่จับคู่ไม่ได้ */
+function openOmsOrphans(){
+  const m=document.getElementById('modal');
+  const rows=omsWorkOrphans.map((x,i)=>{
+    const r=x.row;
+    return '<tr>'
+      +'<td class="mono">'+esc(omsDay(r.work_plan_at)||x.ds)+'</td>'
+      +'<td>'+esc(r.pro_name||'')+'</td>'
+      +'<td>'+esc(r.source_name||'')+'</td>'
+      +'<td>'+esc(r.dest_name||'')+'</td>'
+      +'<td class="mono">'+esc(String(r.woheader_docid||'')+(r.woitem_docid?(':'+r.woitem_docid):''))+'</td>'
+      +'<td class="mono">'+esc(r.truck_id||'')+'</td>'
+      +'<td>'+esc(normName(r.driver_name))+'</td>'
+      +'<td style="white-space:nowrap">'
+        +'<button class="btn mini" data-omsinfo="'+i+'" title="ดูข้อมูลเต็มของรายการนี้">ดูข้อมูล</button> '
+        +'<button class="btn mini primary" data-omspair="'+i+'" title="เลือกใบงานในระบบเพื่อจับคู่กับรายการนี้เอง">🔗 จับคู่ใบงาน</button> '
+        +'<button class="del" data-omsdrop="'+i+'" title="ทิ้งรายการนี้ออกจากลิสต์">🗑</button>'
+      +'</td></tr>';
+  }).join('');
+  m.innerHTML='<div class="modal-card" style="max-width:1100px">'
+    +'<div class="modal-head"><h2>งานจาก OMS ที่จับคู่ใบงานไม่ได้ '+omsWorkOrphans.length+' รายการ</h2><button class="modal-x" id="closeModal">✕</button></div>'
+    +'<div class="hint" style="margin-bottom:10px">ดึงล่าสุด '+esc(omsWorkAt||'—')+' · ระบบดึงเองทุก 5 นาที (วันนี้ + วันวาน)<br>'
+    +'กด <b>จับคู่ใบงาน</b> เพื่อเลือกใบงานในระบบเองแล้วระบบจะเติมเวลาให้ · กด <b>🗑</b> เพื่อทิ้งรายการออกจากลิสต์ (ไม่ได้ลบอะไรในระบบ OMS)</div>'
+    +'<div class="tablewrap" style="max-height:56vh"><table style="min-width:1000px"><thead><tr>'
+    +'<th>วันที่</th><th>ชื่อสินค้า</th><th>ต้นทาง</th><th>ปลายทาง</th><th>เลขที่ใบงาน</th><th>เบอร์รถ</th><th>ชื่อ พจส.</th><th></th>'
+    +'</tr></thead><tbody>'+(rows||'<tr><td colspan="8" class="empty-note">ไม่มีรายการค้าง จับคู่ได้ครบทุกใบ</td></tr>')+'</tbody></table></div>'
+    +'<div class="modal-actions"><button class="btn" id="omsPullNow">📥 ดึงใหม่เดี๋ยวนี้</button><button class="btn primary" id="cancelJob">ปิด</button></div></div>';
+  m.style.display='flex';
+}
+/* เลือกใบงานในระบบเพื่อจับคู่เอง — โชว์งานที่จ่ายแล้วของวันนั้น */
+function openOmsPair(idx){
+  const x=omsWorkOrphans[idx]; if(!x)return;
+  const r=x.row;
+  const list=(day.jobs||[]).slice();
+  const rows=list.map(j=>{
+    const has=String(j.omsDoc||'').trim();
+    return '<tr>'
+      +'<td class="mono">'+esc(j.mainTruck||j.truck||'')+'</td>'
+      +'<td class="mono">'+esc(j.code||'')+'</td>'
+      +'<td>'+esc(j.driver||'')+'</td>'
+      +'<td>'+esc(j.product||'')+'</td>'
+      +'<td class="mono" style="text-align:center">'+esc(j.trip||'')+'</td>'
+      +'<td class="mono">'+esc(j.depart||'—')+'</td>'
+      +'<td class="mono">'+esc(j.closed||'—')+'</td>'
+      +'<td class="mono">'+(has?esc(has):'<span class="cno">ยังไม่มี</span>')+'</td>'
+      +'<td><button class="btn mini primary" data-omspick="'+esc(String(j.id))+'" data-omsidx="'+idx+'">เลือกใบนี้</button></td>'
+      +'</tr>';
+  }).join('');
+  const m=document.getElementById('modal');
+  m.innerHTML='<div class="modal-card" style="max-width:1100px">'
+    +'<div class="modal-head"><h2>จับคู่ใบงานเอง</h2><button class="modal-x" id="closeModal">✕</button></div>'
+    +'<div class="hint" style="margin-bottom:10px">รายการจาก OMS: <b>'+esc(r.truck_id||'')+'</b> · '+esc(normName(r.driver_name))+' · '+esc(r.pro_name||'')
+      +' · เลขที่เอกสาร <b class="mono">'+esc(String(r.woheader_docid||''))+'</b><br>'
+      +'เลือกใบงานของวันที่ '+esc(curDate)+' ที่จะจับคู่ · เมื่อจับคู่แล้วระบบจะเขียนเลขที่เอกสารลงใบงานนั้น รอบต่อไปจะจับคู่ได้เองอัตโนมัติ</div>'
+    +'<div class="tablewrap" style="max-height:52vh"><table style="min-width:1000px"><thead><tr>'
+    +'<th>เบอร์รถหลัก</th><th>รหัส พจส.</th><th>ชื่อ พจส.</th><th>สินค้า</th><th style="text-align:center">เที่ยว</th>'
+    +'<th>เวลาออก</th><th>เวลาปิดงาน</th><th>เลขที่เอกสารเดิม</th><th></th>'
+    +'</tr></thead><tbody>'+(rows||'<tr><td colspan="9" class="empty-note">วันนี้ยังไม่มีใบงานให้จับคู่</td></tr>')+'</tbody></table></div>'
+    +'<div class="modal-actions"><button class="btn" id="omsBackList">← กลับไปลิสต์</button><button class="btn primary" id="cancelJob">ปิด</button></div></div>';
+  m.style.display='flex';
+}
+/* ยืนยันการจับคู่ที่ CC เลือกเอง */
+function omsPairPick(jobId,idx){
+  const x=omsWorkOrphans[idx]; if(!x)return;
+  const j=(day.jobs||[]).find(y=>String(y.id)===String(jobId)); if(!j)return;
+  const r=x.row;
+  setJobField(j,'omsDoc',String(r.woheader_docid||''));
+  omsJobFills(j,r).forEach(([f,v])=>setJobField(j,f,v));
+  omsWorkByJob[String(j.id)]=r;
+  omsWorkOrphans.splice(idx,1);
+  saveDay();updateOmsDocBtn();render();
+  openOmsOrphans();
+}
+/* ถังขยะ — ถามยืนยันก่อน แล้วจำถาวรไม่ให้กลับมาโผล่รอบถัดไป */
+function omsDrop(idx){
+  const x=omsWorkOrphans[idx]; if(!x)return;
+  const r=x.row;
+  const msg='ทิ้งรายการนี้ออกจากลิสต์?\n\n'
+    +'เลขที่เอกสาร: '+String(r.woheader_docid||'')+(r.woitem_docid?(':'+r.woitem_docid):'')+'\n'
+    +'เบอร์รถ: '+String(r.truck_id||'')+' · พจส.: '+normName(r.driver_name)+'\n'
+    +'สินค้า: '+String(r.pro_name||'')+'\n\n'
+    +'ระบบจะจำไว้ว่าไม่ต้องแสดงรายการนี้อีก และจะไม่ลบอะไรในระบบ OMS';
+  if(!confirm(msg))return;
+  const key=omsRowKey(r);
+  if(x.ds===curDate){ pushOp({k:'omsignore',id:key}); saveDay(); }
+  else dayPatch(x.ds,[{k:'omsignore',id:key}]);
+  omsWorkOrphans.splice(idx,1);
+  updateOmsDocBtn();
+  openOmsOrphans();
+}
 
 /* ---------- KPIs ---------- */
 /* ใครอยู่ใน "ฐานการจ่ายงาน" ของวันนี้ = คนที่มาทำงานจริง (มา / มาสาย / มาทำ OT วันหยุด)
@@ -1929,7 +2263,7 @@ async function doLogin(){
   updateAdminChip();closeModal();
   flag('saving');
   await withBusy('กำลังโหลดข้อมูล…',async()=>{await loadConfig();await loadRoutes();await loadOmsCfg();await loadDay();});
-  flag('ok');render();startPoll();startAlarms();if(tab==='roster')scrollToCurrentHour();
+  flag('ok');render();startPoll();startAlarms();startOmsWork();if(tab==='roster')scrollToCurrentHour();
 }
 function stampBy(){day.by=adminName;}
 function syncActual(){const a=document.getElementById('j_actual');if(a&&!a.dataset.touched)a.value=document.getElementById('j_truck').value;}
@@ -2177,7 +2511,7 @@ function boardTable(){
     return `<tr>
       <td class="mono" style="text-align:center">${idx}</td>
       <td class="mono">${esc(j.date||curDate)}</td>
-      <td><div>${esc(j.driver||'-')}</div><div class="cno">${esc(j.product||'')}${j.trip?(' · เที่ยว '+esc(j.trip)):''}</div></td>
+      <td class="omsname" data-omsjob="${esc(String(j.id))}" title="กดเพื่อดูข้อมูลจาก OMS ของใบงานนี้"><div>${esc(j.driver||'-')}${omsWorkByJob[String(j.id)]?' <span class="omsdot" title="มีข้อมูลจาก OMS แล้ว">●</span>':''}</div><div class="cno">${esc(j.product||'')}${j.trip?(' · เที่ยว '+esc(j.trip)):''}</div></td>
       <td class="truck"><span class="plate">${esc(j.actualTruck||j.mainTruck||j.truck||'')}</span>${TSEQ[j.id]?(' <span class="tag tseq">เที่ยวที่ '+TSEQ[j.id]+'</span>'):''} ${jtBadgeJ(j)}</td>
       <td class="mono">${j.depart?esc(j.depart)+' <span class="cno">น.</span>':'<span class="cno">—</span>'}</td>
       <td>${etaCell}</td>
@@ -2973,6 +3307,9 @@ document.getElementById('dateInput').addEventListener('change',async e=>{
   closeWidget('alarm');closeWidget('alert');loadNotify();tickAlarms();render();if(tab==='roster')scrollToCurrentHour();});
 
 document.getElementById('view').addEventListener('click',e=>{
+  /* ช่องชื่อ พจส. หน้า 3 -> หน้าต่างข้อมูลจาก OMS (ไม่จับคลิกที่ช่องกรอก/ปุ่มในแถวเดียวกัน) */
+  const on=e.target.closest('td.omsname');
+  if(on&&!e.target.closest('input,button,select,textarea')){openOmsJobInfo(on.dataset.omsjob);return;}
   const tg=e.target.closest('[data-grp]');
   if(tg){const g=tg.dataset.grp;sumProdOpen[g]=!sumProdOpen[g];lsSet('fleet:sumprod',JSON.stringify(sumProdOpen));renderSummary();return;}
   const dp=e.target.closest('[data-delprod]');
@@ -3139,6 +3476,24 @@ document.getElementById('view').addEventListener('input',e=>{
   if(e.target.dataset&&e.target.dataset.depart!==undefined)return;   /* รอบันทึกตอนออกจากช่อง (ดู listener change) */
 });
 document.getElementById('modal').addEventListener('click',e=>{
+  /* ---- ปุ่มในลิสต์ "จับคู่ไม่ได้" (2026-08-14) ---- */
+  const oi=e.target.closest('[data-omsinfo]');
+  if(oi){const x=omsWorkOrphans[+oi.dataset.omsinfo];if(x){
+    const m=document.getElementById('modal');
+    m.innerHTML='<div class="modal-card" style="max-width:720px">'
+      +'<div class="modal-head"><h2>ข้อมูลจาก OMS (รายการที่จับคู่ไม่ได้)</h2><button class="modal-x" id="closeModal">✕</button></div>'
+      +omsRowTable(x.row)
+      +'<div class="modal-actions"><button class="btn" id="omsBackList">← กลับไปลิสต์</button><button class="btn primary" id="cancelJob">ปิด</button></div></div>';
+    m.style.display='flex';}
+    return;}
+  const op=e.target.closest('[data-omspair]');
+  if(op){openOmsPair(+op.dataset.omspair);return;}
+  const od=e.target.closest('[data-omsdrop]');
+  if(od){omsDrop(+od.dataset.omsdrop);return;}
+  const opk=e.target.closest('[data-omspick]');
+  if(opk){omsPairPick(opk.dataset.omspick,+opk.dataset.omsidx);return;}
+  if(e.target.closest('#omsBackList')){openOmsOrphans();return;}
+  if(e.target.closest('#omsPullNow')){closeModal();omsWorkPull(true);return;}
   if(e.target.closest('#loginSave')){doLogin();return;}
   if(e.target.closest('#resetBackend')){
     lsSet('fleet:backend:manual','0');lsSet('fleet:backend',BACKEND_URL_DEFAULT);
@@ -3194,6 +3549,8 @@ document.getElementById('modal').addEventListener('click',e=>{
   if(e.target.closest('#cancelJob')||e.target.closest('#closeModal')||e.target.id==='modal'){closeModal();return;}
 });
 document.getElementById('adminChip').addEventListener('click',e=>{if(e.target.closest('#changeAdmin')||e.target.closest('#loginBtn'))openLogin();});
+document.getElementById('omsDocBtn').addEventListener('click',()=>openOmsOrphans());
+document.getElementById('omsPullBtn').addEventListener('click',()=>omsWorkPull(true));
 document.getElementById('refreshBtn').addEventListener('click',async()=>{
   flag('saving');
   await withBusy('กำลังดึงข้อมูลจาก Google Sheet…',async()=>{await loadConfig();await loadRoutes();await loadOmsCfg();await loadDay();});
@@ -3765,12 +4122,15 @@ function chGroupedBars(items,series,aria){
   const padL=28,padR=14,padT=16,xBand=20,H=168;
   const innerH=H-padT-xBand, base=padT+innerH;
   const BG=2;                                             /* ช่องว่างสีพื้นระหว่างแท่งในกลุ่มเดียวกัน */
-  const gW=Math.max(46,S*20+22);
+  /* ความกว้างต่อวันหดลงเมื่อวันมาก (ช่วง 1 เดือน) เพื่อไม่ให้กราฟยาวเกินไป — ที่เหลือเลื่อนดูข้างได้ */
+  const gW=Math.max(N<=8?52:N<=14?46:N<=24?36:S*9+10, S*7+6);
   const W=Math.max(240,padL+padR+N*gW);
   const barW=Math.max(6,Math.min(22,(gW*0.7-(S-1)*BG)/S));
   const inner=barW*S+BG*(S-1);
   const y=v=>base-(v/max)*innerH;
   const showVals=barW>=11;
+  const everyX=Math.max(1,Math.ceil(N/14));               /* ป้ายวันที่เว้นระยะเมื่อวันมาก ไม่ให้ตัวหนังสือทับกัน */
+  const showX=i=>(i%everyX)===0||i===N-1;
   /* ถ้าวันน้อย ๆ แล้วกลุ่มแท่งแคบกว่าพื้นที่วาด ให้จัดไว้กลางแกน ไม่ให้เหลือที่ว่างข้างเดียว */
   const off=Math.max(0,(W-padL-padR-N*gW)/2);
   const groups=items.map((it,i)=>{
@@ -3785,7 +4145,7 @@ function chGroupedBars(items,series,aria){
       <title>${esc(it.tip)}</title>
       <rect x="${gx}" y="${padT-6}" width="${gW}" height="${innerH+6}" fill="${on?'rgba(43,108,176,.07)':'transparent'}"></rect>
       ${bars}
-      <text x="${cx}" y="${H-6}" font-size="8" text-anchor="middle" fill="${CH_MUTE}">${esc(String(it.ds).slice(5))}</text></g>`;
+      ${showX(i)?`<text x="${cx}" y="${H-6}" font-size="8" text-anchor="middle" fill="${CH_MUTE}">${esc(String(it.ds).slice(5))}</text>`:''}</g>`;
   }).join('');
   return `<div class="dscroll"><svg class="dsvg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(aria)}">
     ${chGrid(padL,W-padR,ticks,y)}${chYAxis(padL,padT,base)}${groups}
@@ -3795,10 +4155,22 @@ function dTrend(daily,pick,lab,color){
   const vals=daily.map(r=>chNum(pick(r))), N=vals.length;
   if(!N)return '';
   const max=chNiceMax(Math.max(0,...vals)), ticks=chTicks(max);
-  const padL=28,padR=14,padT=16,xBand=20,H=150;
+  /* ระยะห่างต่อวันหดลงเมื่อวันมาก เพื่อไม่ให้กราฟยาวเป็นริบบิ้นบาง ๆ
+     (ช่วง 1 เดือนเดิมกว้าง ~1,790px ตอนนี้เหลือ ~1,030px) ที่เหลือให้เลื่อนดูข้างในกล่อง */
+  const step = N<=8?56 : N<=14?44 : N<=24?34 : 26;
+  const padL=28,padR=14,padT=18,xBand=20,H=168;
   const innerH=H-padT-xBand, base=padT+innerH;
-  const W=Math.max(240,padL+padR+N*46);
+  const W=Math.max(240,padL+padR+N*step);
   const xa=padL+16, xb=W-padR-6;
+  /* ป้ายตัวเลขบนจุด: ไม่ติดทุกจุด (ชนกันและอ่านไม่ออกเวลาวันมาก)
+     ติดที่จุดแรก/จุดท้าย/จุดสูงสุด/จุดต่ำสุด และทุก ๆ ช่วงหนึ่ง — วันน้อยก็ติดครบเหมือนเดิม */
+  const showAllVals = step>=44;
+  const everyVal = Math.max(1,Math.ceil(N/10));
+  const iMax = vals.indexOf(Math.max(...vals)), iMin = vals.indexOf(Math.min(...vals));
+  const showVal = i => showAllVals || i===0 || i===N-1 || i===iMax || i===iMin || (i%everyVal)===0;
+  /* ป้ายวันที่ใต้แกน: เว้นระยะเมื่อวันมาก ไม่ให้ตัวหนังสือทับกัน */
+  const everyX = Math.max(1,Math.ceil(N/14));
+  const showX = i => (i%everyX)===0 || i===N-1;
   const x=i=>N===1?(xa+xb)/2:xa+i*(xb-xa)/(N-1), y=v=>base-(v/max)*innerH;
   const pts=vals.map((v,i)=>x(i)+','+y(v)).join(' ');
   const area='M'+x(0)+','+base+' L'+vals.map((v,i)=>x(i)+','+y(v)).join(' L')+' L'+x(N-1)+','+base+' Z';
@@ -3811,8 +4183,8 @@ function dTrend(daily,pick,lab,color){
       <title>${esc(dayDetailText(daily[i]))}</title>
       <rect x="${x(i)-hit}" y="${padT-6}" width="${hit*2}" height="${innerH+6}" fill="transparent"></rect>
       <circle cx="${x(i)}" cy="${y(v)}" r="${dashPickDay===daily[i].ds?5:4}" fill="${dashPickDay===daily[i].ds?color:'#fff'}" stroke="${color}" stroke-width="2"></circle>
-      <text x="${x(i)}" y="${y(v)-9}" font-size="8.5" text-anchor="middle" fill="${CH_INK}" style="font-variant-numeric:tabular-nums">${v}</text>
-      <text x="${x(i)}" y="${H-6}" font-size="8" text-anchor="middle" fill="${CH_MUTE}">${daily[i].ds.slice(5)}</text></g>`).join('')}
+      ${(showVal(i)||dashPickDay===daily[i].ds)?`<text x="${x(i)}" y="${y(v)-9}" font-size="8.5" text-anchor="middle" fill="${CH_INK}" style="font-variant-numeric:tabular-nums">${v}</text>`:''}
+      ${showX(i)?`<text x="${x(i)}" y="${H-6}" font-size="8" text-anchor="middle" fill="${CH_MUTE}">${daily[i].ds.slice(5)}</text>`:''}</g>`).join('')}
   </svg></div>`;
 }
 /* ---------- รายงานเที่ยวรถแยกตามกลุ่ม (2026-08) ----------
@@ -4094,7 +4466,7 @@ async function boot_(){
   await withBusy('กำลังโหลดข้อมูล…',async()=>{await loadConfig();await loadRoutes();await loadOmsCfg();await loadDay();});
   document.getElementById('fleetcount').textContent=Array.isArray(config)?config.length:'?';
   updateAdminChip();
-  render();flag('ok');startPoll();startAlarms();fitTabs();
+  render();flag('ok');startPoll();startAlarms();startOmsWork();fitTabs();
   if(tab==='roster')scrollToCurrentHour();
   if(!adminName||!backendURL)openLogin();
 }
