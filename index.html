@@ -184,6 +184,15 @@
   .hmin::placeholder{color:#b9c1cd;letter-spacing:0}
   .actualin:focus{outline:2px solid var(--accent2)}
   .modal-overlay{position:fixed;inset:0;background:rgba(15,33,56,.55);display:flex;align-items:flex-start;justify-content:center;z-index:100;padding:5vh 16px;overflow:auto}
+  /* ---- วงกลมหมุน "กำลังโหลดข้อมูล" กลางจอ ---- */
+  #busy{position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;background:rgba(15,33,56,.42)}
+  #busy.on{display:flex}
+  .busy-card{background:#fff;border-radius:16px;padding:26px 34px;box-shadow:0 20px 60px rgba(0,0,0,.28);display:flex;flex-direction:column;align-items:center;gap:14px;min-width:210px}
+  .busy-ring{width:52px;height:52px;border-radius:50%;border:5px solid var(--line);border-top-color:var(--accent);animation:busySpin .8s linear infinite}
+  .busy-text{font-weight:700;color:var(--ink);font-size:15px;text-align:center}
+  @keyframes busySpin{to{transform:rotate(360deg)}}
+  /* เครื่องที่ตั้งค่าลดการเคลื่อนไหว: ไม่หมุน แต่ยังกะพริบให้รู้ว่ากำลังทำงาน */
+  @media (prefers-reduced-motion:reduce){.busy-ring{animation:busyFade 1.2s ease-in-out infinite}@keyframes busyFade{0%,100%{opacity:1}50%{opacity:.35}}}
   .modal-card{background:#fff;border-radius:14px;max-width:760px;width:100%;padding:20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
   .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px}
   .modal-head h2{margin:0;font-size:17px}
@@ -322,6 +331,9 @@
 </nav>
 <main id="view"></main>
 <div id="modal" class="modal-overlay" style="display:none"></div>
+<!-- วงกลมหมุน "กำลังโหลดข้อมูล" กลางจอ · โผล่เฉพาะตอนโหลดที่ CC สั่งเอง (เปิดหน้า / เปลี่ยนวันที่ / ดึงจาก Google Sheet)
+     ไม่โผล่ตอนระบบเช็กข้อมูลใหม่เองทุก 15 วินาที และไม่โผล่ตอนบันทึกอัตโนมัติ -->
+<div id="busy" aria-live="polite" aria-busy="false"><div class="busy-card"><div class="busy-ring"></div><div class="busy-text">กำลังโหลดข้อมูล…</div></div></div>
 <div id="alarmBox"></div>
 <div id="alertBox"></div>
 <div id="gate">
@@ -892,6 +904,30 @@ function driverOfJob(t,j){
 
 /* save */
 let st=null;
+/* ---------- วงกลมหมุน "กำลังโหลดข้อมูล" กลางจอ ----------
+   busyOn()/busyOff() นับซ้อนกันได้ (โหลดหลายอย่างพร้อมกันก็ยังถูก)
+   รอ 220 มิลลิวินาทีก่อนโชว์ — โหลดเร็ว ๆ จะไม่กะพริบใส่ตา CC
+   มีตัวตัดที่ 20 วินาที กันค้างถ้าเน็ตหลุดกลางทาง จอจะไม่ถูกล็อกไว้ */
+let busyN=0,busyShowT=null,busyKillT=null;
+function busyPaint(on,msg){
+  const el=document.getElementById('busy');if(!el)return;
+  const tx=el.querySelector('.busy-text');if(tx&&msg)tx.textContent=msg;
+  el.classList.toggle('on',!!on);el.setAttribute('aria-busy',on?'true':'false');
+}
+function busyOn(msg){
+  busyN++;
+  if(busyN===1){
+    clearTimeout(busyShowT);clearTimeout(busyKillT);
+    busyShowT=setTimeout(()=>busyPaint(true,msg||'กำลังโหลดข้อมูล…'),220);
+    busyKillT=setTimeout(()=>{busyN=0;clearTimeout(busyShowT);busyPaint(false);},20000);
+  }else if(msg){const tx=document.querySelector('#busy .busy-text');if(tx)tx.textContent=msg;}
+}
+function busyOff(){
+  busyN=Math.max(0,busyN-1);
+  if(busyN===0){clearTimeout(busyShowT);clearTimeout(busyKillT);busyPaint(false);}
+}
+/* ครอบงานที่ต้องรอ ให้ปิดวงหมุนเสมอแม้ระหว่างทางจะพัง */
+async function withBusy(msg,fn){busyOn(msg);try{return await fn();}finally{busyOff();}}
 function flag(s){const e=document.getElementById('saveFlag');if(!e)return;if(s==='saving'){e.textContent='● กำลังบันทึก…';e.className='saveflag saving';}else if(s==='err'){e.textContent='● ต่อระบบกลางไม่ได้';e.className='saveflag saving';}else{e.textContent=backendURL?(lastSyncTxt?('● ซิงก์ '+lastSyncTxt):'● บันทึกแล้ว'):'● เก็บในเครื่อง';e.className='saveflag';}}
 function saveDay(){
   flag('saving');dirty=true;editGen++;clearTimeout(st);
@@ -1225,7 +1261,6 @@ function dispatchState(t,d){
 function summaryBar(){
   const k=kpis();
   const bx=(f,cls,lab,val)=>`<div class="stat boardbox ${cls} ${filter===f?'sel':''}" data-f="${f}" title="กดเพื่อกรองเฉพาะ ${lab}"><div class="lab">${lab}</div><div class="val mono">${val}</div></div>`;
-  const checkedIn=k.baseHead;      /* ฐานการจ่ายงาน = คนที่มาทำงานจริง (มา+สาย+OT) และมีรถให้วิ่ง */
   return `<section class="summary">
     <div class="stat hero boardbox ${filter==='all'?'sel':''}" data-f="all" title="กดเพื่อดูทั้งหมด"><div class="lab">สรุปการมาทำงาน</div><div class="val mono">${k.actual}/${k.scheduled}</div><div class="bar" style="width:${k.scheduled?Math.min(100,k.actual/k.scheduled*100):0}%"></div></div>
     ${bx('present','go','มา (ปกติ)',k.present)}
@@ -1235,9 +1270,10 @@ function summaryBar(){
     ${bx('leave','lv','ลา',k.leave)}
     ${bx('off','','วันหยุดวันนี้ (ตามตารางกะ)',k.off)}
     ${bx('incomplete','gap','ยังไม่เช็ก',k.unchecked)}
-    <div class="stat go boardbox ${filter==='dispatched'?'sel':''}" data-f="dispatched" title="กดเพื่อกรองเฉพาะคนที่จ่ายแผนงานเที่ยวแรกไปแล้ว (จากคนที่มาทำงานจริงวันนี้ ${checkedIn} คน — มา + มาสาย + มาทำ OT)"><div class="lab">จ่ายงานแล้ว</div><div class="val mono">${k.dispatched}<small>/${checkedIn}</small></div>
-      <div class="cno" style="margin-top:2px;line-height:1.5" title="กระทบยอดกับหน้า 3 &quot;งานที่จ่ายวันนี้&quot; ให้ตรงกันเสมอ&#10;เที่ยวแรก = คนที่ได้รับงานแล้ว คนละ 1 ใบ&#10;ถัดไป = ใบที่เกินเที่ยวแรก (เที่ยว 2, 3, 4 …)&#10;นอกฐาน = ใบที่เจ้าของไม่ได้อยู่ในฐานคนมาทำงานวันนี้"><b class="mono">${k.jobsTotal}</b> ใบ = เที่ยวแรก <b class="mono">${k.dispatched}</b> + ถัดไป <b class="mono">${k.extraTrips}</b>${
-        k.jobsOutside?(' + <button class="linkish" id="outsideBtn" style="color:#b8860b;font-weight:700" title="ใบงานที่เจ้าของไม่อยู่ในฐานคนมาทำงานวันนี้ — กดเพื่อดูว่าเป็นใบไหน ของใคร เพราะอะไร">นอกฐาน '+k.jobsOutside+'</button>'):''}</div></div>
+    <!-- จ่ายงานแล้ว = จำนวนใบงานที่จ่ายออกไปวันนี้ทั้งหมด รวมทุกเที่ยว (เที่ยว 1 + 2 + 3 …)
+         เลขตัวเดียว ไม่มีตัวหาร ไม่แยกเที่ยว ตามที่ผู้ใช้สั่ง 2026-08-13
+         เลขนี้ = "งานที่จ่ายวันนี้" ของหน้า 3 ตัวเดียวกันเป๊ะ จึงตรงกันเสมอโดยไม่ต้องกระทบยอด -->
+    <div class="stat go boardbox ${filter==='dispatched'?'sel':''}" data-f="dispatched" title="จำนวนใบงานที่จ่ายออกไปวันนี้ทั้งหมด รวมทุกเที่ยว (เที่ยว 1 + เที่ยว 2 + เที่ยว 3 …)&#10;ตรงกับ &quot;งานที่จ่ายวันนี้&quot; ในหน้า 3 เสมอ&#10;&#10;กดเพื่อกรองตารางเฉพาะ พจส. ที่ได้รับงานแล้ว"><div class="lab">จ่ายงานแล้ว</div><div class="val mono">${k.jobsTotal}</div></div>
     <div class="stat${k.pendingDispatch?' miss':''} boardbox ${filter==='todispatch'?'sel':''}" data-f="todispatch" title="กดเพื่อกรองเฉพาะคนที่มา/สายแล้วแต่ยังไม่ได้จ่ายแผนงานเที่ยวแรก"><div class="lab">เหลือรอจ่ายงาน</div><div class="val mono">${k.pendingDispatch}</div></div>
   </section>`;
 }
@@ -1770,7 +1806,10 @@ function openModal(truck,pos){
   preselectRoute();fillOrigins();syncActual();syncDriverInfo();syncTrip();
 }
 function closeModal(){const m=document.getElementById('modal');m.style.display='none';m.innerHTML='';}
-/* หน้าต่างรายการ "ใบงานนอกฐาน" — ใบที่หน้า 3 นับ แต่ไม่มีเจ้าของอยู่ในฐานคนมาทำงานของหน้า 1 */
+/* หน้าต่างรายการ "ใบงานนอกฐาน" — ใบงานที่เจ้าของไม่ได้อยู่ในฐานคนมาทำงานวันนี้
+   (ลา / ขาด / วันหยุด / ยังไม่เช็ก / รถ trainee / เบอร์รถไม่มีในตารางกะ)
+   ไม่มีปุ่มบนหน้าจอแล้ว (ถอดออก 2026-08-13 ตามที่ผู้ใช้สั่ง — การ์ดโชว์เลขเดียวพอ)
+   ถ้าต้องการดูรายการ ให้เปิด Console (F12) แล้วพิมพ์ว่า  openOutsideJobs() */
 function openOutsideJobs(){
   const list=outsideJobs(), k=kpis();
   const m=document.getElementById('modal');
@@ -1835,7 +1874,9 @@ async function doLogin(){
   if(url&&url!==BACKEND_URL_DEFAULT){backendURL=url;lsSet('fleet:backend',url);lsSet('fleet:backend:manual','1');}
   else{backendURL=BACKEND_URL_DEFAULT;lsSet('fleet:backend',BACKEND_URL_DEFAULT);lsSet('fleet:backend:manual','0');}
   updateAdminChip();closeModal();
-  flag('saving');await loadConfig();await loadRoutes();await loadOmsCfg();await loadDay();flag('ok');render();startPoll();startAlarms();if(tab==='roster')scrollToCurrentHour();
+  flag('saving');
+  await withBusy('กำลังโหลดข้อมูล…',async()=>{await loadConfig();await loadRoutes();await loadOmsCfg();await loadDay();});
+  flag('ok');render();startPoll();startAlarms();if(tab==='roster')scrollToCurrentHour();
 }
 function stampBy(){day.by=adminName;}
 function syncActual(){const a=document.getElementById('j_actual');if(a&&!a.dataset.touched)a.value=document.getElementById('j_truck').value;}
@@ -2873,10 +2914,12 @@ function render(){
 
 /* ---------- events (delegated) ---------- */
 document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(b){tab=b.dataset.tab;if(tab==='dash')setTimeout(()=>dashLoad(),0);if(tab==='dispatch')dispFirst=true;if(tab==='summary')sumFirst=true;render();if(tab==='roster')scrollToCurrentHour();}});
-document.getElementById('dateInput').addEventListener('change',async e=>{await flushSaveBeforeSwitch();curDate=e.target.value||todayStr();applyRosterForDate();await loadDay();closeWidget('alarm');closeWidget('alert');loadNotify();tickAlarms();render();if(tab==='roster')scrollToCurrentHour();});
+document.getElementById('dateInput').addEventListener('change',async e=>{
+  await withBusy('กำลังโหลดข้อมูลของวันที่เลือก…',async()=>{
+    await flushSaveBeforeSwitch();curDate=e.target.value||todayStr();applyRosterForDate();await loadDay();});
+  closeWidget('alarm');closeWidget('alert');loadNotify();tickAlarms();render();if(tab==='roster')scrollToCurrentHour();});
 
 document.getElementById('view').addEventListener('click',e=>{
-  if(e.target.closest('#outsideBtn')){openOutsideJobs();return;}   /* กดเลข "นอกฐาน" บนการ์ดหน้า 1 */
   const tg=e.target.closest('[data-grp]');
   if(tg){const g=tg.dataset.grp;sumProdOpen[g]=!sumProdOpen[g];lsSet('fleet:sumprod',JSON.stringify(sumProdOpen));renderSummary();return;}
   const dp=e.target.closest('[data-delprod]');
@@ -3098,7 +3141,10 @@ document.getElementById('modal').addEventListener('click',e=>{
   if(e.target.closest('#cancelJob')||e.target.closest('#closeModal')||e.target.id==='modal'){closeModal();return;}
 });
 document.getElementById('adminChip').addEventListener('click',e=>{if(e.target.closest('#changeAdmin')||e.target.closest('#loginBtn'))openLogin();});
-document.getElementById('refreshBtn').addEventListener('click',async()=>{flag('saving');await loadConfig();await loadRoutes();await loadOmsCfg();await loadDay();flag('ok');render();if(tab==='roster')scrollToCurrentHour();});
+document.getElementById('refreshBtn').addEventListener('click',async()=>{
+  flag('saving');
+  await withBusy('กำลังดึงข้อมูลจาก Google Sheet…',async()=>{await loadConfig();await loadRoutes();await loadOmsCfg();await loadDay();});
+  flag('ok');render();if(tab==='roster')scrollToCurrentHour();});
 document.getElementById('modal').addEventListener('input',e=>{
   if(e.target.id==='j_truck'){fillShift();preselectRoute();fillOrigins();syncActual();syncDriverInfo();syncTrip();return;}
   if(e.target.id==='j_shift'){syncDriverInfo();return;}
@@ -4054,7 +4100,7 @@ async function boot_(){
   const man=lsGet('fleet:backend:manual')==='1'?(lsGet('fleet:backend')||''):'';
   backendURL=man||BACKEND_URL_DEFAULT||'';
   if(!man&&lsGet('fleet:backend')&&lsGet('fleet:backend')!==BACKEND_URL_DEFAULT)lsSet('fleet:backend',BACKEND_URL_DEFAULT);
-  await loadConfig();await loadRoutes();await loadOmsCfg();await loadDay();
+  await withBusy('กำลังโหลดข้อมูล…',async()=>{await loadConfig();await loadRoutes();await loadOmsCfg();await loadDay();});
   document.getElementById('fleetcount').textContent=Array.isArray(config)?config.length:'?';
   updateAdminChip();
   render();flag('ok');startPoll();startAlarms();fitTabs();
