@@ -184,15 +184,38 @@
   .hmin::placeholder{color:#b9c1cd;letter-spacing:0}
   .actualin:focus{outline:2px solid var(--accent2)}
   .modal-overlay{position:fixed;inset:0;background:rgba(15,33,56,.55);display:flex;align-items:flex-start;justify-content:center;z-index:100;padding:5vh 16px;overflow:auto}
-  /* ---- วงกลมหมุน "กำลังโหลดข้อมูล" กลางจอ ---- */
+  /* ---- รถบรรทุก EV วิ่ง "กำลังโหลดข้อมูล" กลางจอ ---- */
   #busy{position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;background:rgba(15,33,56,.42)}
   #busy.on{display:flex}
-  .busy-card{background:#fff;border-radius:16px;padding:26px 34px;box-shadow:0 20px 60px rgba(0,0,0,.28);display:flex;flex-direction:column;align-items:center;gap:14px;min-width:210px}
-  .busy-ring{width:52px;height:52px;border-radius:50%;border:5px solid var(--line);border-top-color:var(--accent);animation:busySpin .8s linear infinite}
+  .busy-card{background:#fff;border-radius:16px;padding:22px 30px 20px;box-shadow:0 20px 60px rgba(0,0,0,.28);display:flex;flex-direction:column;align-items:center;gap:10px;min-width:230px}
   .busy-text{font-weight:700;color:var(--ink);font-size:15px;text-align:center}
-  @keyframes busySpin{to{transform:rotate(360deg)}}
-  /* เครื่องที่ตั้งค่าลดการเคลื่อนไหว: ไม่หมุน แต่ยังกะพริบให้รู้ว่ากำลังทำงาน */
-  @media (prefers-reduced-motion:reduce){.busy-ring{animation:busyFade 1.2s ease-in-out infinite}@keyframes busyFade{0%,100%{opacity:1}50%{opacity:.35}}}
+  .busy-truck{display:block;overflow:visible}
+  .bt-road{stroke:var(--line);stroke-width:3.5;stroke-linecap:round;stroke-dasharray:9 9;animation:btRoad .45s linear infinite}
+  .bt-puff{fill:#c3cbd8;animation:btPuff .7s ease-out infinite}
+  .bt-puff:nth-of-type(2){animation-delay:.23s}
+  .bt-puff:nth-of-type(3){animation-delay:.46s}
+  .bt-body{transform-box:fill-box;transform-origin:center;animation:btBob .42s ease-in-out infinite}
+  .bt-box{fill:var(--nav)}
+  .bt-cab{fill:var(--accent)}
+  .bt-win{fill:#cfe6f7}
+  .bt-stripe{fill:var(--accent);opacity:.85}
+  .bt-bumper{fill:#26324c}
+  .bt-bolt{fill:var(--accent2);animation:btBolt .9s ease-in-out infinite}
+  .bt-light{fill:var(--accent2);animation:btBolt .9s ease-in-out infinite}
+  .bt-wheel{transform-box:fill-box;transform-origin:center;animation:btSpin .5s linear infinite}
+  .bt-tyre{fill:#26324c}
+  .bt-hub{fill:#eef1f6}
+  .bt-spoke{stroke:#eef1f6;stroke-width:1.6;stroke-linecap:round}
+  @keyframes btSpin{to{transform:rotate(360deg)}}
+  @keyframes btBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.6px)}}
+  @keyframes btRoad{to{stroke-dashoffset:18}}
+  @keyframes btPuff{0%{opacity:.55;transform:translate(0,0) scale(.7)}100%{opacity:0;transform:translate(-13px,-5px) scale(1.5)}}
+  @keyframes btBolt{0%,100%{opacity:1}50%{opacity:.35}}
+  /* เครื่องที่ตั้งค่าลดการเคลื่อนไหว: รถจอดนิ่ง เหลือแค่ไฟกะพริบให้รู้ว่ากำลังทำงาน */
+  @media (prefers-reduced-motion:reduce){
+    .bt-road,.bt-body,.bt-wheel,.bt-puff{animation:none}
+    .bt-puff{opacity:0}
+  }
   .modal-card{background:#fff;border-radius:14px;max-width:760px;width:100%;padding:20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
   .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px}
   .modal-head h2{margin:0;font-size:17px}
@@ -331,9 +354,39 @@
 </nav>
 <main id="view"></main>
 <div id="modal" class="modal-overlay" style="display:none"></div>
-<!-- วงกลมหมุน "กำลังโหลดข้อมูล" กลางจอ · โผล่เฉพาะตอนโหลดที่ CC สั่งเอง (เปิดหน้า / เปลี่ยนวันที่ / ดึงจาก Google Sheet)
-     ไม่โผล่ตอนระบบเช็กข้อมูลใหม่เองทุก 15 วินาที และไม่โผล่ตอนบันทึกอัตโนมัติ -->
-<div id="busy" aria-live="polite" aria-busy="false"><div class="busy-card"><div class="busy-ring"></div><div class="busy-text">กำลังโหลดข้อมูล…</div></div></div>
+<!-- รถบรรทุก EV วิ่ง "กำลังโหลดข้อมูล" กลางจอ · โผล่เฉพาะตอนโหลดที่ CC สั่งเอง (เปิดหน้า / เปลี่ยนวันที่ / ดึงจาก Google Sheet)
+     ไม่โผล่ตอนระบบเช็กข้อมูลใหม่เองทุก 15 วินาที และไม่โผล่ตอนบันทึกอัตโนมัติ
+     วาดด้วย SVG ในไฟล์ ไม่โหลดรูปจากที่ไหน จึงขึ้นได้แม้เน็ตช้า -->
+<div id="busy" aria-live="polite" aria-busy="false"><div class="busy-card">
+  <svg class="busy-truck" viewBox="0 0 136 60" width="176" height="78" role="img" aria-label="กำลังโหลดข้อมูล">
+    <line class="bt-road" x1="2" y1="54" x2="134" y2="54"/>
+    <circle class="bt-puff" cx="18" cy="42" r="3.2"/>
+    <circle class="bt-puff" cx="18" cy="42" r="3.2"/>
+    <circle class="bt-puff" cx="18" cy="42" r="3.2"/>
+    <g class="bt-body">
+      <rect class="bt-box" x="22" y="8" width="58" height="32" rx="4"/>
+      <rect class="bt-stripe" x="22" y="30" width="58" height="5" rx="2"/>
+      <path class="bt-bolt" d="M53 13l-9 13.5h6.2l-2.8 9.5 10.6-14.5h-6.2z"/>
+      <path class="bt-cab" d="M80 16h11.5l13.5 13.5V40H80z"/>
+      <path class="bt-win" d="M83.5 19h7.2l8.4 8.4H83.5z"/>
+      <rect class="bt-bumper" x="80" y="40" width="26" height="3.5" rx="1.7"/>
+      <circle class="bt-light" cx="102.5" cy="35.5" r="2.4"/>
+    </g>
+    <g class="bt-wheel">
+      <circle class="bt-tyre" cx="38" cy="45" r="8"/>
+      <circle class="bt-hub" cx="38" cy="45" r="3"/>
+      <line class="bt-spoke" x1="38" y1="38.5" x2="38" y2="51.5"/>
+      <line class="bt-spoke" x1="31.5" y1="45" x2="44.5" y2="45"/>
+    </g>
+    <g class="bt-wheel">
+      <circle class="bt-tyre" cx="93" cy="45" r="8"/>
+      <circle class="bt-hub" cx="93" cy="45" r="3"/>
+      <line class="bt-spoke" x1="93" y1="38.5" x2="93" y2="51.5"/>
+      <line class="bt-spoke" x1="86.5" y1="45" x2="99.5" y2="45"/>
+    </g>
+  </svg>
+  <div class="busy-text">กำลังโหลดข้อมูล…</div>
+</div></div>
 <div id="alarmBox"></div>
 <div id="alertBox"></div>
 <div id="gate">
