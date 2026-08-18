@@ -4126,12 +4126,13 @@ async function dashLoad(force){
   if(dashBusy)return;
   const dates=dashDateList();
   if(force)dates.forEach(d=>{delete dashCache[d];});
-  dates.forEach(ds=>{
-    if(dashCache[ds]!==undefined)return;
-    const raw=lsGet('fleetdb:fleet:day:'+ds);
-    if(raw){try{const o=JSON.parse(raw);if(o&&typeof o==='object'){normDay(o);dashCache[ds]=o;}}catch(e){}}
-  });
-  const need=dates.filter(ds=>dashCache[ds]===undefined);
+  /* 2026-08-18 · ปิดทุกทางที่ "สำเนาเก่า" จะเข้าถึงกราฟได้
+     เดิมหยิบสำเนาใน localStorage มาใช้ก่อนเสมอ ถ้าเครื่องมีสำเนาเก่าค้างอยู่ กราฟก็ใช้อันเก่า
+     ขณะที่หน้า 4 ถามระบบกลางก่อน (loadDay) ตัวเลขสองหน้าจึงต่างกันได้
+     ตอนนี้: ถามระบบกลางก่อนเหมือนหน้า 4 · สำเนาในเครื่องเป็นตัวสำรองเวลาต่อไม่ติดเท่านั้น
+     และวันที่ CC เปิดอยู่ไม่เก็บสำเนาเลย ใช้ข้อมูลสด (day) ตรง ๆ */
+  delete dashCache[curDate];
+  const need=dates.filter(ds=>ds!==curDate&&dashCache[ds]===undefined);
   dashNeed=need.length; dashDone=0;
   if(!need.length){renderDash();return;}
   dashBusy=true; renderDash();
@@ -4139,8 +4140,10 @@ async function dashLoad(force){
     const batch=need.slice(i,i+4);
     await Promise.all(batch.map(async ds=>{
       let raw=null;
-      try{raw=await dayFetch(ds);}catch(e){}
+      /* ลำดับเดียวกับ loadDay ของหน้า 4: ระบบกลางก่อน แล้วค่อยของในเครื่อง */
+      if(backendURL){try{raw=await dayFetch(ds);}catch(e){raw=null;}}
       if(raw===null||raw===undefined){try{raw=await store.get('fleet:day:'+ds);}catch(e){}}
+      if(raw===null||raw===undefined){const ls=lsGet('fleetdb:fleet:day:'+ds); if(ls)raw=ls;}
       let o=null; if(raw){try{o=JSON.parse(raw);}catch(e){}}
       if(o&&typeof o==='object'){normDay(o);dashCache[ds]=o;} else dashCache[ds]=null;
       dashDone++;
@@ -4248,7 +4251,7 @@ function dashAgg(){
        เพราะ dashCache ถ่ายไว้ครั้งเดียวตอนโหลด ไม่ได้อัปเดตตามที่ CC กรอกแผน/จ่ายงานเพิ่มระหว่างวัน
        บักที่ผู้ใช้เจอ 2026-08-18: หน้า 4 บอกแผน 44 จริง 58 แต่กราฟ 1.1 บอก 27+9 และแผน 0
        (สำเนาเก่าไม่มีแผน จึงกลายเป็น "ทำเกินแผน" ทั้งก้อน) */
-    const day2=(ds===curDate&&day)?day:dashCache[ds];
+      const day2=(ds===curDate)?(day||null):dashCache[ds];   /* วันที่เปิดอยู่ = ข้อมูลสดชุดเดียวกับหน้า 4 */
     const row={ds:ds,trips:0,closed:0,present:0,absent:0,late:0,leave:0,ot:0,off:0,unchecked:0,sched:0,hours:0,hoursN:0,plan:0,types:{},wt:{},noData:false,
       truckClosed:{},fleet:[],truckNote:{},
       pMain:0,pOut:0,pIdle:0,pLeave:0,pAbsent:0,pUncheck:0,pLate:0,pOtOff:0,
