@@ -4169,6 +4169,68 @@ let dashFleetGroup='all';
    ใช้ jobType(j) เป็นตัวตัดสิน ตัวเดียวกับหน้า 4 เพื่อให้ตัวเลขสองหน้าตรงกัน
    (ของเดิมหน้า 6 อ่าน j.type ดิบ ๆ ไม่ผ่านทะเบียนเส้นทาง เลขจึงเพี้ยนจากหน้า 4) */
 function isMainBU(gk){return gk==='main'||gk==='vt';}
+/* คีย์ของ day.plan มีสองยุค — ต้องอ่านให้ได้กลุ่มงานเดียวกับที่หน้า 4 จะโชว์ (2026-08-18)
+   ยุคใหม่ : "กลุ่ม|สินค้า" เช่น main|ชีวมวล -> อ่านกลุ่มจากหน้าคีย์ตรง ๆ
+   ยุคเก่า : ชื่อสินค้าเปล่า ๆ -> ต้องไปถามทะเบียนเส้นทางหน้า 5 ว่าสินค้านั้นอยู่กลุ่มไหน
+             (ตรรกะเดียวกับ migratePlanKeys ของหน้า 4 แต่อ่านอย่างเดียว ไม่เขียนทับข้อมูล)
+   บักที่เจอ 2026-08-18: เดิมหน้า 6 เหมาคีย์เก่าทั้งหมดเป็น "งานหลัก" ทำให้แผนของ VT และ BU อื่น
+   ไปกองอยู่ที่งานหลัก เลขไม่ตรงกับหน้า 4 ในวันที่ยังไม่ถูกแปลงคีย์
+   (การแปลงคีย์เกิดเฉพาะวันที่ CC เปิดดูหน้า 4 วันย้อนหลังส่วนใหญ่จึงยังเป็นคีย์เก่า) */
+/* ---------- อ่านตัวเลขของหน้า 4 มาใช้ตรง ๆ (2026-08-18) ----------
+   ผู้ใช้สั่งให้กราฟ 1.1 และ 1.2 "ดึงข้อมูลจากตารางหน้า 4" จึงต้องเรียกฟังก์ชันตัวเดียวกับหน้า 4
+   ไม่ใช่เขียนสูตรซ้ำอีกชุด (ที่ผ่านมาเขียนซ้ำแล้วเลขเพี้ยนจากกันสองรอบ)
+   ฟังก์ชันของหน้า 4 อ่านตัวแปรกลาง day / config / curDate จึงต้องสลับบริบทให้เป็นวันที่ต้องการก่อน
+   แล้วคืนค่าเดิมทุกกรณีด้วย finally · อ่านอย่างเดียว ไม่เขียนข้อมูลใด ๆ */
+function withDayContext(ds,doc,fn){
+  const sDay=day, sCfg=config, sDate=curDate;
+  try{
+    day=doc; curDate=ds;
+    const rs=rosterOn(ds);
+    if(Array.isArray(rs)&&rs.length)config=rs;
+    return fn();
+  } finally { day=sDay; config=sCfg; curDate=sDate; }
+}
+/* ตารางที่ 1 หน้า 4 "พจส. มาทำงานเทียบแผน รายชั่วโมง" — ยอดรวมทั้งวัน + สถานะรายคน
+   ยอดรวมมาจาก hourlyAttend() ตัวเดียวกับที่หน้า 4 ใช้วาดแถว "รวมทั้งวัน"
+   สถานะรายคนใช้ attStat(t,d) ตัวเดียวกัน ซึ่งตามตัวคนด้วยรหัส พจส. ไม่ใช่ตำแหน่งกะดิบ */
+function attendOf(ds,doc){
+  return withDayContext(ds,doc,()=>{
+    const b=hourlyAttend();
+    const T={plan:0,present:0,late:0,absent:0,leave:0,unchecked:0,off:0,ot:0};
+    Object.keys(b).forEach(k=>{const r=b[k];
+      ['plan','present','late','absent','leave','unchecked','off','ot'].forEach(f=>T[f]+=r[f]||0);});
+    const per=[];
+    for(const t of config)for(const d of (t.drivers||[])){
+      per.push({truckNo:t.truckNo,pos:String(d.pos),code:String(d.code||'').trim(),
+        name:d.name||'',off:isOff(t,d,ds),v:attStat(t,d)});
+    }
+    return {total:T,per:per};
+  });
+}
+/* ตารางที่ 2 หน้า 4 "ปริมาณงานเทียบแผน (แยกตามประเภทงาน 4 กลุ่ม)" — ยอดรวมต่อกลุ่ม
+   งานจริงนับด้วย jobType(j) · แผนอ่านคีย์แบบเดียวกับ migratePlanKeys ของหน้า 4 (แต่ไม่เขียนทับ)
+   หมายเหตุ: หน้า 4 จะ "แปลงคีย์แล้วบันทึก" ตอนเปิดหน้า ส่วนที่นี่อ่านอย่างเดียว ผลลัพธ์เท่ากัน */
+function planActualOf(ds,doc){
+  return withDayContext(ds,doc,()=>{
+    const act={}, plan={};
+    JOBTYPES.forEach(x=>{act[x.k]=0;plan[x.k]=0;});
+    for(const j of (day.jobs||[])){const g=jobType(j);act[g]=(act[g]||0)+1;}
+    Object.keys(day.plan||{}).forEach(k=>{
+      const n=Number(day.plan[k]);
+      if(!isFinite(n)||n<=0)return;
+      if(String(k)==='__vt')return;      /* หน้า 4 ทิ้งคีย์นี้ตอนแปลง ที่นี่จึงข้ามให้ตรงกัน */
+      const g=planGroupOf(k);
+      plan[g]=(plan[g]||0)+n;
+    });
+    return {plan:plan,act:act};
+  });
+}
+function planGroupOf(k){
+  const s=String(k);
+  if(s.indexOf('|')>=0){const g=s.split('|')[0];return JT[g]?g:'main';}
+  const r=(routes||[]).find(x=>x&&x.product===s);
+  return (r&&JT[r.type])?r.type:'main';
+}
 function dashAgg(){
   const dates=dashDateList();
   const A={dates:dates,daily:[],haveDays:0,
@@ -4200,25 +4262,31 @@ function dashAgg(){
     /* --- งานของแต่ละคนในวันนั้น จับด้วยรหัส พจส. --- */
     const jobsByCode={};
     (day2.jobs||[]).forEach(j=>{const c=String(j.code||'').trim();if(c)(jobsByCode[c]=jobsByCode[c]||[]).push(j);});
-    /* --- คน --- */
+    /* --- คน --- ตัวเลขทั้งหมดมาจาก "ตารางที่ 1 หน้า 4" ผ่าน attendOf() ตัวเดียวกับที่หน้า 4 ใช้
+       จึงตามตัวคนด้วยรหัส พจส. เหมือนหน้า 1/หน้า 4 ไม่ใช่อ่านตำแหน่งกะดิบเหมือนก่อน 2026-08-18 */
     const rs=rosterOn(ds);
     row.fleet=rs; row.truckNote=isPlain(day2.truckNote)?day2.truckNote:{};
-    row.dnote=isPlain(day2.dnote)?day2.dnote:{};   /* หมายเหตุเดิมจากหน้า 1 (ต่อคัน/ต่อกะ) — ใช้เป็นค่าเริ่มต้นของหมายเหตุรถ 0 เที่ยว */
-    const codeSeen={};
+    row.dnote=isPlain(day2.dnote)?day2.dnote:{};   /* หมายเหตุเดิมจากหน้า 1 (ต่อคัน/ต่อกะ) */
     /* สภาพลูกเรือของรถแต่ละคันในวันนั้น — ใช้อธิบายว่าทำไมรถคันนั้นไม่ได้วิ่ง */
     rs.forEach(t=>{ if(t&&t.truckNo)row.truckCrew[t.truckNo]=
       {came:0,late:0,absent:0,leave:0,off:0,uncheck:0,crew:(t.drivers||[]).length,
        route:t.routeGroup||'',jobs:0,closed:0}; });
-    for(const t of rs)for(const d of (t.drivers||[])){
-      const off=isOff(t,d,ds);
-      const TC=row.truckCrew[t.truckNo];
-      const v=((day2.attend||{})[t.truckNo]||{})[d.pos]||'';
-      const code=String(d.code||'').trim();
+    const AT=attendOf(ds,day2);
+    const T1=AT.total;
+    row.sched=T1.plan; row.present=T1.present; row.late=T1.late; row.absent=T1.absent;
+    row.leave=T1.leave; row.unchecked=T1.unchecked; row.off=T1.off; row.ot=T1.ot;
+    A.att.sched+=T1.plan; A.att.present+=T1.present; A.att.late+=T1.late;
+    A.att.absent+=T1.absent; A.att.leave+=T1.leave; A.att.unchecked+=T1.unchecked;
+    A.att.off+=T1.off; A.att.ot+=T1.ot;
+    const codeSeen={};
+    AT.per.forEach(x=>{
+      const TC=row.truckCrew[x.truckNo];
+      const v=x.v, code=x.code;
       const mine=code?(jobsByCode[code]||[]):[];
       /* งานรายคน — เก็บทุกคนที่มีงาน รวมคนที่มา OT วันหยุด เพราะเป็นงานที่ทำจริง */
       if(code&&!codeSeen[code]){
         codeSeen[code]=1;
-        const pp=P(code); pp.inRoster=true; if(!pp.name&&d.name)pp.name=d.name;
+        const pp=P(code); pp.inRoster=true; if(!pp.name&&x.name)pp.name=x.name;
         if(mine.length)pp.workDays++;
         mine.forEach(j=>{
           const gk=jobType(j);
@@ -4228,56 +4296,43 @@ function dashAgg(){
         });
         if(v==='late')pp.late++; else if(v==='absent')pp.absent++; else if(v==='leave')pp.leave++;
       }
-      if(off){A.att.off++; row.off++; if(TC)TC.off++;
-        if(v==='ot'){A.att.ot++;A.att.present++;row.present++;row.ot++;row.pOtOff++;if(TC)TC.came++;} continue;}
-      A.att.sched++; row.sched++;
+      if(x.off){ if(TC)TC.off++; if(v==='ot'){row.pOtOff++;if(TC)TC.came++;} return; }
       if(TC){ if(v==='present'||v==='ot')TC.came++;
               else if(v==='late'){TC.came++;TC.late++;}
               else if(v==='absent')TC.absent++;
               else if(v==='leave')TC.leave++;
               else TC.uncheck++; }
-      if(v==='present'){A.att.present++;row.present++;}
-      else if(v==='late'){A.att.present++;A.att.late++;row.present++;row.late++;}
-      else if(v==='ot'){A.att.present++;A.att.ot++;row.present++;row.ot++;}
-      else if(v==='absent'){A.att.absent++;row.absent++;}
-      else if(v==='leave'){A.att.leave++;row.leave++;}
-      else {A.att.unchecked++;row.unchecked++;}
       if(v==='absent'||v==='late'||v==='leave'){
-        const nm=d.name||'-';
-        A.driver[nm]=A.driver[nm]||{absent:0,late:0,leave:0,name:nm,code:d.code||''};
+        const nm=x.name||'-';
+        A.driver[nm]=A.driver[nm]||{absent:0,late:0,leave:0,name:nm,code:code||''};
         if(v==='absent')A.driver[nm].absent++; else if(v==='late')A.driver[nm].late++; else A.driver[nm].leave++;
       }
-      /* Section 1.1 — แบ่งคนในแผนของวันนั้นเป็น 4 พวก รวมกันได้เท่ากับแผนพอดี
-         คนที่วันเดียววิ่งทั้งงานหลักและงานนอก นับเป็น "งานหลัก" ครั้งเดียว ไม่นับซ้ำ */
-      const came=(v==='present'||v==='late'||v==='ot');
+      /* กราฟ 1.2 — แบ่งคนในแผนของวันนั้นเป็น 6 พวกที่ไม่ทับกัน รวมกันได้เท่าแผนพอดี
+         *** ยึดสถานะที่ CC เช็กเป็นหลักก่อน *** ถ้า CC เช็กว่า ลา/ขาด/ยังไม่เช็ก ก็นับตามนั้น
+         แม้จะมีใบงานค้างอยู่ ตัวเลขในกราฟจะได้ตรงกับตารางที่ 1 หน้า 4 และการ์ดด้านบนเสมอ
+         (ก่อน 2026-08-18 เช็ก "มีงานไหม" ก่อน ทำให้คนที่ถูกเช็กว่าขาดแต่มีใบงาน กลายเป็น "มา") */
+      if(v==='leave'){row.pLeave++;return;}
+      if(v==='absent'){row.pAbsent++;return;}
+      if(v!=='present'&&v!=='late'&&v!=='ot'){row.pUncheck++;return;}
+      if(v==='late')row.pLate++;
       let hasMain=false,hasOut=false;
       mine.forEach(j=>{ if(isMainBU(jobType(j)))hasMain=true; else hasOut=true; });
-      if(v==='late')row.pLate++;
-      if(hasMain)row.pMain++;
-      else if(hasOut)row.pOut++;
-      else if(came)row.pIdle++;
-      else if(v==='leave')row.pLeave++;
-      else if(v==='absent')row.pAbsent++;
-      else row.pUncheck++;
-    }
-    /* --- แผนงาน --- แยกตามกลุ่มงานด้วย เพื่อใช้ในกราฟ 1.1 ปริมาณงาน
-       คีย์ของแผนคือ "กลุ่ม|สินค้า" (เช่น main|ชีวมวล) · ข้อมูลเก่าที่ยังไม่มี "|" นับเป็นงานหลัก */
-    Object.keys(day2.plan||{}).forEach(k=>{
-      const num=Number(day2.plan[k]);
-      if(!isFinite(num)||num<=0)return;
-      A.plan+=num;row.plan+=num;
-      const g=(String(k).indexOf('|')>=0)?String(k).split('|')[0]:'main';
-      const gk=JT[g]?g:'main';
-      row.planByType[gk]=(row.planByType[gk]||0)+num;
-      A.planByType[gk]=(A.planByType[gk]||0)+num;
+      if(hasMain)row.pMain++; else if(hasOut)row.pOut++; else row.pIdle++;
+    });
+    /* --- ปริมาณงานเทียบแผน --- ตัวเลขมาจาก "ตารางที่ 2 หน้า 4" ผ่าน planActualOf()
+       ทั้งฝั่งแผนและฝั่งงานจริง ใช้สูตรเดียวกับหน้า 4 จึงไม่มีทางเพี้ยนจากกัน */
+    const PA=planActualOf(ds,day2);
+    JOBTYPES.forEach(x=>{
+      const pl=PA.plan[x.k]||0, ac=PA.act[x.k]||0;
+      row.planByType[x.k]=pl; A.planByType[x.k]=(A.planByType[x.k]||0)+pl;
+      A.plan+=pl; row.plan+=pl;
+      row.types[x.k]=ac;      A.byType[x.k]=(A.byType[x.k]||0)+ac;
     });
     /* --- เที่ยว / เส้นทาง / รถ / เวลา --- */
     const per={};
     (day2.jobs||[]).forEach(j=>{
       A.trips++; row.trips++;
-      const gk=jobType(j);
-      A.byType[gk]=(A.byType[gk]||0)+1;
-      row.types[gk]=(row.types[gk]||0)+1;
+      const gk=jobType(j);          /* ประเภทงานนับไว้แล้วใน planActualOf ข้างบน ไม่นับซ้ำที่นี่ */
       const p=(j.product||'(ไม่ระบุ)').trim(); A.prod[p]=(A.prod[p]||0)+1;
       const o=(j.origin||'(ไม่ระบุ)').trim(); A.origin[o]=(A.origin[o]||0)+1;
       /* นับรถตาม "เลขรถที่วิ่งจริง" ให้ตรงกับหน้า 4 (2026-08-17) */
