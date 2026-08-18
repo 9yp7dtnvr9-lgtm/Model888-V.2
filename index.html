@@ -4244,7 +4244,11 @@ function dashAgg(){
   const P=code=>(A.person[code]=A.person[code]||{code:code,name:'',rounds:0,main:0,out:0,
     hrs:0,hrsN:0,workDays:0,late:0,absent:0,leave:0,inRoster:false});
   dates.forEach(ds=>{
-    const day2=dashCache[ds];
+    /* วันที่ CC เปิดอยู่ ต้องอ่าน "ข้อมูลสด" (day) ไม่ใช่สำเนาใน dashCache
+       เพราะ dashCache ถ่ายไว้ครั้งเดียวตอนโหลด ไม่ได้อัปเดตตามที่ CC กรอกแผน/จ่ายงานเพิ่มระหว่างวัน
+       บักที่ผู้ใช้เจอ 2026-08-18: หน้า 4 บอกแผน 44 จริง 58 แต่กราฟ 1.1 บอก 27+9 และแผน 0
+       (สำเนาเก่าไม่มีแผน จึงกลายเป็น "ทำเกินแผน" ทั้งก้อน) */
+    const day2=(ds===curDate&&day)?day:dashCache[ds];
     const row={ds:ds,trips:0,closed:0,present:0,absent:0,late:0,leave:0,ot:0,off:0,unchecked:0,sched:0,hours:0,hoursN:0,plan:0,types:{},wt:{},noData:false,
       truckClosed:{},fleet:[],truckNote:{},
       pMain:0,pOut:0,pIdle:0,pLeave:0,pAbsent:0,pUncheck:0,pLate:0,pOtOff:0,
