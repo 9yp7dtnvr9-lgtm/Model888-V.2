@@ -4719,12 +4719,16 @@ function chStackedBars(items,series,aria,opts){
         else if(barW>=10)
           out += `<text x="${bx+barW/2}" y="${yB-3}" font-size="7.5" text-anchor="middle" fill="${CH_INK}" style="font-variant-numeric:tabular-nums">${v}</text>`;
       });
-      const tot=totals[i][si];
+      const stackTot=totals[i][si];
+      /* it.tot = ยอดที่ต้องการให้เขียนกำกับบนหัวแท่ง แทนผลบวกของทุกช่วงสี
+         ใช้ตอนที่มีช่วงสี "ส่วนที่ยังไม่ถึงแผน" อยู่ในแท่ง — ผลบวกจะเท่ากับแผน ไม่ใช่ปริมาณงานจริง
+         ตำแหน่งยังอิงหัวแท่งจริง (stackTot) เพื่อไม่ให้ตัวเลขไปทับช่วงสี */
+      const tot=(!multi&&it.tot!==undefined)?it.tot:stackTot;
       const nSeg=vals.filter(v=>(+v||0)>0).length;
       /* แท่ง "ปัญหา" ไม่เขียนยอดรวม เพราะ สาย เป็นคนที่มาทำงาน คนละพวกกับ ลา/ขาด บวกกันแล้วไม่มีความหมาย */
       const showTot=!(multi&&O.noTotal&&O.noTotal.indexOf(si)>=0);
       if(tot&&nSeg>1&&showTot)
-        out += `<text x="${bx+barW/2}" y="${y(tot)-6}" font-size="9" text-anchor="middle" fill="${CH_INK}" style="font-variant-numeric:tabular-nums;font-weight:600">${tot}</text>`;
+        out += `<text x="${bx+barW/2}" y="${y(stackTot)-6}" font-size="9" text-anchor="middle" fill="${CH_INK}" style="font-variant-numeric:tabular-nums;font-weight:600">${tot}</text>`;
       if(multi&&O.subLab&&O.subLab[si]&&barW>=16)
         out += `<text x="${bx+barW/2}" y="${H-(it.foot?14:6)-9}" font-size="7" text-anchor="middle" fill="${CH_MUTE}">${esc(O.subLab[si])}</text>`;
     });
@@ -4838,38 +4842,42 @@ function dMultiBars(daily,series,opts){
    1 วัน 2 แท่งวางชิดกัน
      แท่งซ้าย "ตามแผน" : ทำจริงงานหลัก + ทำจริงงานรอง(VT) + ที่ยังไม่ถึงแผน (หรือส่วนที่เกินแผน)
      แท่งขวา  "งานนอก" : BU อื่น สายยาว + สายสั้น */
+/* 2026-08-19 ผู้ใช้สั่ง: 1 วัน 1 แท่ง = "ปริมาณงานที่จ่ายทั้งหมด" ของวันนั้น
+   แยกสีแค่ 2 อย่าง งานใน BU4 (หลัก + VT) กับ งานนอก BU (BU อื่น สายยาว + สายสั้น)
+   แล้วเทียบกับแผนงานของวันนั้น
+     ทำได้ไม่ถึงแผน -> เติมช่วงสีเทา "ยังไม่ถึงแผน" ให้หัวแท่งไปจบที่เส้นแผน
+     ทำเกินแผน      -> **ไม่เติมช่วงสีเพิ่ม** เพราะจะทำให้แท่งสูงเกินงานจริง บอกเป็นข้อความใต้แท่งแทน
+   ตัวเลขบนหัวแท่งคือปริมาณงานที่จ่ายจริง (ไม่ใช่ผลบวกที่มีสีเทารวมอยู่) ผ่าน it.tot */
 const SER_WORK=[
-  {label:'ทำจริง · งานหลัก_BU4', color:CH_W_MAIN, ink:'#fff'},
-  {label:'ทำจริง · งานรอง VT_BU4', color:CH_W_VT, ink:'#fff'},
-  {label:'ยังไม่ถึงแผน',          color:CH_W_GAP, ink:CH_INK},
-  {label:'ทำเกินแผน',             color:CH_W_OVER,ink:'#fff'}
-];
-const SER_WORK2=[
-  {label:'งานนอก · BU อื่น สายยาว', color:CH_W_LONG, ink:'#fff'},
-  {label:'งานนอก · BU อื่น สายสั้น', color:CH_W_SHORT,ink:'#fff'}
+  {label:'งานใน BU4 (หลัก + VT)',        color:CH_W_MAIN, ink:'#fff'},
+  {label:'งานนอก BU (BU อื่น)',           color:CH_W_LONG, ink:'#fff'},
+  {label:'ยังไม่ถึงแผน',                  color:CH_W_GAP,  ink:CH_INK}
 ];
 function dWorkStack(daily){
   const items=daily.map(r=>{
-    const P=r.planByType||{}, T=r.types||{};
-    const plan=(P.main||0)+(P.vt||0);                 /* แผนของงานในแผน = หลัก + VT */
-    const aM=T.main||0, aV=T.vt||0, done=aM+aV;
-    const gap=Math.max(0,plan-done), over=Math.max(0,done-plan);
-    const A=[aM,aV,gap,over];
-    const B=[T.oth_l||0,T.oth_s||0];
-    const outTot=B[0]+B[1];
-    return {key:r.ds,x:String(r.ds).slice(5),vals:[A,B],
-      tip:r.ds+' — งานในแผน: แผน '+plan+' เที่ยว · ทำจริง '+done+' เที่ยว'
-        +' (งานหลัก '+aM+' · งานรอง VT '+aV+')'
-        +(gap?(' · ยังไม่ถึงแผน '+gap):'')+(over?(' · ทำเกินแผน '+over):'')
-        +(plan?(' · คิดเป็น '+Math.round(done/plan*100)+'% ของแผน'):'')
-        +' || งานนอก (BU อื่น) รวม '+outTot+' เที่ยว: สายยาว '+B[0]+' · สายสั้น '+B[1]};
+    const T=r.types||{};
+    const inBU=(T.main||0)+(T.vt||0);                      /* งานใน BU4 = หลัก + VT */
+    const outBU=(T.oth_l||0)+(T.oth_s||0);                 /* งานนอก BU = BU อื่น ทั้งสายยาวและสายสั้น */
+    const total=inBU+outBU;                                /* ปริมาณงานที่จ่ายทั้งหมดของวันนั้น */
+    const plan=r.plan||0;                                  /* แผนรวมทุกกลุ่มของวันนั้น (ชุดเดียวกับหน้า 4) */
+    const gap=Math.max(0,plan-total), over=Math.max(0,total-plan);
+    const P=r.planByType||{};
+    return {key:r.ds,x:String(r.ds).slice(5),vals:[inBU,outBU,gap],tot:total,
+      foot:plan?('แผน '+plan+(over?(' · เกิน +'+over):'')):'ไม่ได้ตั้งแผน',
+      tip:r.ds+' — จ่ายงานทั้งหมด '+total+' เที่ยว'
+        +' (งานใน BU4 '+inBU+' [หลัก '+(T.main||0)+' · VT '+(T.vt||0)+']'
+        +' · งานนอก BU '+outBU+' [สายยาว '+(T.oth_l||0)+' · สายสั้น '+(T.oth_s||0)+'])'
+        +' || แผน '+plan+' เที่ยว'
+        +(plan?(' · ทำได้ '+Math.round(total/plan*100)+'% ของแผน'):' (ยังไม่ได้ตั้งแผน)')
+        +(gap?(' · ยังไม่ถึงแผน '+gap):'')+(over?(' · เกินแผน '+over):'')
+        +(plan?(' || แผนแยกกลุ่ม: ใน BU4 '+((P.main||0)+(P.vt||0))+' · นอก BU '+((P.oth_l||0)+(P.oth_s||0))):'')};
   });
-  /* ช่อง "ทำเกินแผน" ใส่ในคำอธิบายสีเฉพาะเมื่อมีวันที่ทำเกินแผนจริง ไม่งั้นรกเปล่า ๆ */
-  const anyOver=items.some(it=>(+it.vals[0][3]||0)>0);
-  const legend=SER_WORK.slice(0,3).concat(anyOver?[SER_WORK[3]]:[],SER_WORK2);
-  return chStackedBars(items,SER_WORK,'ปริมาณงานเทียบแผน และงานนอก รายวัน',
-      {H:250,clickable:true,fill:dashFillW(1),series2:SER_WORK2,subLab:['ตามแผน','งานนอก'],noTotal:[]})
-    +chLegend(legend,'แท่งซ้าย = งานในแผน (หลัก + VT) เทียบกับแผนที่ตั้งไว้ · แท่งขวา = งาน BU อื่นที่ไม่ได้อยู่ในแผน · ข้อมูลชุดเดียวกับตารางปริมาณงานเทียบแผน หน้า 4');
+  /* ช่องสีเทาใส่ในคำอธิบายเฉพาะเมื่อมีวันที่ทำไม่ถึงแผนจริง ไม่งั้นรกเปล่า ๆ */
+  const anyGap=items.some(it=>(+it.vals[2]||0)>0);
+  const legend=SER_WORK.slice(0,2).concat(anyGap?[SER_WORK[2]]:[]);
+  return chStackedBars(items,SER_WORK,'ปริมาณงานที่จ่ายรายวัน แยกงานใน BU / นอก BU เทียบแผน',
+      {H:250,clickable:true,fill:dashFillW(1)})
+    +chLegend(legend,'1 วัน 1 แท่ง = ปริมาณงานที่จ่ายทั้งหมด · ตัวเลขบนหัวแท่ง = จำนวนที่จ่ายจริง · ข้อความใต้แท่ง = แผนของวันนั้น (และส่วนที่เกินแผน ถ้ามี) · ข้อมูลชุดเดียวกับตารางปริมาณงานเทียบแผน หน้า 4');
 }
 
 /* แท่งที่ 1 — เทียบกับ "แผนที่ต้องมา" ของวันนั้น รวมกันได้เต็มแท่งพอดี */
@@ -5052,7 +5060,7 @@ function zeroChip(k,extra){
 function dZeroReport(A){
   const rows=zeroTruckData(A);
   const nDays=(A.daily||[]).length;
-  if(!rows.length)return `<div class="dpanel"><h3>2.3 · รถ 0 รอบ</h3>
+  if(!rows.length)return `<div class="dpanel"><h3>3.3 · รถ 0 รอบ</h3>
     <div class="cno">ทุกคันได้รับใบงานครบทุกวันในช่วงนี้</div></div>`;
   const sel=rows.find(r=>r.truck===dashZeroPick)||null;
   /* ช่อง "หมายเหตุ" ในตารางนี้ = **โชว์เฉย ๆ แก้ไม่ได้** (ผู้ใช้สั่ง 2026-08-19)
@@ -5074,7 +5082,7 @@ function dZeroReport(A){
       <td data-znoteshow="${esc(r.truck)}"><span class="znoteval"${has?'':' style="display:none"'}>${esc(has)}</span><span class="znoteauto"${has?' style="display:none"':''}>${auto?zeroChip(r.top):'<span class="cno">—</span>'}</span></td>
       <td style="text-align:center;color:var(--muted)">▸</td></tr>`;
   }).join('');
-  const tbl1=`<div class="dpanel"><h3>2.3 · รถ 0 รอบ <span class="cno">(ไม่มีใบงานเลยในวันนั้น · เกณฑ์เดียวกับตารางที่ 4 หน้า 4 · กดที่แถวเพื่อดูไทม์ไลน์)</span></h3>
+  const tbl1=`<div class="dpanel"><h3>3.3 · รถ 0 รอบ <span class="cno">(ไม่มีใบงานเลยในวันนั้น · เกณฑ์เดียวกับตารางที่ 4 หน้า 4 · กดที่แถวเพื่อดูไทม์ไลน์)</span></h3>
     <div class="tablewrap" style="max-height:340px;overflow:auto"><table style="min-width:540px">
     <thead><tr><th>เบอร์รถ</th><th>ต้นทาง</th><th style="text-align:center">วันที่ 0 รอบ</th>
       <th style="text-align:center">จากทั้งหมด</th><th style="min-width:190px">หมายเหตุ</th><th></th></tr></thead>
@@ -5171,14 +5179,33 @@ function renderDash(){
     <h2>${ttl}</h2>${sub?`<span class="cno">${sub}</span>`:''}</div>`;
   const at=k=>(dashPickDay&&dashPickAt===k)?dPickPanel(A):'';
 
-  /* ---------- Section 1 · พจส. ---------- */
+  /* ---------- Section 1 · ปริมาณงาน ----------
+     2026-08-19 ผู้ใช้สั่งแยกเป็น 2 Section: ภาพสรุป "ปริมาณงาน" ขึ้นมาก่อน แล้วค่อย "พจส."
+     ของเดิมเอาการ์ด พจส. ขึ้นก่อนแล้วมีกราฟปริมาณงานแทรกอยู่กลาง ทำให้อ่านสองเรื่องปนกัน
+     คีย์ data-dwho ('s10','s11','s21','s31') คงเดิมโดยตั้งใจ — เป็นชื่อภายในที่กล่องรายละเอียดวันใช้อ้าง
+     เปลี่ยนแค่เลขที่โชว์บนหัวข้อ */
+  const sec1=`${secHead('1','ปริมาณงาน','ตัวเลขในการ์ดเป็นค่าเฉลี่ยต่อวัน จาก '+A.haveDays+' วันที่มีข้อมูล')}
+    <div class="dgrid4">
+      ${card('เที่ยวงานที่จ่าย',avg1(A.trips),'เที่ยว/วัน · รวม '+A.trips+' เที่ยว','hero')}
+      ${card('ตามแผน',avg1(A.plan),'เที่ยว/วัน · ทำได้ '+pct(A.trips,A.plan)+'% ของแผน')}
+      ${card('ปิดงานแล้ว',avg1(A.closed),'เที่ยว/วัน · '+pct(A.closed,A.trips)+'% ของที่จ่าย')}
+      ${(function(){const BT=A.byType||{},PT=A.planByType||{};   /* กันพังถ้า A ไม่ครบ — หน้าทั้งหน้าไม่ควรดับ */
+        return JOBTYPES.map(t=>card(t.s,avg1(BT[t.k]||0),'เที่ยว/วัน · รวม '+(BT[t.k]||0)
+          +(PT[t.k]?(' · แผน '+PT[t.k]):''))).join('');})()}
+    </div>
+    <div class="dpanel" data-dwho="s10">
+      <h3>1.1 · ปริมาณงานรายวัน <span class="cno">(1 วัน 1 แท่ง = งานที่จ่ายทั้งหมด · แยกสี งานใน BU4 / งานนอก BU · เทียบแผนของวันนั้น)</span></h3>
+      ${dWorkStack(A.daily)}</div>
+    ${at('s10')}`;
+
+  /* ---------- Section 2 · พจส. ---------- */
   /* 2026-08-19: ตาราง สาย/ลา/ขาด ย้ายไปใช้ A.people (มีตัวหารรายวันของแต่ละคน) แทน A.driver
      A.driver จับคนด้วย "ชื่อ" และไม่มีวันที่ต้องมาทำงาน จึงคิดค่าต่อวันไม่ได้ */
   /* กันพังถ้ามีที่ไหนส่ง A แบบไม่ครบเข้ามา — หน้าทั้งหน้าไม่ควรดับเพราะตัวเลขหายไปตัวเดียว */
   if(!Array.isArray(A.people))A.people=[];
   const runP=A.people.filter(p=>p.rounds>0);
   const rndTot=runP.reduce((a,p)=>a+p.rounds,0);
-  const sec1=`${secHead('1','พจส.','ตัวเลขในการ์ดเป็นค่าเฉลี่ยต่อวัน จาก '+A.haveDays+' วันที่มีข้อมูล')}
+  const secP=`${secHead('2','พจส.','ตัวเลขในการ์ดเป็นค่าเฉลี่ยต่อวัน จาก '+A.haveDays+' วันที่มีข้อมูล')}
     <div class="dgrid4">
       ${card('มาทำงาน',avg1(A.att.present),'คน/วัน · '+n1(A.attRate)+'% ของแผน','hero')}
       ${card('แผนต้องมา',avg1(A.att.sched),'คน/วัน')}
@@ -5189,18 +5216,14 @@ function renderDash(){
       ${card('ยังไม่เช็ก',avg1(A.att.unchecked),'คน/วัน · ควรเป็น 0 เมื่อจบวัน')}
       ${card('รอบต่อคน',(runP.length?(rndTot/runP.length).toFixed(1):'0'),'รอบ/คน ในช่วงนี้ ('+runP.length+' คนที่มีงาน)')}
     </div>
-    <div class="dpanel" data-dwho="s10">
-      <h3>1.1 · ปริมาณงาน <span class="cno">(1 วัน 2 แท่ง · แท่งซ้าย = งานในแผน เทียบแผน · แท่งขวา = งานนอก)</span></h3>
-      ${dWorkStack(A.daily)}</div>
-    ${at('s10')}
     <div class="dpanel" data-dwho="s11">
-      <h3>1.2 · การมาทำงานของ พจส. รายวัน <span class="cno">(1 วัน 2 แท่ง · แท่งซ้าย = เทียบแผน · แท่งขวา = สาย/ลา/ขาด)</span></h3>
+      <h3>2.1 · การมาทำงานของ พจส. รายวัน <span class="cno">(1 วัน 2 แท่ง · แท่งซ้าย = เทียบแผน · แท่งขวา = สาย/ลา/ขาด)</span></h3>
       ${dAttStack(A.daily)}</div>
     ${at('s11')}
     <div class="dpanel">
-      <h3>1.3 · รอบที่ พจส. แต่ละคนวิ่งได้ <span class="cno">(1 คน 1 แท่ง · แบ่งงานหลัก/งานนอก)</span></h3>
+      <h3>2.2 · รอบที่ พจส. แต่ละคนวิ่งได้ <span class="cno">(1 คน 1 แท่ง · แบ่งงานหลัก/งานนอก)</span></h3>
       ${dPersonStack(A)}</div>
-    <div class="dsub">1.4 · จัดอันดับ พจส.</div>
+    <div class="dsub">2.3 · จัดอันดับ พจส.</div>
     ${dPersonRank(A)}
     <div class="cno" style="margin:14px 0 6px">เกณฑ์: <b>ครั้ง ÷ จำนวนวันที่คนนั้นต้องมาทำงาน</b> ในช่วง ${A.dates.length} วันที่เลือก คิดเป็น <b>%</b>
       · วันหยุดของตัวเองไม่นับเป็นตัวหาร · 100% = เป็นทุกวันที่ต้องมาทำงาน · ตัวเล็ก = ครั้งดิบ / วันที่ต้องมา</div>
@@ -5213,7 +5236,7 @@ function renderDash(){
   /* ---------- Section 2 · เที่ยวรถ ---------- */
   const tk=Object.keys(A.truck).map(k=>[k,A.truck[k]]).sort((a,b)=>b[1]-a[1]);
   const low=tk.slice().reverse().slice(0,8);
-  const sec2=`${secHead('2','เที่ยวรถ','นับตามเลขรถที่วิ่งจริง ตรงกับหน้า 4')}
+  const sec2=`${secHead('3','เที่ยวรถ','นับตามเลขรถที่วิ่งจริง ตรงกับหน้า 4')}
     <div class="dgrid4">
       ${card('รถที่ออกงาน',Object.keys(A.trucksSeen).length,'จาก '+config.length+' คันในกองรถ','hero')}
       ${card('เที่ยวรวม',A.trips,'เฉลี่ย '+n1(A.tripsPerDay)+' เที่ยว/วัน')}
@@ -5221,12 +5244,12 @@ function renderDash(){
       ${card('ครบ '+TARGET_ROUNDS+' รอบ',A.hitTrucks,'คัน (เคยทำครบใน 1 วัน)')}
     </div>
     <div class="dpanel" data-dwho="s21">
-      <h3>2.1 · เที่ยวที่ปิดงานแล้วต่อคัน — 3 / 2 / 1 เที่ยว/วัน <span class="cno">(นับเฉพาะเที่ยวที่ปิดงานแล้ว)</span></h3>
+      <h3>3.1 · เที่ยวที่ปิดงานแล้วต่อคัน — 3 / 2 / 1 เที่ยว/วัน <span class="cno">(นับเฉพาะเที่ยวที่ปิดงานแล้ว)</span></h3>
       <div class="dseg" style="margin:0 0 12px">${FLEET_GROUPS.map(g=>`<button class="${dashFleetGroup===g.k?'on':''}" data-dfleet="${g.k}">${esc(g.lab)} <span class="cno">(${g.n})</span></button>`).join('')}</div>
       ${dGroupedBars(A.daily,dashFleetGroup)}
     </div>
     ${at('s21')}
-    <div class="dsub">2.2 · รถที่วิ่งมากสุด / น้อยสุด</div>
+    <div class="dsub">3.2 · รถที่วิ่งมากสุด / น้อยสุด</div>
     <div class="dtwo">
       <div class="dpanel"><h3>รถที่วิ่งมากสุด <span class="cno">(เที่ยว)</span></h3>${dBars(A.truck,10,'#2b6cb0')}</div>
       <div class="dpanel"><h3>รถที่วิ่งน้อยสุด <span class="cno">(เที่ยว)</span></h3>
@@ -5245,13 +5268,13 @@ function renderDash(){
           <div style="width:${q.n?Math.round(q.over/q.n*100):0}%;background:#c0392b"></div></div></div>
       <div class="cno" style="text-align:right">ไม่เกิน ${q.ok} · เกิน ${q.over}</div>
       <div class="dnum">${q.n}</div></div>`;}).join('');
-  const sec3=`${secHead('3','เวลา','นับจากเที่ยวที่ปิดงานแล้วเท่านั้น')}
+  const sec3=`${secHead('4','เวลา','นับจากเที่ยวที่ปิดงานแล้วเท่านั้น')}
     <div class="dgrid4">
       ${card('เวลาทำงานเฉลี่ย',n1(A.hoursAvg),'ชม./เที่ยว (จาก '+A.hours.length+' เที่ยวที่ปิดงาน)','hero')}
       ${WT_GROUPS.map(x=>card(x.name+' ผ่านเกณฑ์',okpc(x.k),'ไม่เกิน '+g(x.k).ok+' · เกิน '+g(x.k).over+' · เฉลี่ย '+(g(x.k).n?(g(x.k).sum/g(x.k).n).toFixed(1):'-')+' ชม.')).join('')}
       ${card('เกินเกณฑ์รวม',A.over8,pct(A.over8,A.hours.length)+'% ของเที่ยวที่ปิดงาน')}
     </div>
-    <div class="dsub">3.1 · เวลาทำงาน</div>
+    <div class="dsub">4.1 · เวลาทำงาน</div>
     <div class="dtwo">
       <div class="dpanel"><h3>ไม่เกิน / เกิน แยกตามเกณฑ์ <span class="cno">(เที่ยว)</span></h3>${wtRows}</div>
       <div class="dpanel" data-dwho="s31"><h3>เวลาทำงานเฉลี่ยรายวัน <span class="cno">(ชม.)</span></h3>
@@ -5259,7 +5282,7 @@ function renderDash(){
     </div>
     ${at('s31')}`;
 
-  const body=sec1+sec2+sec3;
+  const body=sec1+secP+sec2+sec3;
   const prog=dashBusy?`<div class="dload" style="margin-top:8px"><i style="width:${dashNeed?Math.round(dashDone/dashNeed*100):100}%"></i></div>
      <div class="cno" style="margin-top:4px">กำลังดึงข้อมูล ${dashDone}/${dashNeed} วัน…</div>`:'';
 
@@ -5284,8 +5307,8 @@ function renderDash(){
     </div>
     ${prog}
     <div class="dbar" style="padding:8px 12px">
-      <!-- 2026-08-17 · ถอดแท็บทั้งหมดออก รวมเป็นหน้าเดียว 3 Section · แท็บ "เส้นทาง" ถูกถอดออกด้วย -->
-      <span class="dseg">${jump('s1','1 · พจส.')}${jump('s2','2 · เที่ยวรถ')}${jump('s3','3 · เวลา')}</span>
+      <!-- 2026-08-17 · ถอดแท็บทั้งหมดออก รวมเป็นหน้าเดียว · 2026-08-19 แยกปริมาณงานออกจาก พจส. เป็น 4 Section -->
+      <span class="dseg">${jump('s1','1 · ปริมาณงาน')}${jump('s2','2 · พจส.')}${jump('s3','3 · เที่ยวรถ')}${jump('s4','4 · เวลา')}</span>
       <span class="cno" style="margin-left:auto">ข้อมูลจากหน้า 4 · อัปเดต ${nowHM()} น.</span>
     </div>
     ${body}
