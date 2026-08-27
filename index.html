@@ -1431,6 +1431,24 @@ async function omsWorkFetchDay(ds){
     _fix:'เช็กอินเทอร์เน็ต แล้วเช็ก URL ระบบกลางที่รูปเฟือง ⚙'};}
 }
 
+/* ---- ดึง "เวลารายงานตัว พจส." จาก endpoint เฉพาะ (ใหม่ 2026-08-26) ----
+   ของเดิมเวลารายงานตัวติดมากับ "แถวใบงาน" ของ GetWorkAppBU4 เท่านั้น
+   คนที่วันนั้นไม่มีใบงาน จึงไม่มีเวลารายงานตัวมาให้เลย · ตัวนี้เป็นรายชื่อ พจส. ตรง ๆ จึงครบกว่า
+   ฝั่ง .gs normalize ชื่อฟิลด์มาให้แล้ว (truck_id · driver_id · driver_name · driver_report_at)
+   จึงส่งเข้า omsArriveCheck() ตัวเดิมได้ทันที ไม่มีตรรกะเวลา/สถานะชุดที่สอง */
+async function omsDrvFetchDay(ds){
+  if(!backendURL)return {ok:false,ds:ds,rows:[],message:'ยังไม่ได้ตั้ง URL ระบบกลาง'};
+  try{
+    const r=await fetch(backendURL+'?driverreport='+encodeURIComponent(ds)+'&t='+Date.now()+tk());
+    const d=await r.json();
+    if(!d||typeof d!=='object')return {ok:false,ds:ds,rows:[],message:'คำตอบจากระบบกลางไม่ถูกต้อง'};
+    if(!Array.isArray(d.rows))d.rows=[];
+    /* สคริปต์ระบบกลางตัวเก่ายังไม่รู้จักคำสั่งนี้ ต้องบอกให้รู้ ไม่ใช่เงียบแล้วเข้าใจว่าไม่มีข้อมูล */
+    if(d.error)return {ok:false,ds:ds,rows:[],_old:true,
+      message:'ระบบกลางยังไม่รู้จักคำสั่งดึงเวลารายงานตัว (อัปไฟล์ .gs ตัวใหม่แล้ว Deploy → New version)'};
+    return d;
+  }catch(e){return {ok:false,ds:ds,rows:[],message:'ต่อระบบกลางไม่ได้'};}
+}
 /* ---- รอบดึงหลัก: วันนี้ + วันวาน ---- */
 async function omsWorkPull(manual){
   if(omsWorkBusy)return;
@@ -1442,6 +1460,7 @@ async function omsWorkPull(manual){
     const today=curDate, yst=prevDayStr(curDate);
     const dates=[today,yst];
     const got=await Promise.all(dates.map(ds=>omsWorkFetchDay(ds)));
+    const gotDrv=await Promise.all(dates.map(ds=>omsDrvFetchDay(ds)));   /* เวลารายงานตัวจาก endpoint เฉพาะ */
     const bad=got.filter(x=>x&&x.ok===false&&x.message)[0];
     omsWorkMsg=bad?String(bad.message):'';
     omsWorkFix=bad?String(bad._fix||''):'';
@@ -1491,12 +1510,36 @@ async function omsWorkPull(manual){
        แถวพวกนี้จะตกหล่นทั้งกะ (บักที่ผู้ใช้เจอ 2026-08-14 — แก้แล้ว)
        จึงรวมแถวจากทุกชุดมากองรวมกัน ตัดตัวซ้ำ แล้วแยกเขียนเข้าวันของมันเอง */
     const seen={}, byDate={};
-    got.forEach(res=>{ ((res&&res.rows)||[]).forEach(row=>{
+    /* คีย์ตัดซ้ำ: แถวจาก endpoint เวลารายงานตัวไม่มีเลขใบงาน จึงใช้ รถ|รหัส|เวลา แทน
+       และต้องตัดข้ามสองแหล่งด้วย ไม่งั้นคนที่มีทั้งใบงานและแถวรายงานตัวจะถูกนับสองรอบ */
+    const arrKey=row=>String(row.truck_id||'')+'|'+String(row.driver_id||'')+'|'+String(row.driver_report_at||'');
+    const feed=(res)=>{ ((res&&res.rows)||[]).forEach(row=>{
       const rds=omsDay(row.driver_report_at); if(!rds)return;
-      const k=omsRowKey(row)+'|'+String(row.driver_report_at||'');
+      const k=arrKey(row);
       if(seen[k])return; seen[k]=1;
       (byDate[rds]=byDate[rds]||[]).push(row);
-    });});
+    });};
+    /* *** 2026-08-26 (รอบสอง) ผู้ใช้สั่ง: เลิกใช้เวลารายงานตัวที่ห้อยมากับแถวใบงาน ***
+       เวลามาจริงมาจาก endpoint GetDriverReportAppBU4 แหล่งเดียวเท่านั้น
+       (แถวใบงานจาก GetWorkAppBU4 ยังใช้เติมเวลาออก/กลับ/ปิดงาน และจับคู่ใบงานตามเดิม
+        แต่ฟิลด์ driver_report_at ของมันไม่ถูกนำมาลงเวลามาจริงอีกแล้ว) */
+    gotDrv.forEach(feed);
+    /* สรุปผลของแหล่งใหม่ไว้รายงาน — ถ้าอ่านแถวได้แต่จับฟิลด์เวลาไม่ได้ ต้องเห็น ไม่ใช่เงียบ */
+    const drvBad=gotDrv.filter(x=>x&&x.ok===false&&x.message)[0]||null;
+    const drvCount=gotDrv.reduce((a,x)=>a+((x&&+x.count)||0),0);
+    const drvMapped=gotDrv.reduce((a,x)=>a+((x&&+x.mapped)||0),0);
+    const drvKeys=(gotDrv.find(x=>x&&x.keys&&x.keys.length)||{}).keys||[];
+    diag.drv={count:drvCount,mapped:drvMapped,keys:drvKeys,msg:drvBad?String(drvBad.message):''};
+    if(drvBad&&!omsWorkMsg){omsWorkMsg=String(drvBad.message);omsWorkFix=drvBad._old
+      ? 'อัปไฟล์ .gs ตัวใหม่ แล้ว Deploy → Manage deployments → Edit → New version'
+      : 'เปิด <URL ระบบกลาง>?driverreport='+curDate+'&raw=1&tk=… เพื่อดูคำตอบดิบจาก OMS';}
+    /* "ได้แถวมาแต่ทุกแถวไม่มีเวลา" มีสองความหมาย แยกจากกันไม่ได้จากข้อมูลที่มี
+         (ก) ตัวอ่านจับชื่อฟิลด์เวลาไม่ตรง   (ข) OMS ยังไม่มีเวลาให้ในตอนนี้จริง ๆ (เช้าวันนั้น)
+       จึง **ไม่** ถือเป็นความล้มเหลว (ไม่เขียนลง omsWorkMsg ซึ่งจะกลบกล่องสรุปทั้งใบ)
+       แต่แนบเป็นบรรทัดใบ้ในกล่องสรุป พร้อมชื่อคีย์จริง เพื่อเอามาปรับตัวอ่านได้ถ้าเป็นกรณี (ก) */
+    if(!drvBad&&drvCount&&!drvMapped)
+      diag.drv.hint='ทุกแถวไม่มีเวลา — ถ้าที่จริง OMS ส่งเวลามาแล้ว แปลว่าตัวอ่านจับชื่อฟิลด์ไม่ตรง'
+        +(drvKeys.length?(' (คีย์ที่เจอ: '+drvKeys.join(', ')+')'):'');
     const arriveDates=Object.keys(byDate).sort();
     for(const rds of arriveDates){
       await needDoc(rds);
@@ -1510,8 +1553,8 @@ async function omsWorkPull(manual){
     }
     /* แถวที่ OMS ไม่ได้ส่งเวลารายงานตัวมาเลย จะไม่เข้าลูปข้างบน นับแยกไว้ให้เห็นด้วย */
     const totalRows=got.reduce((a,x)=>a+(Array.isArray(x&&x.rows)?x.rows.length:0),0);
-    const withTime=diag.arrive.length;
-    diag.totalRows=totalRows; diag.noTimeRows=totalRows-withTime; diag.filled=filled;
+    /* "ยังไม่ส่งเวลามา" ต้องนับจากแหล่งเวลามาจริง (รายชื่อรายงานตัว) ไม่ใช่จากจำนวนแถวใบงานอีกแล้ว */
+    diag.totalRows=totalRows; diag.noTimeRows=Math.max(0,drvCount-drvMapped); diag.filled=filled;
 
     /* ---------- 3) ส่งของวันอื่นขึ้นระบบกลาง ---------- */
     for(const ds of Object.keys(opsByDate)){
@@ -1536,8 +1579,11 @@ async function omsWorkPull(manual){
         if(W.already)         why.push('มีเวลาอยู่แล้ว ไม่ทับของ CC '+W.already+' คน');
         if(W.truckNotInRoster)why.push('เบอร์รถไม่มีในตารางกะ '+W.truckNotInRoster+' รายการ');
         if(W.driverNotInTruck)why.push('ไม่พบ พจส. ในรถคันนั้น '+W.driverNotInTruck+' รายการ');
-        if(diag.noTimeRows)   why.push('OMS ยังไม่ส่งเวลารายงานตัวมา '+diag.noTimeRows+' รายการ');
+        if(diag.noTimeRows)   why.push('รายชื่อรายงานตัวที่ยังไม่มีเวลา '+diag.noTimeRows+' แถว');
+        if((diag.drv||{}).hint)why.push(diag.drv.hint);
+        const DV=diag.drv||{};
         alert('ดึงข้อมูลจาก OMS แล้ว\n\nได้รายการงานมา '+diag.totalRows+' รายการ'+
+          '\nรายชื่อรายงานตัวจาก OMS '+(DV.count||0)+' แถว (มีเวลา '+(DV.mapped||0)+' แถว)'+
           '\nเติมข้อมูลให้ '+filled+' ช่อง'+
           '\nเวลารายงานตัวที่ลงให้ใหม่ '+(W.write||0)+' คน'+
           (why.length?('\n\nรายการที่ไม่ได้ลงเวลา\n· '+why.join('\n· ')):'')+
@@ -4032,6 +4078,94 @@ function importFile(file){
 }
 /* ดึงตารางกะสดจาก Google Sheet ผ่าน Apps Script (endpoint ?roster=live) แทนการอัปโหลด Excel
    ใช้ dialog/ปุ่ม "ใช้ตารางกะชุดนี้" เดียวกับตอนอัปโหลด Excel เลย (applyImport ไม่ต้องแก้อะไร) */
+/* ============================================================================
+   ทยอยเปลี่ยนตารางกะตามวันที่กำหนด (2026-08-25)
+   ชีต "ตารางกะ พจส. (888)" มีคอลัมน์ K "กำหนดวันเปลี่ยนกะ" — วันมีผลของ "แถวนั้น"
+   คุมทั้งแถว: เบอร์รถ · ลำดับกะ · เวลาเข้ากะ · วันหยุด · เว้นว่าง = ไม่มีคิว คงตามชุดเดิม
+
+   ทำไมต้องประกอบที่ฝั่งนี้ ไม่ใช่ฝั่ง .gs:
+   ชีตเก็บแต่ "สภาพใหม่" ของแถวที่จะเปลี่ยน ค่า "ก่อนเปลี่ยน" ไม่ได้อยู่ในชีต
+   จึงต้องเอาตารางกะชุดที่ใช้อยู่ (base) มาเป็นพื้น แล้วทาบแถวที่ถึงวันแล้วลงไป
+
+   ผลลัพธ์: สร้าง "ชุดตารางกะ" (rosterVersions) หนึ่งชุดต่อหนึ่งวันมีผล
+   ทั้งระบบที่เหลือจึงไม่ต้องแก้อะไรเลย — หน้า 1/4/6 ถาม rosterFor(วันที่) เหมือนเดิม
+   ============================================================================ */
+/* ทาบแถวจากชีตลงบนตารางกะพื้น คืน {roster, conflicts, moved}
+   applyRows = แถวที่ "ถึงวันมีผลแล้ว" ณ วันที่ที่กำลังประกอบ (รวมแถวที่ไม่มีคิวด้วย) */
+function rosterCompose(base, allRows, applyRows){
+  const byCode={}; applyRows.forEach(r=>{const c=String(r.code||'').trim(); if(c)byCode[c]=r;});
+  /* โครงรถ: เอาจากทุกแถวในชีต (ให้รถที่เพิ่งเพิ่มในชีตมีที่อยู่) + รถที่มีในชุดพื้น (ไม่ให้รถหาย) */
+  const trucks={}, order=[];
+  const put=(no,rg,prod,ty)=>{
+    const k=no||TRAINEE_TRUCK;
+    if(!trucks[k]){trucks[k]={truckNo:k,routeGroup:rg||'',product:prod||'',type:ty||'model',drivers:[]};order.push(k);}
+    return trucks[k];
+  };
+  (base||[]).forEach(t=>{if(t&&t.truckNo)put(t.truckNo,t.routeGroup,t.product,t.type);});
+  (allRows||[]).forEach(r=>{
+    const t=put(r.truckNo,r.routeGroup,r.product,r.type);
+    /* แถวที่ถึงวันแล้วเท่านั้น ที่มีสิทธิ์เปลี่ยนข้อมูลระดับรถ (เส้นทาง/สินค้า/ประเภท) */
+    if(byCode[String(r.code||'').trim()]===r){
+      if(r.routeGroup)t.routeGroup=r.routeGroup;
+      if(r.product)t.product=r.product;
+      if(r.type)t.type=r.type;
+    }
+  });
+  /* คนที่ต้องมีในชุดนี้ = คนในชุดพื้น + คนของแถวที่ถึงวันแล้ว
+     คนใหม่ที่แถวยังไม่ถึงวัน = ยังไม่มีตัวตนในชุดนี้ (ถูกข้าม) */
+  const seen={}, place=[];
+  (base||[]).forEach(t=>((t&&t.drivers)||[]).forEach(d=>{
+    const c=String((d&&d.code)||'').trim();
+    const key=c||('!'+t.truckNo+'|'+d.pos+'|'+(d.name||''));
+    if(seen[key])return; seen[key]=1;
+    const r=c?byCode[c]:null;
+    place.push(r
+      ? {truckNo:r.truckNo||TRAINEE_TRUCK,pos:r.pos,code:c,name:r.name||d.name,phone:r.phone||d.phone||'',
+         dayOff:r.dayOff,shift:r.shift,from:r.from||''}
+      : {truckNo:t.truckNo,pos:String(d.pos||''),code:c,name:d.name||'',phone:d.phone||'',
+         dayOff:d.dayOff||'',shift:d.shift||'',shift2:d.shift2,shiftFrom:d.shiftFrom,from:''});
+  }));
+  applyRows.forEach(r=>{
+    const c=String(r.code||'').trim(); if(!c||seen[c])return; seen[c]=1;
+    place.push({truckNo:r.truckNo||TRAINEE_TRUCK,pos:r.pos,code:c,name:r.name||'',phone:r.phone||'',
+      dayOff:r.dayOff,shift:r.shift,from:r.from||''});
+  });
+  /* วางลงช่องลำดับกะ — คนที่ "ย้ายตามคิว" ได้สิทธิ์จองช่องก่อน คนที่อยู่เดิมค่อยเติมช่องที่เหลือ
+     ถ้าช่องชนกัน (ทยอยเปลี่ยนแล้วจังหวะคาบเกี่ยว) ต้องไม่ทำใครหาย -> เลื่อนไปช่องว่างถัดไปและรายงาน */
+  const conflicts=[];
+  const usedOf={};
+  const claim=(no,pos)=>{
+    usedOf[no]=usedOf[no]||{};
+    let p=String(pos||'').trim();
+    if(!p||usedOf[no][p]){
+      let n=1; while(usedOf[no][String(n)])n++;
+      if(p)conflicts.push(no+' ลำดับกะ '+p+' ชนกัน → ย้ายไปกะ '+n);
+      p=String(n);
+    }
+    usedOf[no][p]=1; return p;
+  };
+  const movers=place.filter(x=>byCode[x.code]===undefined?false:true);
+  const stayers=place.filter(x=>!(byCode[x.code]!==undefined));
+  movers.concat(stayers).forEach(x=>{
+    const t=put(x.truckNo,'','','');
+    const d={pos:claim(t.truckNo,x.pos),code:x.code,name:x.name,phone:x.phone,
+             dayOff:x.dayOff||'',shift:x.shift||''};
+    if(x.shift2)d.shift2=x.shift2;
+    if(x.shiftFrom)d.shiftFrom=x.shiftFrom;
+    t.drivers.push(d);
+  });
+  order.forEach(k=>trucks[k].drivers.sort((a,b)=>(+a.pos||99)-(+b.pos||99)));
+  return {roster:order.map(k=>trucks[k]), conflicts:conflicts, moved:movers.length};
+}
+/* สร้างชุดตารางกะหนึ่งชุดต่อหนึ่งวันมีผล — ชุดแรก = "ตอนนี้" แล้วต่อด้วยแต่ละวันที่ยังไม่ถึง */
+function rosterStageplan(base, rows, cuts, today){
+  const on=d=>(rows||[]).filter(r=>!r.from||String(r.from)<=String(d));
+  const out=[{ds:today, ...rosterCompose(base,rows,on(today))}];
+  (cuts||[]).slice().sort().forEach(d=>{
+    out.push({ds:d, ...rosterCompose(base,rows,on(d))});
+  });
+  return out;
+}
 async function importFromSheet(){
   if(!backendURL){alert('ยังไม่ได้ตั้ง URL ระบบกลาง — กด ⚙ ตั้งค่าระบบกลางก่อน');return;}
   const btn=document.getElementById('importSheetBtn');
@@ -4048,8 +4182,18 @@ async function importFromSheet(){
     const noOff=roster.reduce((a,t)=>a+(t.drivers||[]).filter(d=>!d.dayOff).length,0);
     const traineeT=roster.find(t=>t.truckNo===TRAINEE_TRUCK);
     const trainee=traineeT?(traineeT.drivers||[]).length:0;
+    /* ---- คิวเปลี่ยนกะรายแถว (คอลัมน์ K) ---- ถ้า .gs ที่ deploy ยังเป็นตัวเก่า จะไม่มี rows มาให้
+       กรณีนั้นทำงานเหมือนเดิมทุกอย่าง (ชุดเดียว) แต่ต้องบอกให้รู้ว่าคอลัมน์ K ยังไม่มีผล */
+    const rows=Array.isArray(data&&data.rows)?data.rows:null;
+    const cuts=Array.isArray(data&&data.cuts)?data.cuts.slice().sort():[];
+    const sToday=(data&&data.today)||todayStr();
+    const cutN={}; if(rows)cuts.forEach(d=>{cutN[d]=rows.filter(r=>String(r.from||'')===d).length;});
     const nm='Google Sheet (ปัจจุบัน) · '+nowHM()+' น.';
-    pendingWb={wb:{SheetNames:[nm]},results:{[nm]:{ok:true,roster,trucks:roster.length,drivers:drv,noShift,noOff,skipped:0,trainee,chgN:0,chgDates:[]}}};
+    pendingWb={wb:{SheetNames:[nm]},results:{[nm]:{ok:true,roster,trucks:roster.length,drivers:drv,
+      noShift,noOff,skipped:0,trainee,chgN:0,chgDates:[],
+      rows:rows,cuts:cuts,cutN:cutN,sToday:sToday,
+      colK:(data&&data.colK)||'',badDate:(data&&data.badDate)||0,
+      staged:!!(rows&&rows.length)}}};
     openImportDialog();
   }catch(err){alert('ดึงข้อมูลจาก Google Sheet ไม่สำเร็จ: '+err.message);}
   if(btn){btn.disabled=false;btn.textContent='🔄 ดึงจาก Google Sheet';}
@@ -4064,6 +4208,9 @@ function openImportDialog(sel,keepFrom){
       <td class="cno">${esc((t.drivers||[]).map(d=>d.name+' ('+d.shift+(d.shiftFrom?(' → '+d.shift2+' ตั้งแต่ '+d.shiftFrom):'')+')').join(' · ')||'ไม่มีคนขับ')}</td></tr>`).join(''):'';
   const warn=[];
   if(R.ok){
+    if(R.staged&&R.badDate)warn.push('ช่อง "กำหนดวันเปลี่ยนกะ" อ่านไม่ออก '+R.badDate+' แถว (ถือว่าไม่มีคิว)');
+    if(R.rows&&!R.colK)warn.push('ยังไม่พบหัวคอลัมน์ K ในชีต — ถ้ายังไม่ได้เพิ่ม "กำหนดวันเปลี่ยนกะ" จะไม่มีคิวเปลี่ยน');
+    if(R.rows===null)warn.push('ระบบกลางยังเป็นสคริปต์ตัวเก่า จึงยังอ่านคอลัมน์ "กำหนดวันเปลี่ยนกะ" ไม่ได้ (อัปไฟล์ .gs ตัวใหม่แล้ว Deploy → New version)');
     if(R.noShift)warn.push(R.noShift+' คนไม่มีเวลากะ');
     if(R.noOff)warn.push(R.noOff+' คนไม่มีวันหยุด');
     if(R.trainee)warn.push(R.trainee+' คนยังไม่มีเบอร์รถ (เก็บไว้ที่ "'+TRAINEE_TRUCK+'" ชั่วคราว — ย้ายไปเบอร์รถจริงในหน้าตารางกะเมื่อมอบหมายแล้ว)');
@@ -4077,6 +4224,12 @@ function openImportDialog(sel,keepFrom){
       <div class="field"><label>เริ่มมีผลตั้งแต่วันที่</label><input type="date" id="imp_from" value="${esc(keepFrom||tomorrowStr())}"><div class="cno" style="color:#b8860b;margin-top:4px">\u26a0 ตั้งเป็น<b>วันพรุ่งนี้</b>ให้แล้ว — ถ้าเปลี่ยนเป็นวันนี้หรือย้อนหลัง จะไปเปลี่ยนตารางกะของวันที่ CC กรอกข้อมูลไปแล้ว ทำให้ลำดับกะ/เวลาที่แสดงเปลี่ยนย้อนหลัง</div></div>
     </div>
     <div class="hint" style="margin-top:12px">ข้อมูลของวัน<b>ก่อนหน้า</b>วันที่นี้จะยังใช้ตารางกะชุดเดิม ไม่ถูกกระทบ · ชุดที่ใช้อยู่ตอนนี้: <b>${esc(activeVerName())}</b></div>
+    ${(R.ok&&R.cuts&&R.cuts.length)?`<div class="card" style="margin:12px 0 0;padding:12px;border-color:var(--accent)">
+      <div style="font-size:14px;font-weight:600;margin-bottom:6px">🗓 มีคิวเปลี่ยนกะล่วงหน้า ${R.cuts.length} วัน — ระบบจะสร้างตารางกะให้ ${R.cuts.length+1} ชุด</div>
+      <div class="cno" style="line-height:1.9">ชุดแรกเริ่มวันที่เลือกด้านบน แล้วทยอยเปลี่ยนตามนี้:<br>
+        ${R.cuts.map(d=>'· <b>'+esc(d)+'</b> — '+(R.cutN[d]||0)+' แถวเปลี่ยน').join('<br>')}</div>
+      <div class="cno" style="margin-top:6px">แถวที่ไม่ได้กรอกวันในคอลัมน์ K = ไม่มีคิว คงตามชุดเดิม</div>
+      </div>`:''}
     ${R.ok?`<div class="card" style="margin:12px 0 0;padding:12px">
       <div style="font-size:14px;margin-bottom:8px">อ่านได้ <b style="font-size:17px">${R.trucks}</b> คัน · <b style="font-size:17px">${R.drivers}</b> คน
         ${R.chgN?`<span class="tag" style="background:var(--n-bg);color:var(--n)">มีคิวเปลี่ยนเวลากะ ${R.chgN} คน (${esc(R.chgDates[0])} ถึง ${esc(R.chgDates[R.chgDates.length-1])})</span>`:''}
@@ -4113,11 +4266,33 @@ async function applyImport(){
       +'การเปลี่ยนตารางกะย้อนหลังจะทำให้ลำดับกะและเวลาที่แสดงของวันที่กรอกไปแล้วเปลี่ยนตาม\n\n'
       +'แนะนำให้ตั้งเป็นวันพรุ่งนี้ ('+tomorrowStr()+') แทน\n\nยืนยันจะใช้ '+from+' จริงหรือไม่?'))return;
   }
-  const dup=rosterVersions.find(v=>v.from===from);
-  if(dup&&!confirm('มีตารางกะที่เริ่มวันที่ '+from+' อยู่แล้ว ("'+dup.name+'") ต้องการแทนที่ไหม?'))return;
-  const newVer={id:'v'+Date.now(),from,name:nm,roster:normRoster(R.roster),savedAt:new Date().toISOString(),by:adminName||''};
+  /* ---- ทยอยเปลี่ยนกะตามคอลัมน์ K (2026-08-25) ----
+     มีคิว -> สร้างชุดหนึ่งชุดต่อหนึ่งวันมีผล (ชุดแรก = วันที่ CC เลือก, ถัดไป = แต่ละวันในคิวที่เลยวันนั้น)
+     ไม่มีคิว/สคริปต์ตัวเก่า -> ชุดเดียวเหมือนเดิมทุกอย่าง */
+  const useStage=!!(R.staged&&R.rows&&R.rows.length);
+  let stages=null, conflicts=[];
+  if(useStage){
+    const base=rosterOn(from);                                   /* พื้น = ชุดที่มีผลอยู่ ณ วันที่เริ่ม */
+    const later=(R.cuts||[]).filter(d=>String(d)>String(from));   /* คิวที่เลยวันเริ่มไปแล้วเท่านั้น */
+    stages=rosterStageplan(base,R.rows,later,from);
+    stages.forEach(st=>{ (st.conflicts||[]).forEach(c=>{ if(conflicts.indexOf(c)<0)conflicts.push(c); }); });
+    const bad=stages.filter(st=>!validConfig(st.roster));
+    if(bad.length){alert('ประกอบตารางกะไม่สำเร็จ ('+bad.length+' ชุดใช้ไม่ได้) จึงยังไม่บันทึกอะไร');return;}
+    if(conflicts.length&&!confirm('พบลำดับกะชนกัน '+conflicts.length+' จุด (ช่วงคาบเกี่ยวของการทยอยเปลี่ยน)\n\n'
+      +conflicts.slice(0,8).join('\n')+(conflicts.length>8?('\n…อีก '+(conflicts.length-8)+' จุด'):'')
+      +'\n\nระบบจะเลื่อนคนที่ชนไปช่องกะว่างถัดไป ไม่มีใครหาย · จะบันทึกต่อไหม?'))return;
+  }
+  const dupFrom=useStage?stages.map(st=>st.ds):[from];
+  const dup=rosterVersions.filter(v=>dupFrom.indexOf(v.from)>=0);
+  if(dup.length&&!confirm('มีตารางกะที่เริ่มวันที่ '+dup.map(v=>v.from).join(', ')+' อยู่แล้ว ต้องการแทนที่ไหม?'))return;
+  const stamp=Date.now();
+  const newVers=useStage
+    ? stages.map((st,i)=>({id:'v'+stamp+'_'+i,from:st.ds,
+        name:nm+(i?(' · คิว '+st.ds):' · ชุดเริ่ม'),roster:normRoster(st.roster),
+        savedAt:new Date().toISOString(),by:adminName||''}))
+    : [{id:'v'+stamp,from,name:nm,roster:normRoster(R.roster),savedAt:new Date().toISOString(),by:adminName||''}];
   flag('saving');
-  const okSave=await saveRosterVersions(list=>list.filter(v=>v.from!==from).concat([newVer]));
+  const okSave=await saveRosterVersions(list=>list.filter(v=>dupFrom.indexOf(v.from)<0).concat(newVers));
   flag(okSave?'ok':'err');
   applyRosterForDate();pendingWb=null;closeModal();render();
   if(!okSave){
@@ -4127,7 +4302,11 @@ async function applyImport(){
     return;
   }
   const late=(from>curDate);
-  alert('เพิ่มตารางกะ "'+nm+'" เริ่มมีผล '+from+' แล้ว'
+  alert('เพิ่มตารางกะ "'+nm+'" แล้ว'
+    +(useStage?('\n\nสร้างทั้งหมด '+newVers.length+' ชุด (ทยอยเปลี่ยนตามคอลัมน์ K):\n· '
+        +newVers.map(v=>v.from).join('\n· ')
+        +(conflicts.length?('\n\nลำดับกะที่ชนกันและถูกเลื่อนให้: '+conflicts.length+' จุด'):''))
+      :('\n\nเริ่มมีผล '+from))
     +'\n\nวันที่ดูอยู่ตอนนี้ ('+curDate+') ใช้ชุด: '+activeVerName()
     +(late?('\n\n⚠ วันเริ่มมีผลยังไม่ถึง จึงยังไม่เห็นการเปลี่ยนแปลงในวันนี้'):''));
 }
@@ -4363,7 +4542,7 @@ function dashAgg(){
     att:{sched:0,present:0,late:0,absent:0,leave:0,ot:0,off:0,unchecked:0},
     trips:0,closed:0,plan:0,byType:{},planByType:{},prod:{},origin:{},truck:{},driver:{},
     person:{},                                 /* รายคน: รอบ/ชม. สำหรับ Section 1.2 และ 1.4 */
-    hours:[],over8:0,hitTrucks:0,hitTruckSet:{},trucksSeen:{},wt:{}};
+    hours:[],over8:0,hitTrucks:0,hitTruckSet:{},hitDaySum:0,trucksSeen:{},wt:{}};
   WT_GROUPS.forEach(x=>A.wt[x.k]={ok:0,over:0,sum:0,n:0});
   JOBTYPES.forEach(t=>{A.byType[t.k]=0;A.planByType[t.k]=0;});
   /* ที่เก็บของรายคน — จับคนด้วย "รหัส พจส." ไม่ใช่ตำแหน่งกะ */
@@ -4379,7 +4558,7 @@ function dashAgg(){
        บักที่ผู้ใช้เจอ 2026-08-18: หน้า 4 บอกแผน 44 จริง 58 แต่กราฟ 1.1 บอก 27+9 และแผน 0
        (สำเนาเก่าไม่มีแผน จึงกลายเป็น "ทำเกินแผน" ทั้งก้อน) */
       const day2=(ds===curDate)?(day||null):dashCache[ds];   /* วันที่เปิดอยู่ = ข้อมูลสดชุดเดียวกับหน้า 4 */
-    const row={ds:ds,trips:0,closed:0,present:0,absent:0,late:0,leave:0,ot:0,off:0,unchecked:0,sched:0,hours:0,hoursN:0,plan:0,types:{},wt:{},noData:false,
+    const row={ds:ds,trips:0,closed:0,present:0,absent:0,late:0,leave:0,ot:0,off:0,unchecked:0,sched:0,hours:0,hoursN:0,plan:0,hit:0,types:{},wt:{},noData:false,
       truckClosed:{},fleet:[],truckNote:{},
       pMain:0,pOut:0,pIdle:0,pLeave:0,pAbsent:0,pUncheck:0,pLate:0,pOtOff:0,
       planByType:{main:0,vt:0,oth_l:0,oth_s:0},
@@ -4494,7 +4673,11 @@ function dashAgg(){
       }
     });
     /* "ครบ 3 รอบ" = จำนวน "คัน" ที่เคยทำครบในวันใดก็ได้ ไม่ใช่จำนวนครั้ง (2026-08-17) */
-    Object.keys(per).forEach(tk=>{if(per[tk]>=TARGET_ROUNDS)A.hitTruckSet[tk]=1;});
+    /* hitTruckSet = "เคยทำครบในวันใดก็ได้" นับหัวรถไม่ซ้ำ (ของเดิม ยังใช้ที่อื่น)
+       row.hit + hitDaySum = จำนวนคันที่ทำครบ "ในวันนั้น" ใช้หาค่าเฉลี่ยต่อวัน (2026-08-26) */
+    row.hit=0;
+    Object.keys(per).forEach(tk=>{if(per[tk]>=TARGET_ROUNDS){A.hitTruckSet[tk]=1;row.hit++;}});
+    A.hitDaySum+=row.hit;
     A.daily.push(row);
   });
   A.hitTrucks=Object.keys(A.hitTruckSet).length;
@@ -5241,7 +5424,7 @@ function renderDash(){
       ${card('รถที่ออกงาน',Object.keys(A.trucksSeen).length,'จาก '+config.length+' คันในกองรถ','hero')}
       ${card('เที่ยวรวม',A.trips,'เฉลี่ย '+n1(A.tripsPerDay)+' เที่ยว/วัน')}
       ${card('เฉลี่ยต่อคัน',(Object.keys(A.trucksSeen).length?(A.trips/Object.keys(A.trucksSeen).length).toFixed(1):'0'),'เที่ยว/คัน ในช่วงนี้')}
-      ${card('ครบ '+TARGET_ROUNDS+' รอบ',A.hitTrucks,'คัน (เคยทำครบใน 1 วัน)')}
+      ${card('ครบ '+TARGET_ROUNDS+' รอบ',avg1(A.hitDaySum||0),'คัน/วัน · เคยทำครบ '+A.hitTrucks+' คัน')}
     </div>
     <div class="dpanel" data-dwho="s21">
       <h3>3.1 · เที่ยวที่ปิดงานแล้วต่อคัน — 3 / 2 / 1 เที่ยว/วัน <span class="cno">(นับเฉพาะเที่ยวที่ปิดงานแล้ว)</span></h3>
