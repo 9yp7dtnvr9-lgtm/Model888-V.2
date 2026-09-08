@@ -143,11 +143,6 @@
   .dcard.hero{background:linear-gradient(135deg,var(--nav),#20406b);border-color:var(--nav)}
   .dcard.hero .k,.dcard.hero .s{color:#c9d7ea}
   .dcard.hero .v{color:#fff}
-  /* การ์ดกดกรองได้ (Section 5, 2026-08-28) — เหมือน .boardbox แต่ใช้กับ .dcard */
-  .dcard.pick{cursor:pointer;transition:outline .1s,transform .1s}
-  .dcard.pick:hover{transform:translateY(-1px)}
-  .dcard.pick.sel{outline:2px solid var(--accent2);outline-offset:1px}
-  .dcard.pick.hero.sel{outline-color:#8fd0ff}
   /* min-width:0 สำคัญมาก — ไม่มีอันนี้ กล่องจะยืดตามความกว้างกราฟ (flex/grid min-width:auto)
      ทำให้กราฟวันมาก ๆ ดันหน้าเว็บทะลุออกข้างทั้งหน้า แทนที่จะเลื่อนอยู่ในกล่องของตัวเอง */
   .dpanel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;min-width:0;overflow:hidden}
@@ -207,11 +202,6 @@
   .dpick.on{border-color:var(--accent);background:var(--present-bg)}
   .dpick input[type=date]{border:1px solid var(--line);border-radius:7px;padding:4px 6px;font-family:inherit;font-size:12.5px}
   .dchip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;border:1px solid var(--line);background:#fff}
-  /* Section 5 · รายบุคคลย้อนหลัง (2026-08-28) */
-  .hcaret{display:inline-block;font-size:11px;color:var(--accent);transition:transform .15s}
-  .hcaret.on{transform:rotate(90deg)}
-  tr.hdetail{background:#f8fafc}
-  tr.hdetail td{border-bottom:1px solid var(--line)}
   .dload{height:4px;border-radius:4px;background:#e8edf4;overflow:hidden}
   .dload i{display:block;height:100%;background:var(--accent);transition:width .25s}
   @media(max-width:1100px){.dthree{grid-template-columns:1fr 1fr}}
@@ -4414,8 +4404,6 @@ let dashAllPeople=false;
 let dashPickAt='';
 let dashZeroPick='';            /* เบอร์รถที่เลือกในรายงาน "รถ 0 เที่ยว" */                 /* กราฟไหนที่ CC กดเลือกวัน — ใช้วางกล่องรายละเอียดให้อยู่ใต้กราฟนั้น */
 let dashPickDay='';
-let dashHistOpen='';   /* รหัส พจส. ที่เปิดดูรายละเอียดอยู่ใน Section 5 (accordion — เปิดได้ทีละคน) */
-let dashHistFilter='';   /* การ์ดสรุป Section 5 ที่กดกรองอยู่ ('' = ทั้งหมด · 'has' = วิ่งงานอย่างน้อย 1 เที่ยว · 'none' = ไม่ได้วิ่งงานเลย) — 2026-08-28 */
 let dashFrom='', dashTo='';        /* ถ้ากรอกครบทั้งคู่ = ใช้ช่วงที่เลือกเอง */
 const DASH_MAX_DAYS=92;            /* กันเลือกช่วงยาวเกินจนโหลดหนัก */
 
@@ -4519,8 +4507,7 @@ function attendOf(ds,doc){
     const per=[];
     for(const t of config)for(const d of (t.drivers||[])){
       per.push({truckNo:t.truckNo,pos:String(d.pos),code:String(d.code||'').trim(),
-        name:d.name||'',off:isOff(t,d,ds),v:attStat(t,d),arrive:attArr(t,d)});
-        /* arrive: เวลามารายงานตัว (2026-08-28 · Section 5 ประวัติรายบุคคล ใช้เป็นจุดเริ่มนับเที่ยวที่ 1) */
+        name:d.name||'',off:isOff(t,d,ds),v:attStat(t,d)});
     }
     return {total:T,per:per};
   });
@@ -4549,50 +4536,6 @@ function planGroupOf(k){
   const r=(routes||[]).find(x=>x&&x.product===s);
   return (r&&JT[r.type])?r.type:'main';
 }
-/* ========== Section 5 · ประวัติการวิ่งงานย้อนหลังรายบุคคล (2026-08-28) ==========
-   ต่อยอดจาก A.person[code].byDate ที่ dashAgg เก็บไว้แล้ว (ดิบ: เที่ยวงานต่อวัน + เวลามารายงานตัว)
-   คำนวณ 2 ค่าเวลาแยกกันตามที่ผู้ใช้ยืนยัน (2026-08-28):
-   - เวลาวิ่งแต่ละเที่ยว = workHours(j) ตัวเดียวกับที่ระบบใช้อยู่แล้วทุกจุด (ออก→ปิดงาน ข้ามเที่ยงคืนได้)
-   - เวลานับจากรายงานตัว/เที่ยวก่อนหน้า → ปิดงานนี้ = นับต่อเนื่องทีละเที่ยว
-     เที่ยว 1 นับจากเวลามารายงานตัว · เที่ยว 2 นับจากปิดงานเที่ยว 1 · เที่ยว 3 นับจากปิดงานเที่ยว 2 ...
-   เที่ยวที่ยังไม่ปิดงาน (closed ว่าง) ไม่มีเลขให้คำนวณทั้งสองค่า — ไม่รวมในค่าเฉลี่ย
-   ไม่ต้องแปะป้าย "+1 วัน" ตามที่ผู้ใช้สั่ง (2026-08-28) — ให้ minutesBetween() บวกข้ามวันให้เงียบๆพอ */
-function personHistDays(byDate){
-  const days=[]; let sumSeg=0,segN=0,dist=0;
-  Object.keys(byDate||{}).sort().forEach(ds=>{
-    const rec=byDate[ds]||{arrive:'',off:false,jobs:[]};
-    /* เรียงเที่ยวตามลำดับเวลาจริงนับจากเวลามารายงานตัว ไม่ใช่เรียงตามเวลานาฬิกาดิบ (แก้บัค 2026-08-28)
-       กะที่ข้ามเที่ยงคืน เช่น มารายงานตัว 17:15 แล้ววิ่งจนถึง 01:58 ของอีกวัน — ถ้าเรียงด้วยเวลาดิบ
-       เที่ยวตอนตี 2-3 (เช่น 02:48) จะถูกมองว่า "เช้าที่สุด" แล้วขึ้นเป็นเที่ยวที่ 1 ทั้งที่จริงเป็นเที่ยวสุดท้าย
-       วิธีแก้: เทียบกับเวลามารายงานตัว ถ้าเวลาออกของเที่ยวไหนน้อยกว่าเวลามารายงานตัว ให้ถือว่าเป็น "วันถัดไป" (+24 ชม.)
-       แล้วค่อยเรียง จึงได้ลำดับเที่ยวที่ 1→2→3 ตรงกับที่ พจส. วิ่งจริง */
-    const arrMin=hm2min(rec.arrive);
-    const seqMin=m=>(arrMin!==null&&m!==null&&m<arrMin)?m+1440:m;
-    const jobs=(rec.jobs||[]).slice().sort((a,b)=>{
-      const x=hm2min(a.depart),y=hm2min(b.depart);
-      if(x===null&&y===null)return 0; if(x===null)return 1; if(y===null)return -1;
-      return seqMin(x)-seqMin(y);
-    });
-    let prevClose=rec.arrive||'';
-    const trips=jobs.map((j,i)=>{
-      dist+=Number(j.distance)||0;
-      const run=workHours(j);                 /* '' = ยังคำนวณไม่ได้ (ยังไม่ออก) */
-      let seg=null;
-      if(j.closed&&prevClose){
-        const m=minutesBetween(prevClose,j.closed);
-        if(m!==null){seg=Math.round(m/60*10)/10;sumSeg+=seg;segN++;}
-      }
-      if(j.closed)prevClose=j.closed;
-      return Object.assign({},j,{no:i+1,run:run,seg:seg,segFrom:i===0?'รายงานตัว':('ปิดงานเที่ยว '+i)});
-    });
-    const lastClosed=trips.filter(t=>t.closed).slice(-1)[0];
-    let spanH=null;
-    if(rec.arrive&&lastClosed){const m=minutesBetween(rec.arrive,lastClosed.closed); if(m!==null)spanH=Math.round(m/60*10)/10;}
-    days.push({ds:ds,arrive:rec.arrive||'',off:!!rec.off,lastClose:lastClosed?lastClosed.closed:'',spanH:spanH,trips:trips});
-  });
-  return {days:days,avgSeg:segN?Math.round(sumSeg/segN*10)/10:null,dist:dist,
-    workDays:days.filter(d=>d.trips.length>0).length};
-}
 function dashAgg(){
   const dates=dashDateList();
   const A={dates:dates,daily:[],haveDays:0,
@@ -4608,8 +4551,7 @@ function dashAgg(){
      cameDays  = วันที่มาทำงานจริง (มา / มาสาย / มา OT วันหยุด) ใช้เป็นตัวหารของ รอบ/วัน
      ทั้งสองตัวขึ้นกับ "ช่วงวันที่เลือก" โดยตรง เลือก 7 วันก็นับแค่ 7 วันนั้น */
   const P=code=>(A.person[code]=A.person[code]||{code:code,name:'',rounds:0,main:0,out:0,
-    hrs:0,hrsN:0,workDays:0,dutyDays:0,cameDays:0,late:0,absent:0,leave:0,inRoster:false,
-    byDate:{} /* {ds:{arrive,jobs:[{product,origin,dest,distance,depart,closed,type,truck}]}} — Section 5 (2026-08-28) */});
+    hrs:0,hrsN:0,workDays:0,dutyDays:0,cameDays:0,late:0,absent:0,leave:0,inRoster:false});
   dates.forEach(ds=>{
     /* วันที่ CC เปิดอยู่ ต้องอ่าน "ข้อมูลสด" (day) ไม่ใช่สำเนาใน dashCache
        เพราะ dashCache ถ่ายไว้ครั้งเดียวตอนโหลด ไม่ได้อัปเดตตามที่ CC กรอกแผน/จ่ายงานเพิ่มระหว่างวัน
@@ -4659,18 +4601,11 @@ function dashAgg(){
         codeSeen[code]=1;
         const pp=P(code); pp.inRoster=true; if(!pp.name&&x.name)pp.name=x.name;
         if(mine.length)pp.workDays++;
-        /* Section 5 (2026-08-28): เก็บเวลามารายงานตัวของวันนี้ไว้ก่อน แม้วันนั้นจะไม่มีเที่ยวเลย
-           (ต้องเห็นว่า "มา แต่ไม่ได้วิ่งงาน" ต่างจาก "ไม่มีข้อมูลวันนั้น")
-           เก็บ off (วันหยุดของคนนี้ตามตารางกะ) ไว้ด้วย — ใช้ตัดสินว่าทำไมไม่มีเวลามารายงานตัว
-           (วันหยุด vs ข้อมูลตกหล่นจริง) ตัวเดียวกับ isOff() ที่ dutyDays ใช้อยู่แล้วด้านบน */
-        pp.byDate[ds]=pp.byDate[ds]||{arrive:x.arrive||'',off:!!x.off,jobs:[]};
         mine.forEach(j=>{
           const gk=jobType(j);
           pp.rounds++; if(isMainBU(gk))pp.main++; else pp.out++;
           const wb=workBreakdown(j);
           if(wb.closed&&wb.total>0){pp.hrs+=wb.total;pp.hrsN++;}
-          pp.byDate[ds].jobs.push({product:j.product||'',origin:j.origin||'',dest:j.dest||'',
-            distance:j.distance,depart:j.depart||'',closed:j.closed||'',type:gk});
         });
         if(v==='late')pp.late++; else if(v==='absent')pp.absent++; else if(v==='leave')pp.leave++;
         /* ตัวหารรายวันของคนนี้ในช่วงที่เลือก — นับวันต่อวัน ไม่ใช่ยอดรวมทั้งช่วง */
@@ -4726,12 +4661,6 @@ function dashAgg(){
         pp.rounds++; if(isMainBU(gk))pp.main++; else pp.out++;
         const wb0=workBreakdown(j);
         if(wb0.closed&&wb0.total>0){pp.hrs+=wb0.total;pp.hrsN++;}
-        /* Section 5 (2026-08-28): คนนี้ไม่อยู่ในตารางกะของวันนี้เลย (เช่น ย้ายคัน/นอกกอง)
-           จึงไม่รู้ว่าวันนี้เป็นวันหยุดของเขาหรือไม่ (off:false = ไม่ทราบ) → แสดง "ตรวจสอบข้อมูล"
-           ตามกติกาที่ยืนยันไว้ (ไม่ยืนยันได้ว่าเป็นวันหยุด = ต้องตรวจสอบ ไม่ใช่เดาว่าเป็นวันหยุด) */
-        pp.byDate[ds]=pp.byDate[ds]||{arrive:'',off:false,jobs:[]};
-        pp.byDate[ds].jobs.push({product:j.product||'',origin:j.origin||'',dest:j.dest||'',
-          distance:j.distance,depart:j.depart||'',closed:j.closed||'',type:gk});
       }
       if(j.closed){
         A.closed++; row.closed++;
@@ -4767,9 +4696,6 @@ function dashAgg(){
     p.latePd = p.dutyDays ? Math.round(p.late   /p.dutyDays*100)/100 : null;
     p.leavePd= p.dutyDays ? Math.round(p.leave  /p.dutyDays*100)/100 : null;
     p.absPd  = p.dutyDays ? Math.round(p.absent /p.dutyDays*100)/100 : null;
-    /* Section 5 · ประวัติรายบุคคล — คำนวณครั้งเดียวตรงนี้ ใช้ซ้ำได้ทั้งตารางสรุปและกล่องรายละเอียด */
-    const H=personHistDays(p.byDate);
-    p.histDays=H.days; p.histAvgSeg=H.avgSeg; p.histDist=H.dist; p.histWorkDays=H.workDays;
     return p;})
     .filter(p=>p.rounds>0||p.inRoster);
   A.people.sort((a,b)=>(b.rounds-a.rounds)
@@ -4823,6 +4749,28 @@ const CH_W_MAIN='#2a78d6', CH_W_VT='#1baf7a', CH_W_LONG='#eb6834', CH_W_SHORT='#
 /* ปัดค่าสูงสุดของแกน Y ให้เป็นเลขกลม ๆ อ่านง่าย */
 function chNiceMax(v){v=Number(v);if(!isFinite(v))v=0;v=Math.max(1,Math.ceil(v));if(v<=5)return 5;if(v<=10)return 10;return Math.ceil(v/5)*5;}
 function chNum(v){v=Number(v);return isFinite(v)?v:0;}
+/* ---------- ความกว้างช่องต่อ 1 รายการ (band) — 2026-09-08 ----------
+   ผู้ใช้สั่ง: "กราฟแท่งทุกตาราง ให้ขยายออกด้านข้าง และสามารถปรับขนาดตัวเองถ้าจำนวนแท่งน้อย
+   ก็จะขยายกว้างหน่อย แต่ต้องไม่น่าเกลียด แต่ถ้าจำนวนวันเยอะ แท่งก็จะแคบลงด้วย"
+
+   ของเดิมทำ 2 ขั้นที่ขัดกันเอง — คำนวณช่องต่อวันด้วยบันไดขั้น (110/86/60/40/30 ตามจำนวนวัน)
+   แล้วยืดช่องให้เต็มพาเนล "โดยไม่มีเพดานบน" ขณะที่ความกว้างแท่งจริงมีเพดาน
+   ⇒ 7 วันบนพาเนลกว้าง ~1,100px ได้ช่องต่อวัน ~150px แต่แท่งกว้างได้แค่ 40px
+     เหลือช่องไฟข้างละ ~55px แท่งจึงดูลอยห่างกันผิดสัดส่วน (= อาการ "น่าเกลียด")
+   และบันไดขั้นยังกระโดด (8 วันได้ 86 แต่ 9 วันร่วงเป็น 60 ทันที)
+
+   ของใหม่: ต่อเนื่อง + มีเพดานทั้งบนและล่าง
+     วันน้อย → ชนเพดานบน ส่วนที่เหลือกลายเป็นที่ว่าง แล้วจัดกลุ่มแท่งไว้กลาง (ตัวแปร off)
+               เส้นฐาน/เส้นตารางยังยาวเต็มพาเนลตามที่สั่งไว้เมื่อ 2026-08-17
+     วันมาก → ชนเพดานล่าง ความกว้าง SVG โตเกินพาเนล เลื่อนดูออกด้านข้างในกล่อง .dscroll
+   เพดานบนของแต่ละกราฟคำนวณจาก "ช่องที่แท่งชนเพดานความกว้างแท่งพอดี" จึงไม่มีช่องไฟส่วนเกิน
+   avail<=0 คือยังไม่เคยวัดพาเนล (รอบวาดแรก) — ใช้ค่าประมาณไว้ก่อน แล้ว dashFillMeasure วาดซ้ำให้ */
+function chBand(N,avail,min,max){
+  if(min>max)max=min;
+  if(!(N>0))return max;
+  const w=(avail>0?avail:900)/N;
+  return Math.max(min,Math.min(max,w));
+}
 /* ---------- ความกว้างที่กราฟมีให้ใช้จริง (2026-08-17) ----------
    ผู้ใช้สั่งว่า "พื้นหลังกราฟที่เป็นเส้น ทำให้ยาวเต็มหน้าเป็นเบสฐานไว้เลย ต่อให้ข้อมูลมีน้อย"
    จึงต้องรู้ความกว้างของพาเนลก่อนวาด แล้วยืดเส้นตาราง/แกนให้เต็ม
@@ -4890,12 +4838,17 @@ function chGroupedBars(items,series,aria,opts){
   const alwaysVals=!!O.alwaysVals;                        /* บังคับติดตัวเลขทุกแท่งที่ไม่เป็นศูนย์ */
   /* ความกว้างต่อวันหดลงเมื่อวันมาก (ช่วง 1 เดือน) เพื่อไม่ให้กราฟยาวเกินไป — ที่เหลือเลื่อนดูข้างได้ */
   const wide=alwaysVals?S*13+12:0;                        /* ต้องกว้างพอให้ตัวเลขไม่ทับกัน */
-  let gW=Math.max(N<=4?110:N<=8?82:N<=14?58:N<=24?40:S*9+10, S*7+6, wide);
-  /* ถ้ากราฟแคบกว่าพาเนล ให้ยืดช่องต่อวันจนเต็ม เพื่อให้เส้นฐาน/เส้นตารางยาวเต็มหน้า */
+  /* 2026-09-08 — ช่องต่อวันแบบต่อเนื่อง (ดูคำอธิบายที่ chBand)
+     เพดานบน = ช่องที่แท่งทั้งกลุ่มชนเพดานความกว้างแท่ง (BARCAP) พอดี กว้างกว่านี้ช่องไฟจะโป่งเปล่า ๆ
+     เพดานล่าง = แคบสุดที่ยังพอวางตัวเลขกำกับได้ (ถ้าสั่ง alwaysVals ต้องกว้างขึ้นตาม wide) */
+  const BARCAP=30;                                        /* 2026-09-08 ขยายจาก 26 ด้วยเหตุผลเดียวกับ chStackedBars */
+  const bandMin=Math.max(S*9+10, S*7+6, wide);
+  const bandMax=(BARCAP*S+BG*(S-1))/0.72;
   const fillW=O.fill||0;
-  if(fillW&&padL+padR+N*gW<fillW)gW=(fillW-padL-padR)/N;
-  const W=Math.max(240,Math.round(padL+padR+N*gW));
-  const barW=Math.max(6,Math.min(26,(gW*0.72-(S-1)*BG)/S));
+  let gW=chBand(N,fillW?fillW-padL-padR:0,bandMin,bandMax);
+  /* เส้นฐาน/เส้นตารางยาวเต็มพาเนลเสมอ (สั่งไว้ 2026-08-17) แม้ช่องต่อวันจะชนเพดานแล้วเหลือที่ว่าง */
+  const W=Math.max(240,Math.round(padL+padR+N*gW),Math.round(fillW));
+  const barW=Math.max(6,Math.min(BARCAP,(gW*0.72-(S-1)*BG)/S));
   const inner=barW*S+BG*(S-1);
   const y=v=>base-(v/max)*innerH;
   const showVals=alwaysVals||barW>=11;
@@ -4942,12 +4895,21 @@ function chStackedBars(items,series,aria,opts){
   const innerH=H-padT-xBand, base=padT+innerH;
   /* ช่วงสั้น ๆ ให้แต่ละแท่งกว้างขึ้น เพื่อไม่ให้กราฟกองอยู่มุมซ้ายของพาเนลกว้าง ๆ
      ช่วงยาวหดลงแล้วเลื่อนดูข้างในกล่องตามเดิม */
-  let gW=Math.max(O.minBand||0, N<=4?110:N<=8?86:N<=14?60:N<=24?40:30);
-  const fillW=O.fill||0;
-  if(fillW&&padL+padR+N*gW<fillW)gW=(fillW-padL-padR)/N;   /* ยืดให้เต็มพาเนล */
-  const W=Math.max(260,Math.round(padL+padR+N*gW));
   const BGAP=multi?4:0;                                    /* ช่องว่างระหว่างแท่งในวันเดียวกัน */
-  const barW=Math.max(8,Math.min(multi?30:40,(gW*(multi?0.74:0.6)-BGAP*(K-1))/K));
+  /* 2026-09-08 — ช่องต่อวันแบบต่อเนื่อง (ดูคำอธิบายที่ chBand)
+     เพดานบน = ช่องที่แท่ง (หรือคู่แท่งแผน/ปัญหา) ชนเพดานความกว้างแท่งพอดี — กว้างกว่านี้แท่งไม่โตตาม
+     เพดานล่าง = แคบสุดที่ตัวเลขในแท่งยังอ่านออก · O.minBand ยกพื้นได้ (1.2 รอบต่อคนใช้ 34) */
+  /* เพดานความกว้างแท่ง — 2026-09-08 ขยายจาก 40/30 เป็น 56/40 ตามที่ผู้ใช้สั่งว่า
+     "ถ้าจำนวนแท่งน้อยก็จะขยายกว้างหน่อย" ของเดิมแท่งตันที่ 40px ตั้งแต่ 14 วันลงมา
+     จึงไม่กว้างขึ้นอีกเลยแม้เหลือ 3 วัน แค่ช่องไฟโป่งขึ้นเรื่อย ๆ */
+  const BARCAP=multi?40:56, RATIO=multi?0.74:0.6;
+  const bandMin=Math.max(O.minBand||0, multi?38:26);
+  const bandMax=Math.max(bandMin,(BARCAP*K+BGAP*(K-1))/RATIO);
+  const fillW=O.fill||0;
+  let gW=chBand(N,fillW?fillW-padL-padR:0,bandMin,bandMax);
+  /* เส้นฐาน/เส้นตารางยาวเต็มพาเนลเสมอ (สั่งไว้ 2026-08-17) ที่ว่างที่เหลือใช้จัดกลุ่มแท่งไว้กลาง (off) */
+  const W=Math.max(260,Math.round(padL+padR+N*gW),Math.round(fillW));
+  const barW=Math.max(8,Math.min(BARCAP,(gW*RATIO-BGAP*(K-1))/K));
   const y=v=>base-(v/max)*innerH;
   const GAP=2;                                            /* ช่องว่างสีพื้นระหว่างช่วงสี ตามมาตรฐานกราฟของระบบ */
   const everyX=Math.max(1,Math.ceil(N/16));
@@ -4989,7 +4951,10 @@ function chStackedBars(items,series,aria,opts){
       if(multi&&O.subLab&&O.subLab[si]&&barW>=16)
         out += `<text x="${bx+barW/2}" y="${H-(it.foot?14:6)-9}" font-size="7" text-anchor="middle" fill="${CH_MUTE}">${esc(O.subLab[si])}</text>`;
     });
-    const footTxt=it.foot?`<text x="${cx}" y="${H-4}" font-size="7.5" text-anchor="middle" fill="${CH_MUTE}">${esc(it.foot)}</text>`:'';
+    /* 2026-09-08 — ข้อความเล็กใต้แท่ง (เช่น "แผน N") ต้องเว้นระยะเหมือนป้ายวันที่
+       เดิมพิมพ์ทุกแท่งไม่มีเงื่อนไข พอวันมากตัวหนังสือชนกันเป็นแถบเทาอ่านไม่ออก
+       (เห็นชัดตอนตรวจภาพหน้าจอ 30 วัน) ใช้ showX ตัวเดียวกันเพื่อให้เว้นตรงกับป้ายวันที่พอดี */
+    const footTxt=(it.foot&&showX(i))?`<text x="${cx}" y="${H-4}" font-size="7.5" text-anchor="middle" fill="${CH_MUTE}">${esc(it.foot)}</text>`:'';
     return `<g class="dpt${on?' on':''}"${O.clickable?` data-dd="${esc(it.key)}"`:''}>
       <title>${esc(it.tip)}</title>
       <rect x="${gx}" y="${padT-8}" width="${gW}" height="${innerH+8}" fill="${on?'rgba(43,108,176,.07)':'transparent'}"></rect>
@@ -5008,13 +4973,15 @@ function dTrend(daily,pick,lab,color,opts){
   const max=chNiceMax(Math.max(0,...vals)), ticks=chTicks(max);
   /* ระยะห่างต่อวันหดลงเมื่อวันมาก เพื่อไม่ให้กราฟยาวเป็นริบบิ้นบาง ๆ
      (ช่วง 1 เดือนเดิมกว้าง ~1,790px ตอนนี้เหลือ ~1,030px) ที่เหลือให้เลื่อนดูข้างในกล่อง */
-  let step = N<=8?56 : N<=14?44 : N<=24?34 : 26;
   const padL=28,padR=14,padT=18,xBand=20,H=O.H||168;
   const innerH=H-padT-xBand, base=padT+innerH;
-  /* ยืดระยะต่อวันให้กราฟกว้างเต็มพาเนล เส้นฐานจึงยาวเต็มหน้าแม้ข้อมูลมีไม่กี่วัน */
+  /* 2026-09-08 — ระยะต่อวันแบบต่อเนื่องด้วยเกณฑ์เดียวกับกราฟแท่ง (ดู chBand)
+     เดิมเป็นบันไดขั้น 56/44/34/26 ซึ่งกระโดดคนละจังหวะกับกราฟแท่ง
+     กราฟเส้นไม่ต้องมีเพดานบน เพราะจุดกระจายเต็มความกว้าง (xa..xb) อยู่แล้ว ไม่เกิดช่องไฟโป่งเหมือนแท่ง
+     เส้นฐานยาวเต็มพาเนลแม้ข้อมูลมีไม่กี่วัน · วันมากชนเพดานล่างแล้วเลื่อนดูข้างได้ */
   const fillW=O.fill||0;
-  if(fillW&&padL+padR+N*step<fillW)step=(fillW-padL-padR)/N;
-  const W=Math.max(240,Math.round(padL+padR+N*step));
+  const step=chBand(N,fillW?fillW-padL-padR:0,26,1e4);
+  const W=Math.max(240,Math.round(padL+padR+N*step),Math.round(fillW));
   const xa=padL+16, xb=W-padR-6;
   /* ป้ายตัวเลขบนจุด: ไม่ติดทุกจุด (ชนกันและอ่านไม่ออกเวลาวันมาก)
      ติดที่จุดแรก/จุดท้าย/จุดสูงสุด/จุดต่ำสุด และทุก ๆ ช่วงหนึ่ง — วันน้อยก็ติดครบเหมือนเดิม */
@@ -5415,105 +5382,7 @@ function dashText(A){
   L.push('');
   L.push('สินค้า/เส้นทางที่วิ่งมากสุด');
   top(A.prod).forEach(([k,v])=>L.push('  · '+k+' '+v+' เที่ยว'));
-  L.push('');
-  L.push('รายบุคคลย้อนหลัง (Section 5)');
-  L.push('  · พจส. ทั้งหมดในช่วงนี้ '+(A.people||[]).length+' คน · วิ่งงานอย่างน้อย 1 เที่ยว '
-    +(A.people||[]).filter(p=>p.rounds>0).length+' คน · ไม่ได้วิ่งงานเลย '
-    +(A.people||[]).filter(p=>!p.rounds).length+' คน');
   return L.join('\n');
-}
-/* ================= Section 5 · ตารางสรุป + รายละเอียดรายบุคคล (2026-08-28) =================
-   ข้อมูลดิบมาจาก A.people[].histDays ที่ dashAgg/personHistDays เตรียมไว้แล้ว (ดูหัวข้อด้านบน)
-   ตารางสรุป: แสดง พจส. ทุกคนที่อยู่ในตารางกะของช่วงนี้เสมอ รวมคนที่ไม่ได้วิ่งงานเลย (ตามที่ผู้ใช้สั่ง 2026-08-28)
-   กดที่แถวเพื่อขยาย/ยุบดูรายละเอียด — เปิดได้ทีละคน (dashHistOpen) แบบเดียวกับกล่องรายละเอียดวันของ Section อื่น */
-const HIST_FILTER_LABEL={has:'วิ่งงานอย่างน้อย 1 เที่ยว',none:'ไม่ได้วิ่งงานเลย'};
-function histTableHTML(A){
-  const all=A.people||[];
-  if(!all.length)return `<div class="dpanel"><h3>5.1 · สรุปรายคน</h3><div class="cno">ไม่มี พจส. ในตารางกะของช่วงวันที่เลือก</div></div>`;
-  /* กดการ์ดสรุปด้านบนเพื่อกรองตารางนี้ (2026-08-28) — ตัวเลขบนการ์ดคำนวณจากชุดเต็มเสมอ ไม่ลดตามตัวกรอง
-     เหมือนแพทเทิร์นชิปกรองของหน้า 4 (roundFilter) */
-  const list=dashHistFilter==='has'?all.filter(p=>p.rounds>0)
-            :dashHistFilter==='none'?all.filter(p=>!p.rounds)
-            :all;
-  const filterBar=dashHistFilter?`<div class="cno" style="margin:-6px 0 10px">กำลังกรอง: <b style="color:var(--ink)">${esc(HIST_FILTER_LABEL[dashHistFilter]||dashHistFilter)}</b>
-      · แสดง ${list.length} จาก ${all.length} คน
-      <button class="btn mini" data-hfilter="" style="margin-left:8px">✕ แสดงทั้งหมด</button></div>`:'';
-  if(!list.length)return `<div class="dpanel"><h3>5.1 · สรุปรายคน</h3>${filterBar}<div class="cno">ไม่มี พจส. ตรงกับตัวกรองนี้</div></div>`;
-  const rows=list.map(p=>{
-    const has=p.rounds>0;
-    const open=has&&dashHistOpen===p.code;
-    const avgTxt=(has&&p.histAvgSeg!=null)?(n1(p.histAvgSeg)+' ชม.'):'<span class="cno">-</span>';
-    const head=`<tr class="hrow"${has?(' data-hperson="'+esc(p.code)+'" style="cursor:pointer"'):''}>
-      <td style="width:20px">${has?('<span class="hcaret'+(open?' on':'')+'">▶</span>'):''}</td>
-      <td class="mono">${esc(p.code)}</td>
-      <td>${esc(p.name||'-')}</td>
-      <td style="text-align:center">${has?p.histWorkDays:'-'}</td>
-      <td style="text-align:center;font-weight:600">${has?p.rounds:'<span class="cno">ไม่ได้วิ่งงาน</span>'}</td>
-      <td style="text-align:center">${has?n1(p.histDist||0):'-'}</td>
-      <td style="text-align:center">${avgTxt}</td></tr>`;
-    return head+(open?`<tr class="hdetail"><td colspan="7" style="padding:0">${histDetailHTML(p)}</td></tr>`:'');
-  }).join('');
-  return `<div class="dpanel">
-    <h3>5.1 · สรุปรายคน <span class="cno">(เที่ยวรวมนับรวมที่ยังไม่ปิดงานด้วย · เวลาเฉลี่ย/เที่ยว คิดเฉพาะเที่ยวที่ปิดงานแล้ว)</span></h3>
-    ${filterBar}
-    <div class="tablewrap"><table style="min-width:640px">
-      <thead><tr><th></th><th>รหัส พจส.</th><th>ชื่อ-สกุล</th>
-        <th style="text-align:center">วันที่มีเที่ยว</th><th style="text-align:center">เที่ยวรวม</th>
-        <th style="text-align:center">ระยะทางรวม (กม.)</th><th style="text-align:center">เวลาเฉลี่ย/เที่ยว</th></tr></thead>
-      <tbody>${rows}</tbody></table></div></div>`;
-}
-/* กล่องรายละเอียดของ พจส. หนึ่งคน — แยกเป็นบล็อกตามวันที่มีเที่ยวจริงในช่วงที่เลือก
-   สองคอลัมน์เวลาที่ต้องแยกกันชัด (ยืนยันกับผู้ใช้ 2026-08-28):
-   "เวลาวิ่ง" = ออก→ปิดงานของเที่ยวนั้นเที่ยวเดียว (workHours ตัวเดียวกับที่อื่นในระบบใช้)
-   "นับจากรายงานตัว/เที่ยวก่อนหน้า" = ต่อเนื่องทีละเที่ยวจากเวลารายงานตัว/ปิดงานเที่ยวก่อน
-   เที่ยวที่ยังไม่ปิดงาน (closed ว่าง) โชว์สถานะจริงผ่าน runStatus(j) แทนเวลา — ไม่แปะป้ายข้ามวันตามที่สั่ง */
-/* ป้ายแทน "-" เมื่อไม่มีเวลามารายงานตัว (2026-08-28 · ตามที่ผู้ใช้สั่ง)
-   เช็คว่าวันนั้นเป็นวันหยุดของคนนี้หรือไม่ (d.off มาจาก isOff() ตัวเดียวกับที่ dutyDays ใช้)
-   เป็นวันหยุด = คำอธิบายที่สมเหตุสมผลว่าทำไมไม่มีรอยประทับเวลาเข้ากะตามปกติ (เช่น มาทำ OT)
-   ไม่ใช่วันหยุด = ข้อมูลตกหล่นจริง ต้องเตือนให้ไปตรวจสอบ ไม่ใช่ปล่อยเป็นค่าว่างเฉยๆ */
-function histNoArriveLabel(d){
-  return d.off
-    ? '<span class="tag" style="background:var(--off-bg);color:var(--off)">วันหยุด</span>'
-    : '<span class="tag" style="background:var(--absent-bg);color:var(--absent)">ตรวจสอบข้อมูล</span>';
-}
-function histDetailHTML(p){
-  const days=(p.histDays||[]).filter(d=>d.trips.length>0);
-  if(!days.length)return '<div class="cno" style="padding:12px 16px">ไม่มีเที่ยวงานในช่วงนี้</div>';
-  return '<div style="padding:12px 16px 4px 40px">'+days.map(d=>{
-    const body=d.trips.map(t=>{
-      const rs=runStatus(t);
-      const closedCell=t.closed?('<span class="mono">'+esc(t.closed)+'</span>')
-        :('<span class="badge '+rs[1]+'">'+esc(rs[2])+'</span>');
-      const runTxt=(t.run!==''&&t.run!=null)?(t.run+' ชม.'):'<span class="cno">-</span>';
-      /* เที่ยวที่ 1 นับจาก "มารายงานตัว" — ถ้า seg เป็น null เพราะไม่มีเวลามารายงานตัว (ไม่ใช่เพราะเที่ยวก่อนหน้ายังไม่ปิด)
-         ให้ใช้ป้าย วันหยุด/ตรวจสอบข้อมูล แทน "-" เปล่าๆ (2026-08-28 · ตามที่ผู้ใช้สั่ง) */
-      const segTxt=(t.seg!=null)?(t.seg+' ชม.')
-        :((t.no===1&&!d.arrive)?histNoArriveLabel(d):'<span class="cno">-</span>');
-      return `<tr>
-        <td class="mono" style="text-align:center">${t.no}</td>
-        <td>${jtBadge(t.type)} ${esc(t.product||'-')}</td>
-        <td>${esc(t.origin||'(ไม่ระบุ)')} <span class="cno">→</span> ${esc(t.dest||'(ไม่ระบุ)')}</td>
-        <td class="mono" style="text-align:center">${(t.distance||t.distance===0)?esc(String(t.distance)):'-'}</td>
-        <td class="mono" style="text-align:center">${t.depart?esc(t.depart):'-'}</td>
-        <td style="text-align:center">${closedCell}</td>
-        <td style="text-align:center">${runTxt}</td>
-        <td style="text-align:center">${segTxt}<div class="cno" style="font-size:10.5px">${esc(t.segFrom)} → ปิดงานนี้</div></td>
-      </tr>`;
-    }).join('');
-    return `<div style="margin-bottom:14px">
-      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;margin-bottom:6px">
-        <b class="mono">${esc(d.ds)}</b>
-        <span class="cno">มารายงานตัว ${d.arrive?('<b class="mono" style="color:var(--ink)">'+esc(d.arrive)+'</b>'):histNoArriveLabel(d)}</span>
-        <span class="cno">ปิดงานเที่ยวสุดท้าย <b class="mono" style="color:var(--ink)">${d.lastClose?esc(d.lastClose):'-'}</b></span>
-        <span class="cno">รวมเวลาอยู่ปฏิบัติงาน ${d.spanH!=null?('<b class="mono" style="color:var(--ink)">'+d.spanH+' ชม.</b>'):(d.arrive?'<span class="cno">-</span>':histNoArriveLabel(d))}</span>
-      </div>
-      <div class="tablewrap"><table style="min-width:720px">
-        <thead><tr><th style="text-align:center">เที่ยว</th><th>สินค้า</th><th>เส้นทาง</th>
-          <th style="text-align:center">กม.</th><th style="text-align:center">ออก</th>
-          <th style="text-align:center">ปิดงาน</th><th style="text-align:center">เวลาวิ่ง</th>
-          <th style="text-align:center">นับจากรายงานตัว/เที่ยวก่อนหน้า</th></tr></thead>
-        <tbody>${body}</tbody></table></div></div>`;
-  }).join('')+'</div>';
 }
 /* ---------- วาดหน้า ---------- */
 function renderDash(){
@@ -5529,9 +5398,7 @@ function renderDash(){
      แท็บ "ภาพรวม" ถูกถอดออกไปก่อนหน้านี้ (2026-08-14) และแท็บ "เส้นทาง" ถูกถอดออกรอบนี้
      กราฟสินค้า/เส้นทาง กับ ต้นทาง จึงไม่มีบนหน้านี้แล้ว (ข้อมูลยังถูกนับไว้ใน dashAgg สำหรับปุ่มคัดลอกสรุป) */
   const D=Math.max(1,A.haveDays);                       /* ตัวหารของค่าเฉลี่ยรายวัน */
-  /* 2026-08-28 · ผู้ใช้สั่งให้ตัวเลขบนการ์ดสรุปทุก Section เป็นจำนวนเต็ม ไม่มีทศนิยม
-     (ชื่อ avg1 คงไว้ตามเดิมเพื่อไม่ต้องแก้จุดเรียกใช้ทุกจุด — พฤติกรรมเปลี่ยนจากปัดทศนิยม 1 ตำแหน่ง เป็นปัดเป็นจำนวนเต็ม) */
-  const avg1=v=>String(Math.round(v/D));
+  const avg1=v=>(v/D).toFixed(1);
   const secHead=(n,ttl,sub)=>`<div class="dsech" id="dsec${n}"><span class="dsecn">${n}</span>
     <h2>${ttl}</h2>${sub?`<span class="cno">${sub}</span>`:''}</div>`;
   const at=k=>(dashPickDay&&dashPickAt===k)?dPickPanel(A):'';
@@ -5571,7 +5438,7 @@ function renderDash(){
       ${card('ลา',avg1(A.att.leave),'คน/วัน')}
       ${card('มา OT วันหยุด',avg1(A.att.ot),'คน/วัน')}
       ${card('ยังไม่เช็ก',avg1(A.att.unchecked),'คน/วัน · ควรเป็น 0 เมื่อจบวัน')}
-      ${card('รอบต่อคน',(runP.length?Math.round(rndTot/runP.length):'0'),'รอบ/คน ในช่วงนี้ ('+runP.length+' คนที่มีงาน)')}
+      ${card('รอบต่อคน',(runP.length?(rndTot/runP.length).toFixed(1):'0'),'รอบ/คน ในช่วงนี้ ('+runP.length+' คนที่มีงาน)')}
     </div>
     <div class="dpanel" data-dwho="s11">
       <h3>2.1 · การมาทำงานของ พจส. รายวัน <span class="cno">(1 วัน 2 แท่ง · แท่งซ้าย = เทียบแผน · แท่งขวา = สาย/ลา/ขาด)</span></h3>
@@ -5597,7 +5464,7 @@ function renderDash(){
     <div class="dgrid4">
       ${card('รถที่ออกงาน',Object.keys(A.trucksSeen).length,'จาก '+config.length+' คันในกองรถ','hero')}
       ${card('เที่ยวรวม',A.trips,'เฉลี่ย '+n1(A.tripsPerDay)+' เที่ยว/วัน')}
-      ${card('เฉลี่ยต่อคัน',(Object.keys(A.trucksSeen).length?Math.round(A.trips/Object.keys(A.trucksSeen).length):'0'),'เที่ยว/คัน ในช่วงนี้')}
+      ${card('เฉลี่ยต่อคัน',(Object.keys(A.trucksSeen).length?(A.trips/Object.keys(A.trucksSeen).length).toFixed(1):'0'),'เที่ยว/คัน ในช่วงนี้')}
       ${card('ครบ '+TARGET_ROUNDS+' รอบ',avg1(A.hitDaySum||0),'คัน/วัน · เคยทำครบ '+A.hitTrucks+' คัน')}
     </div>
     <div class="dpanel" data-dwho="s21">
@@ -5627,7 +5494,7 @@ function renderDash(){
       <div class="dnum">${q.n}</div></div>`;}).join('');
   const sec3=`${secHead('4','เวลา','นับจากเที่ยวที่ปิดงานแล้วเท่านั้น')}
     <div class="dgrid4">
-      ${card('เวลาทำงานเฉลี่ย',Math.round(A.hoursAvg),'ชม./เที่ยว (จาก '+A.hours.length+' เที่ยวที่ปิดงาน)','hero')}
+      ${card('เวลาทำงานเฉลี่ย',n1(A.hoursAvg),'ชม./เที่ยว (จาก '+A.hours.length+' เที่ยวที่ปิดงาน)','hero')}
       ${WT_GROUPS.map(x=>card(x.name+' ผ่านเกณฑ์',okpc(x.k),'ไม่เกิน '+g(x.k).ok+' · เกิน '+g(x.k).over+' · เฉลี่ย '+(g(x.k).n?(g(x.k).sum/g(x.k).n).toFixed(1):'-')+' ชม.')).join('')}
       ${card('เกินเกณฑ์รวม',A.over8,pct(A.over8,A.hours.length)+'% ของเที่ยวที่ปิดงาน')}
     </div>
@@ -5639,25 +5506,7 @@ function renderDash(){
     </div>
     ${at('s31')}`;
 
-  /* ---------- Section 5 · รายบุคคลย้อนหลัง (2026-08-28) ----------
-     ต่อท้าย Section 4 ในหน้า Dashboard เดิม (ไม่ทำแท็บแยก) ใช้ตัวกรองช่วงวันที่ตัวเดียวกับด้านบนทั้งหน้า
-     ไม่มีตัวกรองกลุ่มรถ/ประเภทงานเพิ่มตามที่ผู้ใช้สั่ง — A.people มาจาก dashAgg ตัวเดียวกับ Section 2 */
-  const histWith=(A.people||[]).filter(p=>p.rounds>0).length;
-  const histNo=(A.people||[]).length-histWith;
-  /* การ์ด 3 ใบแรกกดกรองตารางด้านล่างได้ (2026-08-28) — แพทเทิร์นเดียวกับการ์ดกรองของหน้า 3/หน้า 4 เดิม
-     กดซ้ำใบเดิม = ยกเลิกกลับไปแสดงทั้งหมด · การ์ด "เที่ยวรวมทั้งหมด" ไม่ใช่กลุ่มคนจึงไม่ทำให้กดกรองได้ */
-  const hcard=(k,v,s2,fv,cls)=>`<div class="dcard pick ${cls||''} ${dashHistFilter===fv?'sel':''}" data-hfilter="${esc(fv)}" title="กดเพื่อ${dashHistFilter===fv?'แสดงทั้งหมด':'ดูเฉพาะกลุ่มนี้'}">
-      <div class="k">${k}</div><div class="v">${v}</div>${s2?('<div class="s">'+s2+'</div>'):''}</div>`;
-  const sec4=`${secHead('5','รายบุคคลย้อนหลัง','เลือกช่วงวันที่ด้านบนของหน้านี้ · กดที่แถวชื่อ พจส. เพื่อดูรายเที่ยว')}
-    <div class="dgrid4">
-      ${hcard('พจส. ทั้งหมดในช่วงนี้',(A.people||[]).length,'คน · กดเพื่อดูทั้งหมด','')}
-      ${hcard('วิ่งงานอย่างน้อย 1 เที่ยว',histWith,'คน · กดเพื่อกรอง','has','hero')}
-      ${hcard('ไม่ได้วิ่งงานเลย',histNo,'คน · กดเพื่อกรอง','none')}
-      ${card('เที่ยวรวมทั้งหมด',A.trips,'เที่ยว · ปิดงานแล้ว '+A.closed+' · ยังไม่ปิด '+(A.trips-A.closed))}
-    </div>
-    ${histTableHTML(A)}`;
-
-  const body=sec1+secP+sec2+sec3+sec4;
+  const body=sec1+secP+sec2+sec3;
   const prog=dashBusy?`<div class="dload" style="margin-top:8px"><i style="width:${dashNeed?Math.round(dashDone/dashNeed*100):100}%"></i></div>
      <div class="cno" style="margin-top:4px">กำลังดึงข้อมูล ${dashDone}/${dashNeed} วัน…</div>`:'';
 
@@ -5683,7 +5532,7 @@ function renderDash(){
     ${prog}
     <div class="dbar" style="padding:8px 12px">
       <!-- 2026-08-17 · ถอดแท็บทั้งหมดออก รวมเป็นหน้าเดียว · 2026-08-19 แยกปริมาณงานออกจาก พจส. เป็น 4 Section -->
-      <span class="dseg">${jump('s1','1 · ปริมาณงาน')}${jump('s2','2 · พจส.')}${jump('s3','3 · เที่ยวรถ')}${jump('s4','4 · เวลา')}${jump('s5','5 · รายบุคคลย้อนหลัง')}</span>
+      <span class="dseg">${jump('s1','1 · ปริมาณงาน')}${jump('s2','2 · พจส.')}${jump('s3','3 · เที่ยวรถ')}${jump('s4','4 · เวลา')}</span>
       <span class="cno" style="margin-left:auto">ข้อมูลจากหน้า 4 · อัปเดต ${nowHM()} น.</span>
     </div>
     ${body}
@@ -5719,7 +5568,7 @@ document.getElementById('view').addEventListener('input',e=>{
 document.getElementById('view').addEventListener('change',e=>{
   if(e.target.id==='dFrom'||e.target.id==='dTo'){
     const a=document.getElementById('dFrom'), b=document.getElementById('dTo');
-    if(a&&b&&a.value&&b.value){dashFrom=a.value;dashTo=b.value;dashHistFilter='';dashHistOpen='';dashLoad();renderDash();}
+    if(a&&b&&a.value&&b.value){dashFrom=a.value;dashTo=b.value;dashLoad();renderDash();}
     return;
   }
   /* ตัวบันทึก "หมายเหตุรถ 0 เที่ยว" ถูกถอดออก 2026-08-14 พร้อมกับตารางที่มันอยู่
@@ -5728,8 +5577,8 @@ document.getElementById('view').addEventListener('change',e=>{
 /* ---------- ปุ่มต่าง ๆ ของหน้า 6 ---------- */
 document.getElementById('view').addEventListener('click',e=>{
   const dd=e.target.closest('[data-dday]');
-  if(dd){dashDays=+dd.dataset.dday;dashFrom='';dashTo='';dashHistFilter='';dashHistOpen='';dashLoad();renderDash();return;}
-  if(e.target.closest('#dClear')){dashFrom='';dashTo='';dashHistFilter='';dashHistOpen='';dashLoad();renderDash();return;}
+  if(dd){dashDays=+dd.dataset.dday;dashFrom='';dashTo='';dashLoad();renderDash();return;}
+  if(e.target.closest('#dClear')){dashFrom='';dashTo='';dashLoad();renderDash();return;}
   if(e.target.closest('#dPickClear')){dashPickDay='';dashPickAt='';renderDash();return;}
   /* ปุ่มกระโดดไป Section (แทนแท็บเดิม) */
   const jp=e.target.closest('[data-djump]');
@@ -5739,13 +5588,6 @@ document.getElementById('view').addEventListener('click',e=>{
     return;
   }
   if(e.target.closest('#dPeopleAll')){dashAllPeople=!dashAllPeople;renderDash();return;}
-  /* Section 5 · กดการ์ดสรุปเพื่อกรองตาราง 5.1 (2026-08-28) — กดซ้ำใบเดิม = ยกเลิกกลับไปแสดงทั้งหมด
-     ต้องเช็คก่อน [data-hperson] เพราะปุ่ม "✕ แสดงทั้งหมด" ในแถบกรองก็ใช้ data-hfilter เหมือนกัน */
-  const hf=e.target.closest('[data-hfilter]');
-  if(hf){dashHistFilter=(dashHistFilter===hf.dataset.hfilter)?'':hf.dataset.hfilter;renderDash();return;}
-  /* Section 5 · เปิด/ยุบรายละเอียดรายบุคคล — เปิดได้ทีละคน กดซ้ำที่คนเดิม = ปิด */
-  const hp=e.target.closest('[data-hperson]');
-  if(hp){dashHistOpen=(dashHistOpen===hp.dataset.hperson)?'':hp.dataset.hperson;renderDash();return;}
   if(e.target.closest('#dZeroClear')){dashZeroPick='';renderDash();return;}
   const zp=e.target.closest('[data-zpick]');
   if(zp){dashZeroPick=(dashZeroPick===zp.dataset.zpick)?'':zp.dataset.zpick;renderDash();return;}
