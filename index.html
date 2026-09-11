@@ -2631,8 +2631,8 @@ function openJobDetail(id){
       ${row('เวลากลับ',tval(j.ret))}
       ${row('เวลาปิดงาน',tval(j.closed))}
       ${row('รวมเวลาทำงาน',wb.parts.length
-          ?('<span class="dbig mono">'+wb.total+'</span> ชม.'+(wb.closed?'':' <span class="tag">ถึง'+esc(wb.upto)+'</span>')
-            +'<div class="cno" style="margin-top:3px">'+wb.parts.map(x=>esc(x.label)+' '+x.h).join(' · ')+'</div>')
+          ?('<span class="dbig mono">'+hmText(wb.totalMin)+'</span>'+(wb.closed?'':' <span class="tag">ถึง'+esc(wb.upto)+'</span>')
+            +'<div class="cno" style="margin-top:3px">'+wb.parts.map(x=>esc(x.label)+' '+hmPlain(x.min)).join(' · ')+'</div>')
           :(wb.started?'<span class="badge b-run">กำลังเดินทาง</span>':'<span class="badge b-wait">รอออก</span>'))}
       ${(wb.closed&&wb.total>workLimit(j))?row('สาเหตุเกิน '+workLimit(j)+' ชม.','<span style="color:var(--absent)">'+(esc(j.overNote||'')||'<span class="cno">ยังไม่ได้ระบุ (กรอกที่หน้า 3)</span>')+'</span>'):''}
       ${row('หมายเหตุ',esc(j.note||'')||'<span class="cno">-</span>')}
@@ -2693,11 +2693,33 @@ function workBreakdown(j){
     const m=minutesBetween(j[pts[i-1][1]],j[pts[i][1]]);
     if(m===null)continue;
     mins+=m;
-    out.parts.push({label:pts[i-1][0]+'→'+pts[i][0],h:Math.round(m/60*10)/10});
+    out.parts.push({label:pts[i-1][0]+'→'+pts[i][0],h:Math.round(m/60*10)/10,min:m});
   }
   out.total=Math.round(mins/60*10)/10;
+  /* 2026-09-11 — เก็บ "นาทีดิบ" ไว้ด้วย สำหรับหน้า 3 ที่ผู้ใช้สั่งให้แสดงเป็น ชม./นาที
+     ต้องแปลงจากนาทีดิบเท่านั้น ห้ามแปลงจาก out.total ซึ่งปัดเป็นทศนิยม 1 ตำแหน่งไปแล้ว
+     (เช่น 403 นาที -> total 6.7 -> ถ้าย้อนกลับจะได้ 6 ชม. 42 นาที ซึ่งขาดไป 1 นาที)
+     out.total / parts[].h คงไว้เหมือนเดิมทุกประการ ที่อื่นทั้งระบบจึงไม่กระทบ */
+  out.totalMin=mins;
   out.upto=pts.length?pts[pts.length-1][0]:'';
   return out;
+}
+/* ---- เวลาแบบ ชม./นาที (2026-09-11) ----
+   ผู้ใช้สั่ง: "หน้าสถานะการวิ่งงาน ตรงรวมเวลาทำงาน ต้องการให้เปลี่ยนเป็น นาฬิกา ชม. นาที"
+   รับ "นาที" เข้ามาเสมอ ไม่รับชั่วโมงทศนิยม เพื่อไม่ให้นาทีเพี้ยนจากการปัดสองต่อ
+   ชั่วโมงเต็ม -> "7 ชม." · ไม่ถึงชั่วโมง -> "42 นาที" · นอกนั้น -> "6 ชม. 43 นาที" */
+function hmText(min){
+  const n=Math.max(0,Math.round(Number(min)||0));
+  const h=Math.floor(n/60), m=n%60;
+  if(!h)return m+' <span class="cno">นาที</span>';
+  return h+' <span class="cno">ชม.</span>'+(m?(' '+m+' <span class="cno">นาที</span>'):'');
+}
+/* แบบสั้นไม่มีแท็ก — ใช้ในบรรทัดย่อยที่เป็นสีจาง/ข้อความล้วนอยู่แล้ว */
+function hmPlain(min){
+  const n=Math.max(0,Math.round(Number(min)||0));
+  const h=Math.floor(n/60), m=n%60;
+  if(!h)return m+' นาที';
+  return h+' ชม.'+(m?(' '+m+' นาที'):'');
 }
 /* ค่าที่ใช้ในไฟล์ Excel: ให้ตรงกับที่แสดงบนหน้าจอ */
 function workHoursText(j){
@@ -2795,9 +2817,9 @@ function boardTable(){
       <td style="text-align:center">${
         !wb.started ? '<span class="badge b-wait">รอออก</span>'
         : !wb.parts.length ? '<span class="badge b-run">กำลังเดินทาง</span>'
-        : '<span class="mono"><b style="font-size:15px">'+wb.total+'</b> <span class="cno">ชม.</span></span>'
+        : '<span class="mono" style="font-weight:600;font-size:15px">'+hmText(wb.totalMin)+'</span>'
           +(wb.closed?'':' <span class="tag">ถึง'+esc(wb.upto)+'</span>')
-          +'<div class="cno" style="margin-top:3px;line-height:1.4">'+wb.parts.map(p=>esc(p.label)+' '+p.h).join(' · ')+'</div>'
+          +'<div class="cno" style="margin-top:3px;line-height:1.4">'+wb.parts.map(p=>esc(p.label)+' '+hmPlain(p.min)).join(' · ')+'</div>'
       }</td>
       <td><input class="noteinp" style="width:170px${over8?';border-color:var(--absent);background:#fff7f6':''}" data-over="${j.id}"
         value="${esc(j.overNote||'')}" placeholder="${over8?('ระบุสาเหตุที่เกิน '+wlim+' ชม.'):'—'}"
@@ -4759,11 +4781,18 @@ function chNum(v){v=Number(v);return isFinite(v)?v:0;}
      เหลือช่องไฟข้างละ ~55px แท่งจึงดูลอยห่างกันผิดสัดส่วน (= อาการ "น่าเกลียด")
    และบันไดขั้นยังกระโดด (8 วันได้ 86 แต่ 9 วันร่วงเป็น 60 ทันที)
 
-   ของใหม่: ต่อเนื่อง + มีเพดานทั้งบนและล่าง
-     วันน้อย → ชนเพดานบน ส่วนที่เหลือกลายเป็นที่ว่าง แล้วจัดกลุ่มแท่งไว้กลาง (ตัวแปร off)
-               เส้นฐาน/เส้นตารางยังยาวเต็มพาเนลตามที่สั่งไว้เมื่อ 2026-08-17
-     วันมาก → ชนเพดานล่าง ความกว้าง SVG โตเกินพาเนล เลื่อนดูออกด้านข้างในกล่อง .dscroll
-   เพดานบนของแต่ละกราฟคำนวณจาก "ช่องที่แท่งชนเพดานความกว้างแท่งพอดี" จึงไม่มีช่องไฟส่วนเกิน
+   ของใหม่: ต่อเนื่อง + มีเพดานล่าง
+     วันน้อย–กลาง → ช่องกระจายเต็มความกว้างพาเนล (ช่องไฟเท่ากันทุกช่อง) แล้วให้ "ความกว้างแท่ง"
+                     เป็นตัวรับพื้นที่ที่เหลือจนชนเพดานแท่งของกราฟนั้น
+     วันมาก      → ชนเพดานล่าง ความกว้าง SVG โตเกินพาเนล เลื่อนดูออกด้านข้างในกล่อง .dscroll
+   เส้นฐาน/เส้นตารางยาวเต็มพาเนลทุกกรณี ตามที่สั่งไว้เมื่อ 2026-08-17
+
+   รอบแก้ 2 (2026-09-08 บ่าย) — เคยลองใส่เพดานบนให้ช่องแล้วจัดกลุ่มแท่งไว้กลาง
+   ผู้ใช้ตีกลับว่า "แท่งกราฟมันไปกระจุกอยู่ตรงกลาง หรือไม่ก็ด้านใดด้านหนึ่ง ทำกระจายบาลานซ์พอดีกับหน้ากราฟหน่อย"
+   จึงเอาเพดานบนของช่องออก เหลือแต่เพดานล่าง ⇒ ไม่มีการกระจุกอีก ที่ว่างไปเป็นความกว้างแท่งแทน
+   (ตัวแปร off จึงเป็น 0 ในการใช้งานปกติทุกกรณี เก็บไว้เป็นตัวกันเหตุเฉพาะตอนพาเนลแคบกว่า
+    ความกว้างขั้นต่ำของ SVG เอง (260/240px) ซึ่งเป็นกรณีเดียวที่ยังเหลือที่ว่างให้ต้องจัด)
+
    avail<=0 คือยังไม่เคยวัดพาเนล (รอบวาดแรก) — ใช้ค่าประมาณไว้ก่อน แล้ว dashFillMeasure วาดซ้ำให้ */
 function chBand(N,avail,min,max){
   if(min>max)max=min;
@@ -4839,14 +4868,17 @@ function chGroupedBars(items,series,aria,opts){
   /* ความกว้างต่อวันหดลงเมื่อวันมาก (ช่วง 1 เดือน) เพื่อไม่ให้กราฟยาวเกินไป — ที่เหลือเลื่อนดูข้างได้ */
   const wide=alwaysVals?S*13+12:0;                        /* ต้องกว้างพอให้ตัวเลขไม่ทับกัน */
   /* 2026-09-08 — ช่องต่อวันแบบต่อเนื่อง (ดูคำอธิบายที่ chBand)
-     เพดานบน = ช่องที่แท่งทั้งกลุ่มชนเพดานความกว้างแท่ง (BARCAP) พอดี กว้างกว่านี้ช่องไฟจะโป่งเปล่า ๆ
+     รอบแก้ 2 (2026-09-08 บ่าย) ผู้ใช้สั่ง "แท่งกราฟมันไปกระจุกอยู่ตรงกลาง หรือไม่ก็ด้านใดด้านหนึ่ง
+     ทำกระจายบาลานซ์พอดีกับหน้ากราฟหน่อย และถ้าแท่งขยายเพิ่มได้อีกนิดนึงก็ขยายให้หน่อย"
+     ⇒ เอาเพดานบนของ "ช่อง" ออก ให้ช่องกระจายเต็มความกว้างเสมอ (ช่องไฟจึงเท่ากันทุกช่อง
+        ไม่กองอยู่ที่ปลายสองข้างแบบการจัดกลาง) แล้วไปขยายเพดานของ "แท่ง" แทน
      เพดานล่าง = แคบสุดที่ยังพอวางตัวเลขกำกับได้ (ถ้าสั่ง alwaysVals ต้องกว้างขึ้นตาม wide) */
-  const BARCAP=30;                                        /* 2026-09-08 ขยายจาก 26 ด้วยเหตุผลเดียวกับ chStackedBars */
+  const BARCAP=38;                                        /* 26 → 30 → 38 */
   const bandMin=Math.max(S*9+10, S*7+6, wide);
-  const bandMax=(BARCAP*S+BG*(S-1))/0.72;
+  const bandMax=1e4;                                      /* ไม่จำกัด — ช่องกระจายเต็มความกว้าง */
   const fillW=O.fill||0;
   let gW=chBand(N,fillW?fillW-padL-padR:0,bandMin,bandMax);
-  /* เส้นฐาน/เส้นตารางยาวเต็มพาเนลเสมอ (สั่งไว้ 2026-08-17) แม้ช่องต่อวันจะชนเพดานแล้วเหลือที่ว่าง */
+  /* เส้นฐาน/เส้นตารางยาวเต็มพาเนลเสมอ (สั่งไว้ 2026-08-17) */
   const W=Math.max(240,Math.round(padL+padR+N*gW),Math.round(fillW));
   const barW=Math.max(6,Math.min(BARCAP,(gW*0.72-(S-1)*BG)/S));
   const inner=barW*S+BG*(S-1);
@@ -4899,15 +4931,16 @@ function chStackedBars(items,series,aria,opts){
   /* 2026-09-08 — ช่องต่อวันแบบต่อเนื่อง (ดูคำอธิบายที่ chBand)
      เพดานบน = ช่องที่แท่ง (หรือคู่แท่งแผน/ปัญหา) ชนเพดานความกว้างแท่งพอดี — กว้างกว่านี้แท่งไม่โตตาม
      เพดานล่าง = แคบสุดที่ตัวเลขในแท่งยังอ่านออก · O.minBand ยกพื้นได้ (1.2 รอบต่อคนใช้ 34) */
-  /* เพดานความกว้างแท่ง — 2026-09-08 ขยายจาก 40/30 เป็น 56/40 ตามที่ผู้ใช้สั่งว่า
-     "ถ้าจำนวนแท่งน้อยก็จะขยายกว้างหน่อย" ของเดิมแท่งตันที่ 40px ตั้งแต่ 14 วันลงมา
-     จึงไม่กว้างขึ้นอีกเลยแม้เหลือ 3 วัน แค่ช่องไฟโป่งขึ้นเรื่อย ๆ */
-  const BARCAP=multi?40:56, RATIO=multi?0.74:0.6;
+  /* เพดานความกว้างแท่ง — ของเดิม 40px ตันตั้งแต่ 14 วันลงมา จึงไม่กว้างขึ้นอีกเลยแม้เหลือ 3 วัน
+     แค่ช่องไฟโป่งขึ้นเรื่อย ๆ ขัดกับคำสั่ง "จำนวนแท่งน้อยก็จะขยายกว้างหน่อย"
+     รอบแก้ 2: ขยายอีกชั้นเป็น 80/52 ตามคำสั่ง "ถ้าแท่งขยายเพิ่มได้อีกนิดนึงก็ขยายให้หน่อย"
+     ความกว้างแท่งจึงเป็นตัวรับพื้นที่ที่เหลือ แทนที่จะปล่อยให้กลายเป็นช่องไฟหรือที่ว่างข้างกราฟ */
+  const BARCAP=multi?52:80, RATIO=multi?0.74:0.6;         /* 40/30 → 56/40 → 80/52 */
   const bandMin=Math.max(O.minBand||0, multi?38:26);
-  const bandMax=Math.max(bandMin,(BARCAP*K+BGAP*(K-1))/RATIO);
+  const bandMax=1e4;                                      /* ไม่จำกัด — ช่องกระจายเต็มความกว้าง (รอบแก้ 2) */
   const fillW=O.fill||0;
   let gW=chBand(N,fillW?fillW-padL-padR:0,bandMin,bandMax);
-  /* เส้นฐาน/เส้นตารางยาวเต็มพาเนลเสมอ (สั่งไว้ 2026-08-17) ที่ว่างที่เหลือใช้จัดกลุ่มแท่งไว้กลาง (off) */
+  /* เส้นฐาน/เส้นตารางยาวเต็มพาเนลเสมอ (สั่งไว้ 2026-08-17) */
   const W=Math.max(260,Math.round(padL+padR+N*gW),Math.round(fillW));
   const barW=Math.max(8,Math.min(BARCAP,(gW*RATIO-BGAP*(K-1))/K));
   const y=v=>base-(v/max)*innerH;
