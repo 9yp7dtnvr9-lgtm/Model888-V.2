@@ -719,7 +719,11 @@ const TRAINEE_TRUCK='EV-TRAINEE';
 
 /* storage: shared backend (Apps Script) when URL set, else window.storage, else memory */
 const mem={};
-const BACKEND_URL_DEFAULT='';   /* เว้นว่าง = ให้ CC กรอก URL เองตอนเข้าระบบ (ปุ่ม ⚙ ตั้งค่าระบบกลาง) */
+/* 2026-09-13 — ฝัง URL ระบบกลางไว้ในไฟล์ ตามที่ผู้ใช้สั่ง
+   เดิมเว้นว่างไว้ให้ CC กรอกเองทีละเครื่องผ่านปุ่ม ⚙ ซึ่งต้องตั้งใหม่ทุกครั้งที่เปลี่ยน deployment
+   *** สำคัญ: URL ที่เคยกรอกเองผ่าน ⚙ ยังชนะค่านี้เสมอ (ดูตัวแปร man ตอนเริ่มระบบท้ายไฟล์) ***
+   เครื่องที่เคยกรอก URL เก่าไว้ ต้องกด ⚙ -> "↺ ล้าง URL" หนึ่งครั้ง จึงจะหันมาใช้ค่าในไฟล์นี้ */
+const BACKEND_URL_DEFAULT='https://script.google.com/macros/s/AKfycbwz3nRxjv4xI_aInCiyP3Rf6tllk-jRboqtBWKCj0AJFKWbNL0IAGT9-RF8J5JrgvvLbw/exec';
 const API_TOKEN='54O7NXcm4720HQb8ZGiqMBoH';            /* <<< ใส่ให้ตรงกับ TOKEN ใน Apps Script (เว้นว่าง = ปิดการตรวจ) */
 let backendURL=BACKEND_URL_DEFAULT;
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
