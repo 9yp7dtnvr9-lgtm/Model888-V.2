@@ -375,6 +375,133 @@
   @media(max-width:720px){.brand h1{font-size:16px}}
   @media(prefers-reduced-motion:reduce){*{transition:none!important}}
   @media print{header,nav.tabs,.toolbar,footer,.switch .txt,.stampcell button,.del{display:none!important}.st:not(.sel){display:none}.tablewrap{border:0}table{min-width:0;font-size:11px}.track{display:none}}
+  /* ===== หน้า "มอนิเตอร์ พจส." (2026-11-25) — ธีมพื้นขาว น้ำเงิน/เขียว · คลาสทั้งหมดขึ้นต้น m- และอยู่ใต้ .mon ไม่ชนกับหน้าอื่น ===== */
+  .mon{--mink:#0f2a4a;--mmut:#64748b;--mline:#e6ecf5;--msoft:#f6f9fd;--mblue:#1d4ed8;--mblue2:#2563eb;--mbluebg:#eff6ff;--mblueline:#cfe0fb;
+       --mgreen:#059669;--mgreen2:#10b981;--mgreenbg:#ecfdf5;--mgreenline:#bfeedd;--mamber:#b45309;--mamberbg:#fffbeb;--mred:#dc2626;--mredbg:#fef2f2;
+       background:#fff;border:1px solid var(--mline);border-radius:16px;padding:18px 18px 26px;color:var(--mink);line-height:1.5}
+  .mon button{font-family:inherit;cursor:pointer}
+  .mon .m-title{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .mon .m-title h2{margin:0;font-size:22px;font-weight:700;display:flex;align-items:center;gap:12px;color:var(--mink)}
+  .mon .m-title h2:before{content:"";width:6px;height:28px;border-radius:4px;background:linear-gradient(180deg,var(--mblue2),var(--mgreen2))}
+  .mon .m-title p{margin:3px 0 0 18px;color:var(--mmut);font-size:13px}
+  .mon .m-info{font-size:12.5px;color:var(--mmut)}.mon .m-info b{color:var(--mink)}
+  .mon .m-filters{border:1px solid var(--mline);border-radius:14px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center;margin-bottom:16px;background:#fff;box-shadow:0 1px 2px rgba(15,42,74,.05),0 4px 14px rgba(15,42,74,.05)}
+  .mon .m-fg{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .mon .m-fl{font-size:12px;font-weight:600;color:var(--mblue)}
+  .mon .m-seg{display:inline-flex;border:1px solid var(--mblueline);border-radius:10px;overflow:hidden;background:#fff}
+  .mon .m-seg button{border:0;background:transparent;padding:6px 13px;font-size:13px;color:var(--mmut);border-right:1px solid var(--mblueline)}
+  .mon .m-seg button:last-child{border-right:0}
+  .mon .m-seg button:hover{background:var(--mbluebg);color:var(--mblue)}
+  .mon .m-seg button.on{background:var(--mblue2);color:#fff;font-weight:600}
+  .mon .m-chips{display:inline-flex;gap:6px;flex-wrap:wrap}
+  .mon .m-chip{border:1px solid var(--mline);background:#fff;border-radius:20px;padding:5px 13px;font-size:13px;color:var(--mmut);display:inline-flex;align-items:center;gap:6px}
+  .mon .m-chip:hover{border-color:var(--mgreenline);color:var(--mgreen)}
+  .mon .m-chip.on{background:var(--mgreenbg);border-color:var(--mgreen2);color:var(--mgreen);font-weight:600}
+  .mon .m-chip i{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .mon input[type=date],.mon input[type=search]{border:1px solid var(--mblueline);border-radius:10px;padding:6px 10px;font:inherit;font-size:13px;color:var(--mink);background:#fff}
+  .mon input[type=search]{min-width:210px}
+  .mon .m-btn{border:1px solid var(--mblueline);background:#fff;color:var(--mblue);border-radius:10px;padding:6px 13px;font-size:13px}
+  .mon .m-btn:hover{background:var(--mbluebg)}
+  .mon .m-load{height:5px;background:var(--mbluebg);border-radius:4px;overflow:hidden;margin:-6px 0 12px}.mon .m-load i{display:block;height:100%;background:linear-gradient(90deg,var(--mblue2),var(--mgreen2))}
+  .mon .m-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:12px}
+  .mon .m-kpi{border:1px solid var(--mline);border-radius:14px;padding:13px 15px 11px;position:relative;overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(15,42,74,.05),0 4px 14px rgba(15,42,74,.05)}
+  .mon .m-kpi:before{content:"";position:absolute;left:0;top:0;right:0;height:3px;background:var(--mblue2)}
+  .mon .m-kpi.g:before{background:var(--mgreen2)}
+  .mon .m-kpi .k{font-size:12px;color:var(--mmut)}
+  .mon .m-kpi .v{font-size:27px;font-weight:700;color:var(--mblue);line-height:1.25}
+  .mon .m-kpi.g .v{color:var(--mgreen)}
+  .mon .m-kpi .v small{font-size:12.5px;font-weight:500;color:var(--mmut);margin-left:4px}
+  .mon .m-kpi .s{font-size:12px;color:var(--mmut)}.mon .m-kpi .s b{color:var(--mink)}
+  .mon .m-warn{background:var(--mamberbg);border:1px solid #fde7b0;color:var(--mamber);border-radius:10px;padding:7px 12px;font-size:12.5px;margin-bottom:12px}
+  .mon .m-panel{border:1px solid var(--mline);border-radius:14px;margin-bottom:16px;overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(15,42,74,.05),0 4px 14px rgba(15,42,74,.05)}
+  .mon .m-ph{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:13px 16px 8px}
+  .mon .m-ph h3{margin:0;font-size:15px;font-weight:700;color:var(--mblue);display:flex;align-items:center;gap:8px}
+  .mon .m-ph h3:before{content:"";width:4px;height:16px;border-radius:3px;background:var(--mgreen2)}
+  .mon .m-hint{font-size:12px;color:var(--mmut)}
+  .mon .m-two{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:16px}
+  .mon .m-two .m-panel{margin-bottom:0}
+  .mon .m-pad{padding:4px 16px 14px}
+  .mon .m-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mmut)}
+  .mon .m-legend span{display:inline-flex;align-items:center;gap:6px}.mon .m-legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .mon .m-tw{overflow-x:auto}
+  .mon table.m-t{border-collapse:collapse;width:100%;min-width:1080px;font-size:13px}
+  .mon table.m-t thead th{position:static;background:var(--mbluebg);color:var(--mblue);font-size:12.5px;font-weight:600;text-align:left;padding:10px 12px;border-bottom:2px solid var(--mblueline);white-space:nowrap}
+  .mon table.m-t thead th.c,.mon table.m-t td.c{text-align:center}
+  .mon table.m-t thead th.s{cursor:pointer;user-select:none}.mon table.m-t thead th.s:hover{color:var(--mgreen)}
+  .mon table.m-t thead th .ar{display:inline-block;width:10px;color:var(--mgreen);font-size:10px}
+  .mon table.m-t td{padding:9px 12px;border-bottom:1px solid var(--mline);vertical-align:middle;background:transparent}
+  .mon table.m-t tr.row{cursor:pointer}.mon table.m-t tr.row:hover td{background:var(--msoft)}
+  .mon table.m-t tr.row.sel td{background:var(--mgreenbg)}
+  .mon .m-rk{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--mmut);background:var(--msoft)}
+  .mon .m-rk.top{background:linear-gradient(135deg,var(--mblue2),var(--mgreen2));color:#fff}
+  .mon .m-who{display:flex;align-items:center;gap:10px;min-width:180px}
+  .mon .m-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--mblue2),var(--mgreen2));color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex:none}
+  .mon .m-who b{display:block;font-weight:600;line-height:1.25}.mon .m-who small{font-size:11.5px;color:var(--mmut)}
+  .mon .m-bar{height:8px;background:var(--msoft);border-radius:6px;overflow:hidden;min-width:70px}
+  .mon .m-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--mblue2),var(--mgreen2));border-radius:6px}
+  .mon .m-trip{display:flex;align-items:center;gap:10px;min-width:130px}.mon .m-trip b{min-width:26px;text-align:right;font-size:15px}
+  .mon .m-stack{display:flex;height:10px;border-radius:6px;overflow:hidden;min-width:110px;background:var(--msoft)}.mon .m-stack i{display:block;height:100%}
+  .mon .m-pills{display:flex;gap:5px;flex-wrap:wrap}
+  .mon .m-pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:2px 8px;border-radius:20px;background:var(--msoft);border:1px solid var(--mline);white-space:nowrap}
+  .mon .m-pill i{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .mon .m-badge{display:inline-block;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap}
+  .mon .m-top{background:var(--mgreenbg);color:var(--mgreen);border:1px solid var(--mgreenline)}
+  .mon .m-ok{background:var(--mbluebg);color:var(--mblue);border:1px solid var(--mblueline)}
+  .mon .m-watch{background:var(--mamberbg);color:var(--mamber);border:1px solid #fde7b0}
+  .mon .m-none{background:var(--msoft);color:var(--mmut);border:1px solid var(--mline)}
+  .mon .m-over{color:var(--mred);font-weight:600}.mon .m-dim{color:var(--mmut)}
+  .mon .m-att{display:flex;gap:4px;font-size:11.5px;white-space:nowrap;justify-content:center}
+  .mon .m-att em{font-style:normal;padding:1px 6px;border-radius:6px;background:var(--msoft);color:var(--mmut)}
+  .mon .m-att em.l{background:var(--mamberbg);color:var(--mamber)}.mon .m-att em.a{background:var(--mredbg);color:var(--mred)}.mon .m-att em.v{background:var(--mbluebg);color:var(--mblue)}
+  .mon .m-empty{padding:30px;text-align:center;color:var(--mmut)}
+  .mon .m-tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:20px}
+  .mon .m-tag.off{background:#f6efdc;color:#a6791f}.mon .m-tag.chk{background:var(--mredbg);color:var(--mred)}
+  .mon .m-hb{display:grid;grid-template-columns:96px 1fr 38px;gap:10px;align-items:center;margin:6px 0;font-size:12.5px}
+  .mon .m-hb .m-bar{min-width:0}.mon .m-hb .m-bar i{background:var(--c,var(--mblue2))}.mon .m-hb b{text-align:right}
+  .mon .m-sub{margin:16px 0 8px;font-size:13.5px;font-weight:700;color:var(--mblue);display:flex;align-items:center;gap:8px}
+  .mon .m-sub:before{content:"";width:4px;height:14px;border-radius:3px;background:var(--mgreen2)}.mon .m-sub small{font-weight:400;color:var(--mmut)}
+  /* ลิ้นชักรายละเอียดรายคน */
+  .m-ov{position:fixed;inset:0;background:rgba(15,42,74,.35);z-index:60}
+  .m-drawer{position:fixed;top:0;right:0;height:100%;width:min(640px,100vw);background:#fff;box-shadow:-8px 0 30px rgba(15,42,74,.18);z-index:61;display:flex;flex-direction:column;color:#0f2a4a;
+            --mink:#0f2a4a;--mmut:#64748b;--mline:#e6ecf5;--msoft:#f6f9fd;--mblue:#1d4ed8;--mblue2:#2563eb;--mbluebg:#eff6ff;--mblueline:#cfe0fb;--mgreen:#059669;--mgreen2:#10b981;--mgreenbg:#ecfdf5;--mgreenline:#bfeedd;--mamber:#b45309;--mamberbg:#fffbeb;--mred:#dc2626;--mredbg:#fef2f2}
+  .m-drawer .m-dh{padding:16px 18px 12px;border-bottom:1px solid var(--mline);display:flex;gap:12px;align-items:center;background:linear-gradient(180deg,var(--mbluebg),#fff)}
+  .m-drawer .m-av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--mblue2),var(--mgreen2));color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:600;font-size:17px;flex:none}
+  .m-drawer h3{margin:0;font-size:18px;font-weight:700}.m-drawer .m-ds{font-size:12.5px;color:var(--mmut)}
+  .m-drawer .m-x{margin-left:auto;border:1px solid var(--mline);background:#fff;border-radius:10px;width:34px;height:34px;font-size:16px;color:var(--mmut);cursor:pointer}
+  .m-drawer .m-db{overflow-y:auto;padding:14px 18px 40px;flex:1}
+  .m-drawer .m-mini{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+  .m-drawer .m-mini>div{border:1px solid var(--mline);border-radius:12px;padding:9px 12px}
+  .m-drawer .m-mini .k{font-size:11.5px;color:var(--mmut)}.m-drawer .m-mini .v{font-size:20px;font-weight:700;color:var(--mblue);line-height:1.3}
+  .m-drawer .m-mini>div:nth-child(even) .v{color:var(--mgreen)}
+  .m-drawer .m-note{background:var(--mamberbg);border:1px solid #fde7b0;color:var(--mamber);border-radius:12px;padding:9px 13px;font-size:12.5px;margin-bottom:12px}
+  .m-drawer .m-note.good{background:var(--mgreenbg);border-color:var(--mgreenline);color:var(--mgreen)}
+  .m-drawer .m-note ul{margin:4px 0 0;padding-left:18px}
+  .m-drawer .m-sub{margin:16px 0 8px;font-size:13.5px;font-weight:700;color:var(--mblue);display:flex;align-items:center;gap:8px}
+  .m-drawer .m-sub:before{content:"";width:4px;height:14px;border-radius:3px;background:var(--mgreen2)}.m-drawer .m-sub small{font-weight:400;color:var(--mmut)}
+  .m-drawer .m-days{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:6px}
+  .m-drawer .m-dc{border:1px solid var(--mline);border-radius:10px;padding:5px 4px;text-align:center;font-size:11px;color:var(--mmut);min-height:50px}
+  .m-drawer .m-dc b{display:block;font-size:15px;line-height:1.2;color:var(--mink)}
+  .m-drawer .m-dc.t1{background:#e8f0ff;border-color:#cfe0fb}.m-drawer .m-dc.t2{background:#c9dbff;border-color:#b0cbfa}.m-drawer .m-dc.t3{background:#9fc0ff;border-color:#86afff}
+  .m-drawer .m-dc.t4{background:var(--mblue2);border-color:var(--mblue2);color:#e8f0ff}.m-drawer .m-dc.t4 b{color:#fff}
+  .m-drawer .m-dc.late{box-shadow:inset 0 -3px 0 #d99a1e}
+  .m-drawer .m-dc.x{background:var(--msoft)}.m-drawer .m-dc.x.a{background:var(--mredbg);border-color:#fbcaca;color:var(--mred)}.m-drawer .m-dc.x.lv{background:var(--mamberbg);border-color:#fde7b0;color:var(--mamber)}
+  .m-drawer .m-hb{display:grid;grid-template-columns:96px 1fr 38px;gap:10px;align-items:center;margin:6px 0;font-size:12.5px}
+  .m-drawer .m-bar{height:8px;background:var(--msoft);border-radius:6px;overflow:hidden}.m-drawer .m-bar i{display:block;height:100%;background:var(--c,var(--mblue2));border-radius:6px}.m-drawer .m-hb b{text-align:right}
+  .m-drawer table.m-mt{border-collapse:collapse;width:100%;min-width:0;font-size:12.5px}
+  .m-drawer table.m-mt thead th{position:static;background:var(--mbluebg);color:var(--mblue);font-size:12px;font-weight:600;text-align:left;padding:7px 10px;border-bottom:2px solid var(--mblueline);white-space:nowrap}
+  .m-drawer table.m-mt td{padding:7px 10px;border-bottom:1px solid var(--mline);background:transparent}
+  .m-drawer .c{text-align:center}.m-drawer .m-dim{color:var(--mmut)}.m-drawer .m-over{color:var(--mred);font-weight:600}
+  .m-drawer .m-pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:2px 8px;border-radius:20px;background:var(--msoft);border:1px solid var(--mline);white-space:nowrap}.m-drawer .m-pill i{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .m-drawer .m-badge{display:inline-block;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:20px}
+  .m-drawer .m-top{background:var(--mgreenbg);color:var(--mgreen);border:1px solid var(--mgreenline)}.m-drawer .m-ok{background:var(--mbluebg);color:var(--mblue);border:1px solid var(--mblueline)}
+  .m-drawer .m-watch{background:var(--mamberbg);color:var(--mamber);border:1px solid #fde7b0}.m-drawer .m-none{background:var(--msoft);color:var(--mmut);border:1px solid var(--mline)}
+  .m-drawer .m-tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:20px}.m-drawer .m-tag.off{background:#f6efdc;color:#a6791f}.m-drawer .m-tag.chk{background:var(--mredbg);color:var(--mred)}
+  .m-drawer .m-grp{border:1px solid var(--mline);border-radius:12px;margin-bottom:10px;overflow:hidden}
+  .m-drawer .m-gh{display:flex;gap:6px 16px;flex-wrap:wrap;background:var(--msoft);padding:7px 12px;font-size:12px;color:var(--mmut)}.m-drawer .m-gh b{color:var(--mink)}.m-drawer .m-gh .d{color:var(--mblue);font-weight:700}
+  .m-drawer .m-more{border:1px solid var(--mline);background:#fff;border-radius:20px;padding:5px 14px;font-size:13px;color:var(--mmut);cursor:pointer}
+  @media (max-width:1100px){.mon .m-kpis{grid-template-columns:repeat(3,1fr)}.mon .m-two{grid-template-columns:1fr}}
+  @media (max-width:640px){.mon .m-kpis{grid-template-columns:repeat(2,1fr)}.m-drawer .m-mini{grid-template-columns:repeat(2,1fr)}.mon input[type=search]{min-width:0;width:100%}}
+  @media print{.m-ov,.m-drawer{display:none!important}}
 </style>
 </head>
 <body>
@@ -397,6 +524,7 @@
   <!-- 2026-08-17 · ย้าย Dashboard มาไว้อันแรกและไม่ใส่เลขกำกับ ตามที่ผู้ใช้สั่ง
        แท็บที่เหลือยังคงเลข 1-5 เดิม และแท็บเริ่มต้นเมื่อเปิดเว็บยังเป็น "เช็กคนขับ" เหมือนเดิม -->
   <button data-tab="dash">Dashboard</button>
+  <button data-tab="monitor">มอนิเตอร์ พจส.</button>
   <button class="active" data-tab="roster"><span class="num">1</span> เช็กคนขับ &amp; จ่ายงาน</button>
   <button data-tab="dispatch"><span class="num">2</span> รายละเอียดงาน</button>
   <button data-tab="board"><span class="num">3</span> สถานะการวิ่งงาน</button>
@@ -559,7 +687,7 @@ async function loadRoutes(){
   /* ลำดับ: ชีต -> คีย์เดิมบนระบบกลาง -> สำรองในเครื่อง -> ชุดตัวอย่าง */
   if(backendURL){
     try{
-      const r=await fetch(backendURL+'?routes=live&t='+Date.now()+tk());
+      const r=await xfetch(backendURL+'?routes=live&t='+Date.now()+tk());
       const d=await r.json();
       if(d&&Array.isArray(d.list)&&d.list.length){routes=routesStripDeleted(d.list);routesRev=d.rev||'';lsSet('fleetdb:fleet:routes',JSON.stringify(routes));return;}
     }catch(e){}
@@ -593,7 +721,7 @@ async function routesSyncNow(){
   if(routesSyncing){routesDirty=true;return false;}
   routesSyncing=true;
   try{
-    const r=await fetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    const r=await xfetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
       body:JSON.stringify({routesSync:JSON.stringify(routes),routesDel:JSON.stringify(routesDel),by:adminName||'',tk:API_TOKEN})});
     const d=await r.json();
     routesSyncing=false;
@@ -609,7 +737,7 @@ async function routesSyncNow(){
     if(d.conflicts)bits.push('แก้ช่องเดียวกันทั้งสองฝั่ง '+d.conflicts+' ช่อง (ใช้ค่าจากหน้าเว็บ)');
     routesLastMsg=bits.join(' · ');
     return true;
-  }catch(e){routesSyncing=false;lastWriteErr='ต่อระบบกลางไม่ได้';return false;}
+  }catch(e){routesSyncing=false;lastWriteErr=netErrText(e);return false;}
 }
 async function saveRoutes(){
   const ok=await routesSyncNow();
@@ -641,25 +769,25 @@ async function pullRoutesFromSheet(){
   if(!backendURL){alert('ยังไม่ได้ตั้ง URL ระบบกลาง');return;}
   flag('saving');
   try{
-    const r=await fetch(backendURL+'?routes=live&t='+Date.now()+tk());
+    const r=await xfetch(backendURL+'?routes=live&t='+Date.now()+tk());
     const d=await r.json();
     if(!d||d.ok===false||d.error){flag('err');alert('ดึงจากชีตไม่สำเร็จ: '+((d&&(d.message||d.error))||'ไม่ทราบสาเหตุ'));return;}
     if(!Array.isArray(d.list)){flag('err');alert('ชีตตอบข้อมูลไม่ถูกรูปแบบ');return;}
     routes=routesStripDeleted(d.list);routesRev=d.rev||'';routesLastMsg='ดึงจากชีตแล้ว '+routes.length+' เส้นทาง';
     lsSet('fleetdb:fleet:routes',JSON.stringify(routes));
     flag('ok');renderPlan();
-  }catch(e){flag('err');alert('ต่อระบบกลางไม่ได้');}
+  }catch(e){flag(netFlagState(netErrText(e)));alert(netErrText(e));}
 }
 /* เช็คเป็นระยะว่ามีคนแก้ในชีตหรือไม่ (ใช้แค่ลายเซ็นสั้น ๆ ไม่ดึงทั้งก้อน) */
 async function pollRoutes(){
   if(!backendURL||editMode||routesSyncing||routesDirty)return;
   if(busyTyping())return;      /* เพิ่งพิมพ์ไม่ถึง 8 วิ อย่าไปกวน (ไม่ใช้การเช็คโฟกัส เพราะถ้า CC ทิ้งเคอร์เซอร์ค้างไว้จะไม่ดึงจากชีตเลย) */
   let d=null;
-  try{const r=await fetch(backendURL+'?routesrev=1&t='+Date.now()+tk());d=await r.json();}catch(e){return;}
+  try{const r=await xfetch(backendURL+'?routesrev=1&t='+Date.now()+tk());d=await r.json();}catch(e){return;}
   if(!d||d.ok===false||!d.rev)return;
   if(routesRev&&d.rev===routesRev)return;
   try{
-    const r2=await fetch(backendURL+'?routes=live&t='+Date.now()+tk());
+    const r2=await xfetch(backendURL+'?routes=live&t='+Date.now()+tk());
     const d2=await r2.json();
     if(d2&&Array.isArray(d2.list)){
       const fresh=routesStripDeleted(d2.list);
@@ -729,11 +857,36 @@ let backendURL=BACKEND_URL_DEFAULT;
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 let lastWriteErr='';
+let lastReadErr='';     /* 2026-09-15: สาเหตุของ "อ่านไม่ได้" แยกจาก "เขียนไม่ได้" คนละเรื่องกัน */
+
+/* ============ 2026-09-15 · ทุกคำขอต้องมี "เวลาจำกัด" ============
+   ปัญหาเดิม: ในไฟล์นี้ไม่มีจุดไหนเลยที่ตั้งเวลาจำกัดให้คำขอที่ยิงไประบบกลาง
+   ถ้าเน็ตสะดุดหรือ Apps Script ค้าง คำขอนั้นจะรอไปเรื่อย ๆ ไม่มีวันจบ ไม่มีวัน error
+   ผลที่ CC เจอ = วงหมุน "กำลังโหลด" ค้าง กรอกข้อมูลแล้วเด้ง คำขอถัดไปต่อคิวค้างตามกันไปหมด
+   ตอนนี้: ครบเวลาแล้วยกเลิกทิ้ง แล้วโยน error ออกมา ให้ try/catch เดิมที่มีอยู่ทุกจุดจัดการต่อ
+   ข้อมูลที่ CC พิมพ์ไว้ไม่หาย เพราะ pendingOps เก็บไว้ลองส่งใหม่อยู่แล้ว */
+const NET_TIMEOUT=12000;        /* อ่าน/เขียนข้อมูลตามปกติ */
+const NET_TIMEOUT_LONG=25000;   /* คำขอที่ระบบกลางต้องวิ่งต่อไปดึงจาก OMS ช้ากว่าปกติโดยธรรมชาติ */
+let netTimeoutN=0;              /* นับจำนวนครั้งที่หมดเวลา ใช้ประกอบการบอกสาเหตุ */
+function xfetch(url,opt,ms){
+  const t=Number(ms)||NET_TIMEOUT;
+  /* เบราว์เซอร์เก่าที่ไม่มี AbortController ให้ทำงานเหมือนเดิมทุกอย่าง ไม่พัง */
+  if(typeof AbortController!=='function')return fetch(url,opt||{});
+  const ac=new AbortController();
+  const timer=setTimeout(()=>{try{ac.abort();}catch(e){}},t);
+  return fetch(url,Object.assign({},opt||{},{signal:ac.signal})).then(
+    r=>{clearTimeout(timer);return r;},
+    e=>{clearTimeout(timer);
+        if(e&&e.name==='AbortError'){netTimeoutN++;const x=new Error('ระบบกลางตอบช้าเกินไป (หมดเวลารอ)');x.timeout=true;throw x;}
+        throw e;});
+}
+/* แปลง error ที่จับได้ ให้เป็นข้อความสาเหตุที่ต่างกันจริง ๆ */
+function netErrText(e){return (e&&e.timeout)?'ระบบกลางตอบช้าเกินไป (หมดเวลารอ)':'ต่อระบบกลางไม่ได้';}
 function dbKey(k){return 'fleetdb:'+k;}
 const store={
   async get(k){
     if(backendURL){
-      try{const r=await fetch(backendURL+'?key='+encodeURIComponent(k)+tk());const d=await r.json();
+      try{const r=await xfetch(backendURL+'?key='+encodeURIComponent(k)+tk());const d=await r.json();
         if(d&&!d.error)return d.value;}catch(e){}
     }
     const local=lsGet(dbKey(k));          /* เก็บในเครื่องจริง ๆ ด้วย localStorage */
@@ -745,12 +898,12 @@ const store={
     try{lsSet(dbKey(k),v);}catch(e){}     /* บันทึกในเครื่องเสมอ ใช้เป็นสำรองถ้าเน็ตหลุด */
     if(!backendURL)return true;
     try{
-      const r=await fetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      const r=await xfetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
         body:JSON.stringify({key:k,value:v,tk:API_TOKEN})});
       const d=await r.json();
       if(d&&d.error){lastWriteErr=String(d.error);return false;}
       return true;
-    }catch(e){lastWriteErr='ต่อระบบกลางไม่ได้';return false;}
+    }catch(e){lastWriteErr=netErrText(e);return false;}
   }
 };
 
@@ -808,27 +961,28 @@ function tk(){return API_TOKEN?('&tk='+encodeURIComponent(API_TOKEN)):'';}
 async function dayFetch(ds){
   if(!backendURL)return null;
   try{
-    const r=await fetch(backendURL+'?day='+encodeURIComponent(ds)+'&t='+Date.now()+tk());
+    const r=await xfetch(backendURL+'?day='+encodeURIComponent(ds)+'&t='+Date.now()+tk());
     const d=await r.json();
-    if(d&&d.error)return null;
+    if(d&&d.error){lastReadErr=String(d.error);return null;}
+    lastReadErr='';
     return (d&&d.value)?d.value:'';
-  }catch(e){return null;}
+  }catch(e){lastReadErr=netErrText(e);return null;}      /* 2026-09-15: เก็บสาเหตุไว้ด้วย เดิมกลืนหายไปเฉย ๆ */
 }
 /* ส่งเฉพาะรายการที่แก้ ให้เซิร์ฟเวอร์ทาบบนข้อมูลล่าสุด */
 async function dayPatch(ds,ops){
   if(!backendURL)return null;
   try{
-    const r=await fetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    const r=await xfetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
       body:JSON.stringify({patchday:ds,ops:JSON.stringify(ops),tk:API_TOKEN})});
     const d=await r.json();
     if(d&&d.error){lastWriteErr=String(d.error);return null;}
     return (d&&d.value)?d.value:null;
-  }catch(e){lastWriteErr='ต่อระบบกลางไม่ได้';return null;}
+  }catch(e){lastWriteErr=netErrText(e);return null;}
 }
 async function dayMerge(ds,obj){
   if(!backendURL)return null;
   try{
-    const r=await fetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    const r=await xfetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
       body:JSON.stringify({mergeday:ds,value:JSON.stringify(obj),tk:API_TOKEN})});
     const d=await r.json();
     if(d&&d.error)return null;
@@ -1043,7 +1197,30 @@ function busyOff(){
 }
 /* ครอบงานที่ต้องรอ ให้ปิดวงหมุนเสมอแม้ระหว่างทางจะพัง */
 async function withBusy(msg,fn){busyOn(msg);try{return await fn();}finally{busyOff();}}
-function flag(s){const e=document.getElementById('saveFlag');if(!e)return;if(s==='saving'){e.textContent='● กำลังบันทึก…';e.className='saveflag saving';}else if(s==='err'){e.textContent='● ต่อระบบกลางไม่ได้';e.className='saveflag saving';}else{e.textContent=backendURL?(lastSyncTxt?('● ซิงก์ '+lastSyncTxt):'● บันทึกแล้ว'):'● เก็บในเครื่อง';e.className='saveflag';}}
+/* ============ 2026-09-15 · แถบสถานะต้องบอก "สาเหตุจริง" ============
+   ปัญหาเดิม: ไม่ว่าอะไรผิดพลาด แถบนี้ขึ้น "ต่อระบบกลางไม่ได้" เหมือนกันหมด
+   ทั้งที่สามอย่างนี้คนละเรื่อง และแก้คนละทาง —
+     คิวหนา   = ต่อถึงระบบกลางได้ปกติ แต่มีคนบันทึกพร้อมกัน ระบบกลางให้เข้าคิว -> รอเดี๋ยวก็ไปเอง ไม่ต้องทำอะไร
+     ตอบช้า   = ส่งไปถึงแล้ว แต่ตอบไม่ทันเวลาที่ตั้งไว้ -> ข้อมูลวันนั้นใหญ่ หรือ Apps Script ช้าอยู่
+     ต่อไม่ได้ = ไปไม่ถึงระบบกลางเลย -> เน็ตหลุด หรือ URL/สิทธิ์การเข้าถึงของ deployment ผิด
+   ทั้งสามกรณี ข้อมูลที่ CC พิมพ์ไว้ยังอยู่ครบใน pendingOps และระบบลองส่งใหม่ให้เองอยู่แล้ว */
+function netFlagState(e){
+  const s=String(e||lastWriteErr||lastReadErr||'');
+  if(/busy/i.test(s))return 'busy';
+  if(/หมดเวลารอ|timeout/i.test(s))return 'slow';
+  return 'err';
+}
+function flag(s){
+  const e=document.getElementById('saveFlag');if(!e)return;
+  if(s==='saving'){e.textContent='● กำลังบันทึก…';e.className='saveflag saving';e.title='';}
+  else if(s==='busy'){e.textContent='● คิวบันทึกหนา กำลังลองใหม่ให้เอง';e.className='saveflag saving';
+    e.title='ต่อระบบกลางได้ตามปกติ แต่มีคนบันทึกพร้อมกันหลายคน ระบบกลางให้เข้าคิว\nสิ่งที่พิมพ์ไว้ยังอยู่ครบ ไม่ต้องพิมพ์ซ้ำ';}
+  else if(s==='slow'){e.textContent='● ระบบกลางตอบช้า กำลังลองใหม่ให้เอง';e.className='saveflag saving';
+    e.title='ส่งไปถึงระบบกลางแล้ว แต่ตอบกลับไม่ทันใน '+Math.round(NET_TIMEOUT/1000)+' วินาที\nสิ่งที่พิมพ์ไว้ยังอยู่ครบ ไม่ต้องพิมพ์ซ้ำ';}
+  else if(s==='err'){e.textContent='● ต่อระบบกลางไม่ได้';e.className='saveflag saving';
+    e.title='ไปไม่ถึงระบบกลางเลย — ตรวจอินเทอร์เน็ต หรือกด ⚙ แล้วกด "ทดสอบการเชื่อมต่อ"\nสิ่งที่พิมพ์ไว้ยังอยู่ครบ ไม่ต้องพิมพ์ซ้ำ';}
+  else{e.textContent=backendURL?(lastSyncTxt?('● ซิงก์ '+lastSyncTxt):'● บันทึกแล้ว'):'● เก็บในเครื่อง';e.className='saveflag';e.title='';}
+}
 function saveDay(){
   flag('saving');dirty=true;editGen++;clearTimeout(st);
   st=setTimeout(()=>{st=null;doSaveNow();},250);
@@ -1092,7 +1269,7 @@ async function doSaveNow(){
       saveRetry=Math.min((saveRetry||0)+1,6);
       /* ต้องนัดลองใหม่เองด้วย ไม่ใช่รอให้ CC เผอิญพิมพ์อะไรอีก (เดิมค้าง dirty=true ตลอด แล้วการซิงก์อัตโนมัติก็หยุดไปเลย) */
       if(!st)st=setTimeout(()=>{st=null;doSaveNow();},Math.min(30000,1500*Math.pow(2,saveRetry-1)));
-      flag('err');
+      flag(netFlagState(lastWriteErr));      /* 2026-09-15: บอกสาเหตุจริง คิวหนา/ตอบช้า/ต่อไม่ได้ */
     }else{
       saveRetry=0;lastWriteErr='';        /* เขียนสำเร็จแล้ว ล้างสถานะผิดพลาดค้าง ไม่ให้ไปปิดฟีเจอร์อื่นค้างไว้ */
       if(!pendingOps.length)dirty=false;
@@ -1208,7 +1385,7 @@ let dayLoaded=false;
 async function loadDay(){
   const ds=curDate, my=++loadSeq;
   let raw=null;
-  if(backendURL){try{raw=await dayFetch(ds);}catch(e){raw=null;}if(raw!==null)lastSyncTxt=nowHM();else flag('err');}
+  if(backendURL){try{raw=await dayFetch(ds);}catch(e){raw=null;}if(raw!==null)lastSyncTxt=nowHM();else flag(netFlagState(lastReadErr));}
   if(raw===null){try{raw=await store.get('fleet:day:'+ds);}catch(e){raw=null;}}
   if(my!==loadSeq||ds!==curDate)return;                  /* มีการโหลดวันอื่นแซงไปแล้ว ทิ้งผลนี้ */
   /* '' = โหลดสำเร็จแต่วันนั้นยังไม่มีข้อมูล (ถือว่ารู้ของจริงแล้ว) · null = โหลดไม่ได้ (ยังไม่รู้ของจริง)
@@ -1425,7 +1602,7 @@ async function omsWorkFetchDay(ds){
   if(!backendURL)return {ok:false,ds:ds,rows:[],message:'ยังไม่ได้ตั้ง URL ระบบกลาง',
     _fix:'กดรูปเฟือง ⚙ บนหัวเว็บ แล้วใส่ URL ของ Apps Script'};
   try{
-    const r=await fetch(backendURL+'?omswork='+encodeURIComponent(ds)+'&t='+Date.now()+tk());
+    const r=await xfetch(backendURL+'?omswork='+encodeURIComponent(ds)+'&t='+Date.now()+tk(),null,NET_TIMEOUT_LONG);
     const d=await r.json();
     if(!d||typeof d!=='object')return {ok:false,ds:ds,rows:[],message:'คำตอบจากระบบกลางไม่ถูกต้อง'};
     const p=omsReplyProblem(d);
@@ -1443,7 +1620,7 @@ async function omsWorkFetchDay(ds){
 async function omsDrvFetchDay(ds){
   if(!backendURL)return {ok:false,ds:ds,rows:[],message:'ยังไม่ได้ตั้ง URL ระบบกลาง'};
   try{
-    const r=await fetch(backendURL+'?driverreport='+encodeURIComponent(ds)+'&t='+Date.now()+tk());
+    const r=await xfetch(backendURL+'?driverreport='+encodeURIComponent(ds)+'&t='+Date.now()+tk(),null,NET_TIMEOUT_LONG);
     const d=await r.json();
     if(!d||typeof d!=='object')return {ok:false,ds:ds,rows:[],message:'คำตอบจากระบบกลางไม่ถูกต้อง'};
     if(!Array.isArray(d.rows))d.rows=[];
@@ -2235,12 +2412,12 @@ async function omsSend(j,dry){
   const p=omsPayload(j);
   if(p.miss.length)return {ok:false,message:'ข้อมูลไม่ครบ: '+p.miss.join(' · ')};
   try{
-    const r=await fetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    const r=await xfetch(backendURL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
       body:JSON.stringify({omsplan:1,tk:API_TOKEN,dryRun:dry?1:0,
-        empId:p.empId,truckId:p.truckId,workList:p.workList,jobId:p.jobId})});
+        empId:p.empId,truckId:p.truckId,workList:p.workList,jobId:p.jobId})},NET_TIMEOUT_LONG);
     const d=await r.json();
     return omsInterpret(d);
-  }catch(e){return {ok:false,message:'ต่อระบบกลางไม่ได้'};}
+  }catch(e){return {ok:false,message:netErrText(e)};}
 }
 /* ส่งแล้วบันทึกผลกลับไปที่งาน */
 async function omsSendAndSave(j,force){
@@ -2538,7 +2715,7 @@ async function doLogin(){
   else{backendURL=BACKEND_URL_DEFAULT;lsSet('fleet:backend',BACKEND_URL_DEFAULT);lsSet('fleet:backend:manual','0');}
   updateAdminChip();closeModal();
   flag('saving');
-  await withBusy('กำลังโหลดข้อมูล…',async()=>{await loadConfig();await loadRoutes();await loadOmsCfg();await loadTruckNotes();await loadDay();});
+  await withBusy('กำลังโหลดข้อมูล…',async()=>{await Promise.allSettled([loadConfig(),loadRoutes(),loadOmsCfg(),loadTruckNotes(),loadDay()]);});
   flag('ok');render();startPoll();startAlarms();startOmsWork();if(tab==='roster')scrollToCurrentHour();
 }
 function stampBy(){day.by=adminName;}
@@ -3633,7 +3810,7 @@ function render(){
     if(!validConfig(config))config=seed();
     if(!isPlain(day))day=normDay(blankDay());
     document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-    ({roster:renderRoster,dispatch:renderDispatch,board:renderBoard,plan:renderPlan,summary:renderSummary,dash:renderDash}[tab])();
+    ({roster:renderRoster,dispatch:renderDispatch,board:renderBoard,plan:renderPlan,summary:renderSummary,dash:renderDash,monitor:renderMonitor}[tab])();
   }catch(err){showFatal('วาดหน้าจอ ('+tab+')',err);}
 }
 
@@ -3862,7 +4039,7 @@ document.getElementById('modal').addEventListener('click',e=>{
     const u=(document.getElementById('login_url').value||'').trim()||BACKEND_URL_DEFAULT;
     const out=document.getElementById('testResult');
     out.textContent='กำลังทดสอบ…';out.style.color='var(--muted)';
-    fetch(u+'?day='+curDate+(API_TOKEN?('&tk='+encodeURIComponent(API_TOKEN)):''))
+    xfetch(u+'?day='+curDate+(API_TOKEN?('&tk='+encodeURIComponent(API_TOKEN)):''))
       .then(r=>r.text()).then(t=>{
         let ok=false,msg=t.slice(0,120);
         try{const d=JSON.parse(t);ok=!d.error;if(d.error)msg='เซิร์ฟเวอร์ตอบ error: '+d.error;}
@@ -3870,7 +4047,8 @@ document.getElementById('modal').addEventListener('click',e=>{
         out.textContent=(ok?'✅ เชื่อมต่อได้ พร้อมใช้งาน':'❌ '+msg);
         out.style.color=ok?'var(--present)':'var(--absent)';
       })
-      .catch(e=>{out.textContent='❌ ต่อไม่ได้เลย: URL ผิด หรือ deployment ถูกลบ/archive';out.style.color='var(--absent)';});
+      .catch(e=>{out.textContent=(e&&e.timeout)?('❌ '+netErrText(e)+' — ระบบกลางรับคำขอแต่ตอบไม่ทันใน '+Math.round(NET_TIMEOUT/1000)+' วินาที')
+                                              :'❌ ต่อไม่ได้เลย: URL ผิด หรือ deployment ถูกลบ/archive';out.style.color='var(--absent)';});
     return;
   }
   if(e.target.closest('#saveJob')){saveJob();return;}
@@ -4197,7 +4375,7 @@ async function importFromSheet(){
   const btn=document.getElementById('importSheetBtn');
   if(btn){btn.disabled=true;btn.textContent='⏳ กำลังดึง…';}
   try{
-    const res=await fetch(backendURL+'?roster=live'+tk()+'&t='+Date.now());
+    const res=await xfetch(backendURL+'?roster=live'+tk()+'&t='+Date.now());
     if(!res.ok)throw new Error('HTTP '+res.status);
     const data=await res.json();
     if(data&&data.ok===false)throw new Error(data.message||'อ่านไม่สำเร็จ');
@@ -4385,7 +4563,7 @@ async function pollDay(){
   const m=document.getElementById('modal');
   if(m&&m.style.display==='flex')return;
   const ds=curDate, gen=editGen, raw=await dayFetch(ds);
-  if(raw===null){flag('err');return;}
+  if(raw===null){flag(netFlagState(lastReadErr));return;}
   lastSyncTxt=nowHM();
   /* ทิ้งคำตอบที่ล้าสมัย: เปลี่ยนวันที่ / มีการแก้ระหว่างรอ / กำลังบันทึกอยู่ */
   if(ds!==curDate||dirty||saveBusy||gen!==editGen)return;
@@ -5585,6 +5763,399 @@ function renderDash(){
   }
 }
 
+
+/* ========== หน้าใหม่ "มอนิเตอร์ พจส." (2026-11-25) ==========
+   ผู้ใช้สั่ง: อยากดูผลงาน/ประสิทธิภาพของ พจส. แต่ละคนย้อนหลังตามช่วงวันที่ในหน้าเดียว (เดิมต้องเปิดรายวันทีละคน)
+   หลักที่ยึดจากบักเก่าของระบบนี้ (อย่าทำซ้ำ):
+   - ตัวเลขต้องมาจากฟังก์ชันตัวเดียวกับหน้า 1/4/6 : attStat/attArr/isOff (ผ่าน withDayContext), jobType, workBreakdown, workLimit
+     ไม่เขียนสูตรคู่ขนาน และจับคนด้วย "รหัส พจส." ไม่ใช่ตำแหน่งกะ
+   - อ่านอย่างเดียว ไม่มีจุดไหนเขียนข้อมูล/ไม่แตะ day หรือ config ถาวร (withDayContext คืนค่าเดิมเสมอ)
+   - วันที่ CC เปิดอยู่ใช้ข้อมูลสด (day) ส่วนวันอื่นใช้ dashCache ชุดเดียวกับ Dashboard
+   - เที่ยวที่ยังไม่ปิดงาน นับเป็นเที่ยวแต่ไม่นับในค่าเฉลี่ยเวลา (ค่าว่าง ≠ ศูนย์)
+   - ไม่มีเวลารายงานตัว: เช็ควันหยุดก่อน (วันหยุด) ถ้าไม่ใช่ = "ตรวจสอบข้อมูล" */
+let monDays=7, monFrom='', monTo='', monProd='all', monView='all', monQ='', monSort='trips', monDir=-1;
+let monOpen='', monShow=14, monBusy=false, monDone=0, monNeed=0, monLast=null;
+const MON_MAX_DAYS=92;
+const MON_PRODS=[
+  {k:'chip',n:'ชิพ/ไม้',c:'#059669'},{k:'box',n:'ตู้',c:'#2563eb'},{k:'coal',n:'ถ่านหิน',c:'#475569'},
+  {k:'swap',n:'สลับหาง',c:'#0891b2'},{k:'oth',n:'อื่นๆ',c:'#94a3b8'}];
+const MON_PN={};MON_PRODS.forEach(p=>MON_PN[p.k]=p);
+const MON_TC={main:'#2563eb',vt:'#0891b2',oth_l:'#10b981',oth_s:'#9adbbd'};
+/* จัดกลุ่มสินค้าจากชื่อสินค้าในใบงาน (ทะเบียนเส้นทางไม่มีฟิลด์กลุ่มสินค้า) — กติกาตามคำสั่ง "ชิพ / ตู้ / ถ่านหิน" */
+function monProdOf(j){
+  const p=String((j&&j.product)||'');
+  if(p.indexOf('ถ่านหิน')>=0||/coal/i.test(p))return 'coal';
+  if(p.indexOf('ตู้')>=0)return 'box';
+  if(p.indexOf('สลับหาง')>=0)return 'swap';
+  if(/ไม้|ชิพ|chip|เปลือก|ราก|ชีวมวล|ฟืน|แกลบ/i.test(p))return 'chip';
+  return 'oth';
+}
+function monDateList(){
+  const out=[];
+  if(monFrom&&monTo){
+    let a=new Date(monFrom+'T00:00:00'), b=new Date(monTo+'T00:00:00');
+    if(isNaN(a.getTime())||isNaN(b.getTime()))return [curDate];
+    if(a>b){const t=a;a=b;b=t;}
+    let cur=a,g=0;
+    while(cur<=b&&g++<MON_MAX_DAYS){out.push(dstr(cur));cur=new Date(cur.getTime()+86400000);}
+    return out;
+  }
+  const end=new Date(curDate+'T00:00:00');
+  for(let i=monDays-1;i>=0;i--)out.push(dstr(new Date(end.getTime()-i*86400000)));
+  return out;
+}
+function monCustom(){return !!(monFrom&&monTo);}
+/* โหลดวันที่ขาดเข้า dashCache (ชุดเดียวกับ Dashboard) — ลำดับเดียวกับ dashLoad: ระบบกลาง > ของในเครื่อง */
+async function monLoad(force){
+  if(monBusy)return;
+  const dates=monDateList();
+  if(force)dates.forEach(d=>{delete dashCache[d];});
+  const need=dates.filter(ds=>ds!==curDate&&dashCache[ds]===undefined);
+  monNeed=need.length; monDone=0;
+  if(!need.length){if(tab==='monitor')renderMonitor();return;}
+  monBusy=true; if(tab==='monitor')renderMonitor();
+  try{
+    for(let i=0;i<need.length;i+=4){
+      const batch=need.slice(i,i+4);
+      await Promise.all(batch.map(async ds=>{
+        let raw=null;
+        if(backendURL){try{raw=await dayFetch(ds);}catch(e){raw=null;}}
+        if(raw===null||raw===undefined){try{raw=await store.get('fleet:day:'+ds);}catch(e){}}
+        if(raw===null||raw===undefined){const ls=lsGet('fleetdb:fleet:day:'+ds); if(ls)raw=ls;}
+        let o=null; if(raw){try{o=JSON.parse(raw);}catch(e){}}
+        if(o&&typeof o==='object'){normDay(o);dashCache[ds]=o;} else dashCache[ds]=null;
+        monDone++;
+      }));
+      if(tab==='monitor')renderMonitor();
+    }
+  } finally { monBusy=false; if(tab==='monitor')renderMonitor(); }
+}
+/* สถานะรายคนของวันนั้น — อ่านผ่าน attStat/attArr/isOff ตัวเดียวกับหน้า 1/4 (สลับบริบทวันชั่วคราว คืนค่าเดิมเสมอ) */
+function monAttend(ds,doc){
+  return withDayContext(ds,doc,()=>{
+    const per=[];
+    for(const t of config)for(const d of (t.drivers||[])){
+      per.push({truckNo:t.truckNo,code:String(d.code||'').trim(),name:d.name||'',
+        off:isOff(t,d,ds),v:attStat(t,d),arrive:attArr(t,d)});
+    }
+    return per;
+  });
+}
+/* เรียงเที่ยวของคนหนึ่งในวันหนึ่ง "นับจากเวลารายงานตัว" (กะข้ามเที่ยงคืน เที่ยว 02:48 ต้องเป็นเที่ยวหลังสุด ไม่ใช่เที่ยวแรก)
+   เวลานับจากรายงานตัว/เที่ยวก่อนหน้า: เที่ยว 1 = รายงานตัว→ปิดงาน1 · เที่ยว 2 = ปิดงาน1→ปิดงาน2 ... (ยืนยันกับผู้ใช้ 2026-08-28) */
+function monTrips(jobs,arrive){
+  const arrMin=hm2min(arrive);
+  const seqMin=m=>(arrMin!==null&&m!==null&&m<arrMin)?m+1440:m;
+  const sorted=jobs.slice().sort((a,b)=>{
+    const x=hm2min(a.depart),y=hm2min(b.depart);
+    if(x===null&&y===null)return 0; if(x===null)return 1; if(y===null)return -1;
+    return seqMin(x)-seqMin(y);
+  });
+  let prev=arrive||'';
+  return sorted.map((j,i)=>{
+    const wb=workBreakdown(j), runMin=(wb.closed&&wb.totalMin>0)?wb.totalMin:null, lim=workLimit(j)*60;
+    let seg=null;
+    if(j.closed&&prev){const m=minutesBetween(prev,j.closed); if(m!==null)seg=m;}
+    if(j.closed)prev=j.closed;
+    return {no:i+1,product:j.product||'',origin:j.origin||'',dest:j.dest||'',km:Number(j.distance)||0,
+      depart:j.depart||'',closed:j.closed||'',type:jobType(j),prod:monProdOf(j),
+      run:runMin,seg:seg,segFrom:i===0?'รายงานตัว':('ปิดงานเที่ยว '+i),
+      over:runMin!==null&&runMin>lim,lim:lim,st:runStatus(j)};
+  });
+}
+function monAgg(){
+  const dates=monDateList();
+  const people={}, daily=[], noDataDay={};
+  let haveDays=0, orphan=0;
+  const mk=(code,name)=>people[code]||(people[code]={code:code,name:name||'',truck:'',inRoster:false,dayMap:{},
+    trips:0,closedN:0,km:0,came:0,late:0,absent:0,leave:0,off:0,ot:0,unchecked:0,workDays:0,over:0,runN:0,sumRun:0,
+    type:{main:0,vt:0,oth_l:0,oth_s:0},prod:{chip:0,box:0,coal:0,swap:0,oth:0},routes:{}});
+  dates.forEach(ds=>{
+    const doc=(ds===curDate)?(day||null):dashCache[ds];
+    const dd={ds:ds,tot:0,noData:!doc,type:{main:0,vt:0,oth_l:0,oth_s:0}};
+    daily.push(dd);
+    if(!doc){noDataDay[ds]=1;return;}
+    haveDays++;
+    const byCode={};
+    (doc.jobs||[]).forEach(j=>{
+      const pg=monProdOf(j); if(monProd!=='all'&&pg!==monProd)return;
+      const gk=jobType(j); dd.type[gk]=(dd.type[gk]||0)+1; dd.tot++;
+      const c=String(j.code||'').trim();
+      if(c)(byCode[c]=byCode[c]||[]).push(j); else orphan++;
+    });
+    const seen={};
+    const addDay=(code,name,truck,v,off,arrive,inRoster)=>{
+      seen[code]=1;
+      const R=mk(code,name); if(!R.name&&name)R.name=name; if(truck)R.truck=truck; if(inRoster)R.inRoster=true;
+      const trips=monTrips(byCode[code]||[],arrive);
+      const rec={ds:ds,v:v,off:!!off,arrive:arrive||'',trips:trips,inRoster:inRoster};
+      R.dayMap[ds]=rec;
+      if(inRoster){
+        if(v==='present'||v==='late'||v==='ot')R.came++;
+        if(v==='late')R.late++; else if(v==='absent')R.absent++; else if(v==='leave')R.leave++; else if(v==='ot')R.ot++;
+        else if(off)R.off++; else if(!v)R.unchecked++;
+      }
+      if(trips.length)R.workDays++;
+      trips.forEach(t=>{
+        R.trips++; R.km+=t.km; R.type[t.type]=(R.type[t.type]||0)+1; R.prod[t.prod]=(R.prod[t.prod]||0)+1;
+        if(t.closed)R.closedN++;
+        if(t.run!==null){R.runN++;R.sumRun+=t.run;if(t.over)R.over++;}
+        /* แยกแถวตามสินค้าด้วย — เส้นทางเดียวกันอาจขนหลายสินค้า ถ้ารวมกันป้ายสินค้า/ประเภทงานจะไม่ตรงกับบางเที่ยว */
+        const key=(t.product||'(ไม่ระบุสินค้า)')+'|'+(t.origin||'(ไม่ระบุ)')+' → '+(t.dest||'(ไม่ระบุ)');
+        const q=R.routes[key]=R.routes[key]||{n:0,km:0,run:0,runN:0,prod:t.prod,type:t.type,product:t.product};
+        q.n++;q.km+=t.km;if(t.run!==null){q.run+=t.run;q.runN++;}
+      });
+    };
+    monAttend(ds,doc).forEach(x=>{ if(x.code&&!seen[x.code])addDay(x.code,x.name,x.truckNo,x.v,x.off,x.arrive,true); });
+    /* คนที่มีงานแต่ไม่อยู่ในตารางกะของวันนั้น (เช่น ย้ายคัน/นอกกอง) — ต้องไม่หายไปจากรายงาน */
+    Object.keys(byCode).forEach(c=>{
+      if(seen[c])return;
+      const j0=byCode[c][0]; addDay(c,String(j0.driver||''),'','',false,'',false);
+    });
+  });
+  const rows=Object.keys(people).map(c=>people[c]);
+  rows.forEach(R=>{
+    R.days=dates.map(ds=>R.dayMap[ds]||{ds:ds,gap:true,noData:!!noDataDay[ds],trips:[]});
+    R.perDay=R.came?R.trips/R.came:0;
+    R.avgRun=R.runN?R.sumRun/R.runN:null;
+    R.overPct=R.runN?Math.round(R.over/R.runN*100):0;
+    const need=R.came+R.absent+R.leave;
+    R.attPct=need?Math.round(R.came/need*100):0;
+  });
+  const active=rows.filter(r=>r.trips>0);
+  const sum=f=>rows.reduce((a,r)=>a+r[f],0);
+  const T={dates:dates,rows:rows,daily:daily,haveDays:haveDays,orphan:orphan,total:rows.length,active:active.length,
+    trips:sum('trips'),km:sum('km'),over:sum('over'),runN:sum('runN'),sumRun:sum('sumRun'),
+    came:sum('came'),late:sum('late'),absent:sum('absent'),leave:sum('leave')};
+  T.avgTrips=active.length?T.trips/active.length:0;
+  T.perDay=T.came?T.trips/T.came:0;
+  T.avgRun=T.runN?T.sumRun/T.runN:null;
+  rows.forEach(r=>{
+    const why=[],good=[];
+    if(!r.trips)r.status='none';
+    else{
+      if(r.runN>=3&&r.overPct>=15)why.push('เที่ยวเกินเวลา '+r.over+' จาก '+r.runN+' เที่ยวที่ปิดงานแล้ว ('+r.overPct+'%) สูงกว่าเกณฑ์ติดตาม 15%');
+      if(r.absent>=2)why.push('ขาด '+r.absent+' วันในช่วงนี้');
+      if(r.late>=2)why.push('มาสาย '+r.late+' วัน');
+      if(T.perDay&&r.came>=2&&r.perDay<T.perDay*.7)why.push('เที่ยวต่อวันที่มา ('+r.perDay.toFixed(1)+') ต่ำกว่าค่าเฉลี่ยทีม ('+T.perDay.toFixed(1)+') เกิน 30%');
+      if(r.trips>=T.avgTrips*1.15&&r.overPct<8&&!r.absent)good.push('เที่ยวสูงกว่าค่าเฉลี่ยทีมและแทบไม่เกินเวลา');
+      r.status=why.length?'watch':(good.length?'top':'ok');
+    }
+    r.why=why;r.good=good;
+  });
+  return T;
+}
+/* ---------- วาด ---------- */
+const MON_ST={top:['เด่น','m-top'],ok:['ปกติ','m-ok'],watch:['ควรติดตาม','m-watch'],none:['ไม่ได้วิ่งงาน','m-none']};
+function monDur(m){if(m==null||isNaN(m))return '-';m=Math.round(m);return Math.floor(m/60)+':'+String(m%60).padStart(2,'0');}
+function monDurTxt(m){if(m==null||isNaN(m))return '-';m=Math.round(m);return Math.floor(m/60)+' ชม. '+String(m%60).padStart(2,'0')+' น.';}
+function monPct(a,b){return b?Math.round(a/b*100):0;}
+function monInit(name){
+  const s=String(name||'').replace(/^\s*(นางสาว|นาย|นาง|น\.ส\.|นส\.)\s*/,'');
+  const m=s.match(/[ก-ฮA-Za-z]/); return m?m[0]:'•';
+}
+/* วันที่ไม่มีเวลารายงานตัว: วันหยุดของคนนั้น = "วันหยุด" · ไม่ใช่ = "ตรวจสอบข้อมูล" (ตามที่ผู้ใช้สั่ง 2026-08-28) */
+function monNoArrive(d){
+  return d.off?'<span class="m-tag off">วันหยุด</span>':'<span class="m-tag chk">ตรวจสอบข้อมูล</span>';
+}
+const MON_WD=['อา','จ','อ','พ','พฤ','ศ','ส'];
+function monShort(ds){const d=new Date(ds+'T00:00:00');return d.getDate()+'/'+(d.getMonth()+1);}
+function monKpis(T){
+  const k=(c,l,v,u,s)=>`<div class="m-kpi ${c}"><div class="k">${l}</div><div class="v mono">${v}<small>${u||''}</small></div><div class="s">${s||''}</div></div>`;
+  const nd=Math.max(1,T.haveDays);
+  return k('','พจส. ที่วิ่งงาน',T.active,'/ '+T.total+' คน','ไม่ได้วิ่งงาน <b>'+(T.total-T.active)+'</b> คน')
+   +k('g','เที่ยวรวม',T.trips,'เที่ยว','เฉลี่ย <b>'+Math.round(T.trips/nd)+'</b> เที่ยว/วัน')
+   +k('','เที่ยวต่อคนต่อวัน',T.perDay.toFixed(1),'เที่ยว','เฉพาะวันที่มาทำงาน')
+   +k('g','เวลาทำงาน/เที่ยว',monDur(T.avgRun),'ชม.','เกินเวลา <b>'+T.over+'</b> จาก '+T.runN+' เที่ยวที่ปิดงาน')
+   +k('','ระยะทางรวม',Math.round(T.km).toLocaleString(),'กม.','เฉลี่ย <b>'+(T.trips?Math.round(T.km/T.trips):0)+'</b> กม./เที่ยว')
+   +k('g','อัตรามาทำงาน',monPct(T.came,T.came+T.absent+T.leave),'%','สาย <b>'+T.late+'</b> · ขาด <b>'+T.absent+'</b> · ลา <b>'+T.leave+'</b> (คน-วัน)');
+}
+function monChart(T){
+  const per=T.daily, W=640,H=210,pl=34,pb=26,pt=10;
+  const mx=Math.max(5,...per.map(p=>p.tot)), bw=(W-pl)/Math.max(1,per.length);
+  let g='';
+  for(let i=0;i<=4;i++){const v=Math.round(mx*i/4),y=pt+(H-pt-pb)*(1-i/4);
+    g+=`<line x1="${pl}" x2="${W}" y1="${y}" y2="${y}" stroke="#e6ecf5"/><text x="${pl-6}" y="${y+4}" text-anchor="end" font-size="10" fill="#64748b">${v}</text>`;}
+  per.forEach((p,i)=>{
+    const x=pl+i*bw+bw*.16,w=bw*.68; let y=H-pb;
+    if(p.noData){g+=`<text x="${x+w/2}" y="${H-pb-6}" text-anchor="middle" font-size="9" fill="#94a3b8">–</text>`;}
+    JOBTYPES.forEach(t=>{const n=p.type[t.k]||0,h=(H-pt-pb)*n/mx; if(h>0){y-=h;
+      g+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${MON_TC[t.k]}" rx="2"><title>${esc(p.ds)} · ${esc(t.s)} ${n} เที่ยว</title></rect>`;}});
+    if(per.length<=16||i%Math.ceil(per.length/12)===0)g+=`<text x="${x+w/2}" y="${H-8}" text-anchor="middle" font-size="10" fill="#64748b">${esc(monShort(p.ds))}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="จำนวนเที่ยวรายวัน">${g}</svg>`;
+}
+function monMix(T){
+  const pc={},tc={}; MON_PRODS.forEach(p=>pc[p.k]=0); JOBTYPES.forEach(t=>tc[t.k]=0);
+  T.rows.forEach(r=>{for(const k in pc)pc[k]+=r.prod[k]||0;for(const k in tc)tc[k]+=r.type[k]||0;});
+  const bars=(o,lab,col)=>Object.keys(o).map(k=>`<div class="m-hb"><span>${esc(lab[k])}</span><div class="m-bar"><i style="width:${monPct(o[k],T.trips)}%;--c:${col[k]}"></i></div><b class="mono">${o[k]}</b></div>`).join('');
+  const pl={},pcl={};MON_PRODS.forEach(p=>{pl[p.k]=p.n;pcl[p.k]=p.c;});
+  const tl={};JOBTYPES.forEach(t=>tl[t.k]=t.s);
+  return `<div class="m-sub" style="margin-top:0">สินค้า</div>${bars(pc,pl,pcl)}<div class="m-sub">ประเภทงาน</div>${bars(tc,tl,MON_TC)}`;
+}
+const MON_COLS=[['rk','#','c',0],['name','พจส.','',0],['trips','เที่ยวรวม','',1],['perDay','เที่ยว/วัน','c',1],
+  ['type','ประเภทงาน','',0],['prod','สินค้าที่วิ่ง','',0],['avgRun','เวลาทำงาน/เที่ยว','c',1],['over','เกินเวลา','c',1],
+  ['km','ระยะทาง (กม.)','c',1],['attPct','การมาทำงาน','c',1],['status','สถานะ','c',0]];
+function monTableRows(T){
+  let rows=T.rows.slice();
+  const q=monQ.trim().toLowerCase();
+  if(q)rows=rows.filter(r=>(r.name+' '+r.code+' '+r.truck).toLowerCase().indexOf(q)>=0);
+  if(monView==='watch')rows=rows.filter(r=>r.status==='watch');
+  if(monView==='none')rows=rows.filter(r=>r.status==='none');
+  const val=r=>monSort==='avgRun'?(r.avgRun==null?-1:r.avgRun):(r[monSort]||0);
+  rows.sort((a,b)=>(val(a)-val(b))*monDir||String(a.name).localeCompare(String(b.name),'th'));
+  return rows;
+}
+function monTableHTML(T){
+  const rows=monTableRows(T), mxT=Math.max(1,...T.rows.map(r=>r.trips));
+  const head='<tr>'+MON_COLS.map(c=>`<th class="${c[2]} ${c[3]?'s':''}" ${c[3]?`data-msort="${c[0]}"`:''}>${c[1]}${c[3]?`<span class="ar">${monSort===c[0]?(monDir<0?'▼':'▲'):''}</span>`:''}</th>`).join('')+'</tr>';
+  const sortedByTrips=monSort==='trips'&&monDir<0;
+  const body=rows.length?rows.map((r,i)=>{
+    const st=MON_ST[r.status], none=r.status==='none';
+    const stack=r.trips?`<div class="m-stack" title="${JOBTYPES.map(t=>t.s+' '+(r.type[t.k]||0)).join(' · ')}">${JOBTYPES.map(t=>`<i style="width:${monPct(r.type[t.k]||0,r.trips)}%;background:${MON_TC[t.k]}"></i>`).join('')}</div>`:'<span class="m-dim">-</span>';
+    const pills=r.trips?`<div class="m-pills">${MON_PRODS.filter(p=>r.prod[p.k]).map(p=>`<span class="m-pill"><i style="background:${p.c}"></i>${p.n} ${r.prod[p.k]}</span>`).join('')}</div>`:'<span class="m-dim">-</span>';
+    return `<tr class="row ${monOpen===r.code?'sel':''}" data-mopen="${esc(r.code)}">
+      <td class="c"><span class="m-rk ${i<3&&!none&&sortedByTrips?'top':''}">${i+1}</span></td>
+      <td><div class="m-who"><span class="m-av">${esc(monInit(r.name))}</span><div><b>${esc(r.name||'(ไม่ทราบชื่อ)')}</b><small>${esc(r.code)}${r.truck?' · '+esc(r.truck):''}${r.inRoster?'':' · ไม่อยู่ในตารางกะ'}</small></div></div></td>
+      <td>${none?'<span class="m-dim">ไม่ได้วิ่งงาน</span>':`<div class="m-trip"><b class="mono">${r.trips}</b><div class="m-bar" style="flex:1"><i style="width:${monPct(r.trips,mxT)}%"></i></div></div>`}</td>
+      <td class="c mono">${none?'-':r.perDay.toFixed(1)}</td><td>${stack}</td><td>${pills}</td>
+      <td class="c mono">${none?'-':monDur(r.avgRun)}</td>
+      <td class="c mono ${r.runN>=3&&r.overPct>=15?'m-over':''}">${none?'-':(r.over?r.over+' <span class="m-dim">('+r.overPct+'%)</span>':'0')}</td>
+      <td class="c mono">${none?'-':Math.round(r.km).toLocaleString()}</td>
+      <td class="c"><div class="m-att"><em class="v">มา ${r.came}</em>${r.late?`<em class="l">สาย ${r.late}</em>`:''}${r.absent?`<em class="a">ขาด ${r.absent}</em>`:''}${r.leave?`<em class="l">ลา ${r.leave}</em>`:''}</div></td>
+      <td class="c"><span class="m-badge ${st[1]}">${st[0]}</span></td></tr>`;
+  }).join(''):'<tr><td colspan="11" class="m-empty">ไม่พบ พจส. ตามเงื่อนไขที่เลือก</td></tr>';
+  return {head:head,body:body,count:rows.length};
+}
+function monDrawerHTML(T){
+  const r=T.rows.find(x=>x.code===monOpen); if(!r)return '';
+  const st=MON_ST[r.status];
+  const mini=`<div class="m-mini"><div><div class="k">เที่ยวรวม</div><div class="v mono">${r.trips}</div></div>
+    <div><div class="k">เวลาทำงาน/เที่ยว</div><div class="v mono">${monDur(r.avgRun)}</div></div>
+    <div><div class="k">เกินเวลา</div><div class="v mono">${r.over}</div></div>
+    <div><div class="k">ระยะทาง (กม.)</div><div class="v mono">${Math.round(r.km).toLocaleString()}</div></div></div>`;
+  const note=r.why.length?`<div class="m-note"><b>ข้อสังเกตที่ควรดู</b><ul>${r.why.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`
+    :(r.good.length?`<div class="m-note good">${esc(r.good[0])}</div>`:'');
+  const cells=r.days.map(d=>{
+    const lab=esc(monShort(d.ds));
+    if(d.gap)return `<div class="m-dc x" title="${esc(d.ds)} ${d.noData?'ไม่มีข้อมูลวันนั้น':'ไม่อยู่ในตารางกะ'}">${lab}<b>–</b></div>`;
+    const n=d.trips.length;
+    if(d.v==='absent'&&!n)return `<div class="m-dc x a" title="${esc(d.ds)} ขาด">${lab}<b>ขาด</b></div>`;
+    if(d.v==='leave'&&!n)return `<div class="m-dc x lv" title="${esc(d.ds)} ลา">${lab}<b>ลา</b></div>`;
+    if(d.off&&!n&&d.v!=='ot')return `<div class="m-dc x" title="${esc(d.ds)} วันหยุด">${lab}<b>หยุด</b></div>`;
+    const t=n===0?'':n===1?'t1':n===2?'t2':n===3?'t3':'t4';
+    return `<div class="m-dc ${t} ${d.v==='late'?'late':''}" title="${esc(d.ds)} · ${n} เที่ยว${d.v==='late'?' · มาสาย':''}${d.v==='ot'?' · OT วันหยุด':''}">${lab}<b class="mono">${n}</b></div>`;
+  }).join('');
+  const bars=(o,lab,col)=>Object.keys(o).map(k=>`<div class="m-hb"><span>${esc(lab[k])}</span><div class="m-bar"><i style="width:${monPct(o[k],r.trips)}%;--c:${col[k]}"></i></div><b class="mono">${o[k]}</b></div>`).join('');
+  const pl={},pcl={};MON_PRODS.forEach(p=>{pl[p.k]=p.n;pcl[p.k]=p.c;});
+  const tl={};JOBTYPES.forEach(t=>tl[t.k]=t.s);
+  const routes=Object.keys(r.routes).map(k=>[k,r.routes[k]]).sort((a,b)=>b[1].n-a[1].n).map(e=>{const x=e[1];
+    return `<tr><td>${esc(e[0].split('|')[1])}<div class="m-dim" style="font-size:11px"><span class="m-pill"><i style="background:${MON_PN[x.prod].c}"></i>${esc(x.product||MON_PN[x.prod].n)}</span> <span class="m-pill"><i style="background:${MON_TC[x.type]}"></i>${esc(jtLabel(x.type))}</span></div></td>
+      <td class="c mono">${x.n}</td><td class="c mono">${Math.round(x.km)}</td><td class="c mono">${x.runN?monDur(x.run/x.runN):'-'}</td></tr>`;}).join('');
+  const wd=r.days.filter(d=>d.trips&&d.trips.length).slice().reverse();
+  const grp=wd.slice(0,monShow).map(d=>{
+    const closed=d.trips.filter(t=>t.closed), last=closed[closed.length-1];
+    const span=(d.arrive&&last)?minutesBetween(d.arrive,last.closed):null;
+    const dt=new Date(d.ds+'T00:00:00');
+    return `<div class="m-grp"><div class="m-gh"><span class="d">${MON_WD[dt.getDay()]} ${esc(monShort(d.ds))}</span>
+      <span>รายงานตัว <b class="mono">${d.arrive?esc(d.arrive):monNoArrive(d)}</b></span>
+      <span>ปิดงานเที่ยวสุดท้าย <b class="mono">${last?esc(last.closed):'-'}</b></span>
+      <span>รวมอยู่ปฏิบัติงาน <b class="mono">${span!==null?monDurTxt(span):(d.arrive?'-':monNoArrive(d))}</b></span></div>
+      <table class="m-mt"><thead><tr><th class="c">เที่ยว</th><th>สินค้า / เส้นทาง</th><th class="c">ออก → ปิด</th><th class="c">เวลาทำงาน</th><th class="c">นับจากรายงานตัว/เที่ยวก่อน</th></tr></thead><tbody>
+      ${d.trips.map((t,i)=>{
+        const closedTxt=t.closed?esc(t.closed):`<span class="m-pill">${esc(t.st[2])}</span>`;
+        const segTxt=t.seg!=null?monDur(t.seg):((i===0&&!d.arrive)?monNoArrive(d):'-');
+        return `<tr><td class="c mono">${t.no}</td>
+        <td><span class="m-pill"><i style="background:${MON_PN[t.prod].c}"></i>${esc(t.product||MON_PN[t.prod].n)}</span> ${esc(t.origin||'(ไม่ระบุ)')} → ${esc(t.dest||'(ไม่ระบุ)')}</td>
+        <td class="c mono">${t.depart?esc(t.depart):'-'} → ${closedTxt}</td>
+        <td class="c mono ${t.over?'m-over':''}">${monDur(t.run)}${t.over?`<div class="m-dim" style="font-size:10.5px;font-weight:400">เกิน ${t.lim/60} ชม.</div>`:''}</td>
+        <td class="c mono">${segTxt}<div class="m-dim" style="font-size:10.5px;font-weight:400">${esc(t.segFrom)}</div></td></tr>`;}).join('')}
+      </tbody></table></div>`;
+  }).join('');
+  return `<div class="m-ov" data-mclose="1"></div>
+  <aside class="m-drawer" role="dialog" aria-label="รายละเอียด ${esc(r.name)}">
+    <div class="m-dh"><span class="m-av">${esc(monInit(r.name))}</span><div><h3>${esc(r.name||'(ไม่ทราบชื่อ)')}</h3>
+      <div class="m-ds">${esc(r.code)}${r.truck?' · '+esc(r.truck):''} · ${T.dates.length} วัน · มา ${r.came} วัน</div></div>
+      <span class="m-badge ${st[1]}">${st[0]}</span><button class="m-x" data-mclose="1" aria-label="ปิด">✕</button></div>
+    <div class="m-db" id="mDb">${mini}${note}
+      <div class="m-sub">รายวัน <small>สีเข้ม = เที่ยวมาก · ขีดส้ม = มาสาย</small></div><div class="m-days">${cells}</div>
+      ${r.trips?`<div class="m-sub">วิ่งงานอะไรบ้าง</div>${bars(r.prod,pl,pcl)}<div style="height:6px"></div>${bars(r.type,tl,MON_TC)}
+      <div class="m-sub">เส้นทางที่วิ่ง</div><table class="m-mt"><thead><tr><th>เส้นทาง</th><th class="c">เที่ยว</th><th class="c">กม.</th><th class="c">เวลาเฉลี่ย</th></tr></thead><tbody>${routes}</tbody></table>
+      <div class="m-sub">รายเที่ยว <small>เรียงจากวันล่าสุด</small></div>${grp}
+      ${wd.length>monShow?`<button class="m-more" data-mmore="1">แสดงเพิ่ม (อีก ${wd.length-monShow} วัน)</button>`:''}`
+      :'<div class="m-empty">ไม่ได้วิ่งงานในช่วงที่เลือก</div>'}
+    </div></aside>`;
+}
+function renderMonitor(){
+  const y=window.scrollY||0;
+  const dbOld=document.getElementById('mDb'), dbTop=dbOld?dbOld.scrollTop:0;
+  const T=monAgg(); monLast=T;
+  /* วันที่ยังไม่เคยโหลด (เช่นเพิ่งเปลี่ยนวันที่หน้าหลัก) — ดึงเองครั้งเดียว ที่ว่างเปล่าเป็น null ไม่วนซ้ำ */
+  if(!monBusy&&T.dates.some(ds=>ds!==curDate&&dashCache[ds]===undefined))setTimeout(()=>monLoad(),0);
+  const ds=T.dates, tbl=monTableHTML(T);
+  const prog=monBusy?`<div class="m-load"><i style="width:${monNeed?Math.round(monDone/monNeed*100):100}%"></i></div>`:'';
+  document.getElementById('view').innerHTML=`<div class="mon">
+    <div class="m-title"><div><h2>มอนิเตอร์ประสิทธิภาพ พจส.</h2>
+      <p>ดูผลงานของ พจส. ทุกคนในหน้าเดียว เลือกช่วงวันที่ได้เอง · ตัวเลขใช้สูตรเดียวกับหน้า 4 และหน้า 6</p></div>
+      <div class="m-info">ช่วงที่ดูอยู่ <b>${esc(monShort(ds[0]))}${ds.length>1?' – '+esc(monShort(ds[ds.length-1])):''}</b> · ${ds.length} วัน · มีข้อมูล ${T.haveDays} วัน${monBusy?' · กำลังดึง '+monDone+'/'+monNeed+' วัน…':''}</div></div>
+    <div class="m-filters">
+      <div class="m-fg"><span class="m-fl">ช่วงวันที่</span>
+        <span class="m-seg">${[1,3,7,14,30].map(v=>`<button data-mdays="${v}" class="${!monCustom()&&monDays===v?'on':''}">${v} วัน</button>`).join('')}</span>
+        <input type="date" id="mFrom" value="${esc(monFrom||ds[0])}"><span class="m-info">ถึง</span><input type="date" id="mTo" value="${esc(monTo||ds[ds.length-1])}">
+        ${monCustom()?'<button class="m-btn" data-mclear="1">✕ ล้าง</button>':''}
+        <button class="m-btn" data-mrefresh="1">⟳ ดึงใหม่</button></div>
+      <div class="m-fg"><span class="m-fl">สินค้า</span><span class="m-chips">
+        <button class="m-chip ${monProd==='all'?'on':''}" data-mprod="all">ทั้งหมด</button>
+        ${MON_PRODS.map(p=>`<button class="m-chip ${monProd===p.k?'on':''}" data-mprod="${p.k}"><i style="background:${p.c}"></i>${p.n}</button>`).join('')}</span></div>
+      <div class="m-fg"><span class="m-fl">แสดง</span><span class="m-chips">
+        ${[['all','ทุกคน'],['watch','ควรติดตาม'],['none','ไม่ได้วิ่งงาน']].map(a=>`<button class="m-chip ${monView===a[0]?'on':''}" data-mview="${a[0]}">${a[1]}</button>`).join('')}</span></div>
+      <div class="m-fg" style="margin-left:auto"><input type="search" id="mQ" placeholder="ค้นหาชื่อ / รหัส / เบอร์รถ" value="${esc(monQ)}"></div>
+    </div>${prog}
+    <div class="m-kpis">${monKpis(T)}</div>
+    ${T.orphan?`<div class="m-warn">มี ${T.orphan} เที่ยวที่ใบงานไม่มีรหัส พจส. จึงนับอยู่ในกราฟรายวัน แต่ไม่อยู่ในตารางรายบุคคล — ควรเติมรหัสในหน้า 2</div>`:''}
+    <div class="m-two">
+      <div class="m-panel"><div class="m-ph"><h3>ปริมาณเที่ยวรายวัน (ทั้งทีม)</h3><div class="m-legend">${JOBTYPES.map(t=>`<span><i style="background:${MON_TC[t.k]}"></i>${esc(t.s)}</span>`).join('')}</div></div><div class="m-pad">${monChart(T)}</div></div>
+      <div class="m-panel"><div class="m-ph"><h3>วิ่งงานอะไรบ้าง</h3><span class="m-hint">สัดส่วนสินค้า · ประเภทงาน</span></div><div class="m-pad">${monMix(T)}</div></div>
+    </div>
+    <div class="m-panel"><div class="m-ph"><h3>ผลงานรายบุคคล</h3><span class="m-hint" id="mHint">แสดง ${tbl.count} จาก ${T.rows.length} คน · กดหัวคอลัมน์เพื่อเรียง · กดแถวเพื่อดูรายละเอียด</span></div>
+      <div class="m-tw"><table class="m-t"><thead id="mHead">${tbl.head}</thead><tbody id="mBody">${tbl.body}</tbody></table></div></div>
+    <div class="m-hint">หมายเหตุ: “เวลาทำงาน/เที่ยว” = เวลาออก→ปิดงาน (workBreakdown เดียวกับหน้า 6) · “เกินเวลา” เทียบเกณฑ์ตามประเภทงาน (8 / 12 / 4 ชม.) · เที่ยวที่ยังไม่ปิดงานนับเป็นเที่ยวแต่ไม่นับในค่าเฉลี่ยเวลา · กลุ่มสินค้าจัดจากชื่อสินค้าในใบงาน</div>
+  </div>${monOpen?monDrawerHTML(T):''}`;
+  const db=document.getElementById('mDb'); if(db)db.scrollTop=dbTop;
+  if(y)window.scrollTo(0,y);
+}
+function monCloseOpen(){monOpen='';monShow=14;renderMonitor();}
+document.getElementById('view').addEventListener('click',e=>{
+  if(tab!=='monitor')return;
+  const t=e.target;
+  let b;
+  if((b=t.closest('[data-mdays]'))){monDays=+b.dataset.mdays;monFrom=monTo='';monOpen='';return renderMonitor();}
+  if(t.closest('[data-mclear]')){monFrom=monTo='';return renderMonitor();}
+  if(t.closest('[data-mrefresh]')){return monLoad(true);}
+  if((b=t.closest('[data-mprod]'))){monProd=b.dataset.mprod;return renderMonitor();}
+  if((b=t.closest('[data-mview]'))){monView=b.dataset.mview;return renderMonitor();}
+  if((b=t.closest('[data-msort]'))){const k=b.dataset.msort;monDir=(monSort===k)?-monDir:-1;monSort=k;return renderMonitor();}
+  if(t.closest('[data-mmore]')){monShow+=14;return renderMonitor();}
+  if(t.closest('[data-mclose]')){return monCloseOpen();}
+  if((b=t.closest('[data-mopen]'))){monOpen=(monOpen===b.dataset.mopen)?'':b.dataset.mopen;monShow=14;return renderMonitor();}
+});
+document.getElementById('view').addEventListener('change',e=>{
+  if(tab!=='monitor')return;
+  if(e.target.id==='mFrom'||e.target.id==='mTo'){
+    const f=document.getElementById('mFrom').value,to=document.getElementById('mTo').value;
+    if(f&&to){monFrom=f;monTo=to;monOpen='';renderMonitor();}
+  }
+});
+document.getElementById('view').addEventListener('input',e=>{
+  if(tab!=='monitor'||e.target.id!=='mQ')return;
+  monQ=e.target.value;
+  if(!monLast)return;
+  const tbl=monTableHTML(monLast);   /* วาดเฉพาะตาราง ไม่วาดทั้งหน้า เพื่อไม่ให้ช่องค้นหาเสียโฟกัสระหว่างพิมพ์ */
+  document.getElementById('mBody').innerHTML=tbl.body;
+  document.getElementById('mHint').textContent='แสดง '+tbl.count+' จาก '+monLast.rows.length+' คน · กดหัวคอลัมน์เพื่อเรียง · กดแถวเพื่อดูรายละเอียด';
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&tab==='monitor'&&monOpen)monCloseOpen();});
+
 /* ---------- ช่องเลือกวันที่ของหน้า 6 ---------- */
 document.getElementById('view').addEventListener('input',e=>{
   /* หมายเหตุประจำตัวรถ ตาราง 2.3 — เก็บที่ truckNotes ไม่แตะ day.dnote / day.truckNote
@@ -5680,6 +6251,34 @@ document.getElementById('gate_code').addEventListener('keydown',e=>{if(e.key==='
 if(lsGet('fleet:unlocked')===GATE_HASH){unlockGate();}
 else{setTimeout(()=>{const i=document.getElementById('gate_code');if(i)i.focus();},80);}
 
+/* ---- 2026-09-15 · วาดของที่ค้างในเครื่องให้เห็นก่อน ระหว่างรอระบบกลาง ----
+   อ่านจาก localStorage ล้วน ๆ ไม่ยิงเน็ต จึงเสร็จทันที
+   *** สำคัญ: ห้ามตั้ง dayLoaded=true ที่นี่เด็ดขาด ***
+   dayLoaded แปลว่า "ยืนยันแล้วว่านี่คือของจริงจากระบบกลาง" ระบบใช้ค่านี้ตัดสินใจเขียนทับข้อมูล
+   (เช่นปิดยอดกะเป็น "ขาด" อัตโนมัติ) ของในเครื่องอาจเก่ากว่าที่ CC คนอื่นเพิ่งบันทึกไป
+   ตรงนี้จึงเป็นแค่ "ภาพให้ดูไปก่อน" เท่านั้น พอของจริงมาถึง loadDay จะทับให้เองแล้วค่อยวาดใหม่ */
+function paintFromCache(){
+  try{
+    const raw=lsGet('fleetdb:fleet:rosters');
+    if(raw){
+      const vs=JSON.parse(raw);
+      const good=Array.isArray(vs)?vs.filter(v=>v&&v.from&&validConfig(v.roster)):[];
+      if(good.length){good.forEach(v=>normRoster(v.roster));rosterVersions=good;applyRosterForDate();}
+    }
+  }catch(e){}
+  try{
+    const raw=lsGet('fleetdb:fleet:day:'+curDate);
+    if(raw){const o=JSON.parse(raw);if(isPlain(o))day=normDay(o);}
+  }catch(e){}
+  try{
+    const raw=lsGet('fleetdb:fleet:trucknote');
+    if(raw){const o=JSON.parse(raw);if(isPlain(o))truckNotes=o;}
+  }catch(e){}
+  /* ยังไม่มีอะไรในเครื่องเลย (เปิดใช้ครั้งแรก) — ใช้ตารางกะในไฟล์กับวันเปล่าไปก่อน จะได้มีโครงหน้าให้เห็น */
+  try{ if(!config)applyRosterForDate(); }catch(e){}
+  try{ if(!day)day=blankDay(); }catch(e){}
+  try{render();}catch(e){}       /* วาดไม่ออกก็ไม่เป็นไร เดี๋ยว render() ตัวจริงหลังโหลดเสร็จวาดให้อยู่แล้ว */
+}
 async function boot(){
   try{ await boot_(); }catch(err){ showFatal('เริ่มระบบ',err); }
 }
@@ -5691,7 +6290,14 @@ async function boot_(){
   const man=lsGet('fleet:backend:manual')==='1'?(lsGet('fleet:backend')||''):'';
   backendURL=man||BACKEND_URL_DEFAULT||'';
   if(!man&&lsGet('fleet:backend')&&lsGet('fleet:backend')!==BACKEND_URL_DEFAULT)lsSet('fleet:backend',BACKEND_URL_DEFAULT);
-  await withBusy('กำลังโหลดข้อมูล…',async()=>{await loadConfig();await loadRoutes();await loadOmsCfg();await loadTruckNotes();await loadDay();});
+  /* ============ 2026-09-15 · เปิดหน้าให้เร็วขึ้น ============
+     ปัญหาเดิม: ตอนเปิดหน้า ยิงคำขอไประบบกลาง 5 ชุด "ต่อกันทีละชุด" ต้องรอครบทุกชุดถึงจะวาดหน้าจอได้
+     ชุดไหนช้าชุดเดียว ทั้งหน้าค้างตามไปด้วย และจอว่างเปล่าจนกว่าจะเสร็จ
+     ตอนนี้ (1) วาดของที่ค้างอยู่ในเครื่องให้เห็นก่อนทันที (2) ยิงทั้ง 5 ชุดพร้อมกัน
+     ยิงพร้อมกันได้เพราะทั้ง 5 เป็นการ "อ่าน" คนละคีย์ ไม่เกี่ยวกัน และฝั่ง Apps Script ไม่ล็อกตอนอ่าน
+     allSettled = ชุดไหนพังไม่ลากชุดอื่นล้มตาม (เดิม await ต่อกัน ถ้าชุดแรกโยน error ชุดหลังไม่ได้โหลดเลย) */
+  paintFromCache();
+  await withBusy('กำลังโหลดข้อมูล…',async()=>{await Promise.allSettled([loadConfig(),loadRoutes(),loadOmsCfg(),loadTruckNotes(),loadDay()]);});
   document.getElementById('fleetcount').textContent=Array.isArray(config)?config.length:'?';
   updateAdminChip();
   render();flag('ok');startPoll();startAlarms();startOmsWork();fitTabs();
