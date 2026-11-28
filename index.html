@@ -10,6 +10,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=Prompt:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --nav:#0f2138;--nav2:#1a3050;--line:#e2e7ee;--surface:#f3f6f9;--card:#fff;--ink:#152238;--muted:#65728a;
@@ -502,6 +505,119 @@
   @media (max-width:1100px){.mon .m-kpis{grid-template-columns:repeat(3,1fr)}.mon .m-two{grid-template-columns:1fr}}
   @media (max-width:640px){.mon .m-kpis{grid-template-columns:repeat(2,1fr)}.m-drawer .m-mini{grid-template-columns:repeat(2,1fr)}.mon input[type=search]{min-width:0;width:100%}}
   @media print{.m-ov,.m-drawer{display:none!important}}
+  /* ===== ธีมใหม่ v61 (2026-11-28) — "กระจกใส ไล่เฉดน้ำเงิน-เขียว" (แบบ C ที่ผู้ใช้เลือก) =====
+     ชั้น CSS ซ้อนทับของเดิมล้วน ๆ — ไม่แตะ HTML ที่ JS สร้าง ไม่แตะลอจิก/ข้อมูลใด ๆ
+     ถ้าต้องการย้อนกลับ: ลบทั้งบล็อกนี้ (ตั้งแต่คอมเมนต์นี้จนถึงคอมเมนต์ปิดท้ายบล็อก) แล้วหน้าตาจะกลับเป็นแบบ v60 */
+  :root{
+    --f:"Noto Sans Thai","Leelawadee UI","Leelawadee","IBM Plex Sans Thai",system-ui,sans-serif;
+    --fd:"Prompt","Noto Sans Thai","Leelawadee UI","Leelawadee","IBM Plex Sans Thai",sans-serif;
+    --nav:#1d4ed8;--nav2:#1e40af;--line:#e3eaf5;--surface:#eaf2ff;--ink:#0b1b33;--muted:#5b6b85;
+    --accent:#059669;--present:#047857;--present-bg:#d1fae5;--radius:18px;
+    --grad:linear-gradient(90deg,#1e40af 0,#1d4ed8 38%,#0f766e 80%,#047857 100%);
+    --grad-btn:linear-gradient(120deg,#1d4ed8,#047857);
+    --shadow:0 1px 2px rgba(16,24,40,.04),0 10px 26px rgba(30,64,175,.08);
+  }
+  body,input,select,textarea,button,.mono,.plate,.arrivein,.actualin,.departin,.planin,.stampcell input,.drv .tm,nav.tabs button .num,h1,h2,h3,.display{font-family:var(--f)}
+  body{background:#eaf2ff linear-gradient(180deg,#eaf2ff 0,#eaf7f1 100%) fixed;color:var(--ink)}
+  /* --- แถบหัว + แท็บ รวมเป็นแถบไล่เฉดบาง ๆ (สูงราว 105px แทนเดิมที่หัวใหญ่) --- */
+  header{background:var(--grad);padding:9px 1cm;gap:12px}
+  .brand .dot{width:36px;height:36px;border-radius:11px;box-shadow:none;border:1px solid rgba(255,255,255,.35);
+    background:rgba(255,255,255,.18) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7h11v9H3zM14 10h4l3 3v3h-7'/%3E%3Ccircle cx='7' cy='17.5' r='1.8'/%3E%3Ccircle cx='17' cy='17.5' r='1.8'/%3E%3C/svg%3E") center/22px no-repeat}
+  .brand h1{font-family:var(--fd);font-size:17px;font-weight:600;letter-spacing:-.1px}
+  .brand small{color:rgba(255,255,255,.82)}
+  .datebox{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:6px 12px}
+  .datebox label{color:#e0ecff}
+  header .btn{background:rgba(255,255,255,.16)!important;border:1px solid rgba(255,255,255,.3)!important;color:#fff!important;border-radius:12px;padding:8px 13px;font-size:14px;box-shadow:none}
+  header .btn:hover{background:rgba(255,255,255,.26)!important}
+  .adminchip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:12px}
+  .adminchip .linkish{color:#fde68a}
+  .adminchip .loginbtn{background:#fff;color:#1d4ed8;border-radius:10px}
+  .saveflag{color:#bbf7d0}.saveflag.saving{color:#fde68a}
+  .hicon{border-radius:12px}
+  nav.tabs{background:var(--grad);padding:2px 1cm 9px;gap:6px;box-shadow:0 10px 24px rgba(30,64,175,.16)}
+  nav.tabs button{color:rgba(255,255,255,.9);font-size:14.5px;padding:7px 15px;border:1px solid transparent;border-radius:999px;transition:background .12s}
+  nav.tabs button:hover{background:rgba(255,255,255,.16)}
+  nav.tabs button .num{background:rgba(255,255,255,.22);color:#fff}
+  nav.tabs button.active{background:#fff;color:#1d4ed8;font-weight:600;border-color:transparent;box-shadow:0 3px 8px rgba(2,6,23,.18)}
+  nav.tabs button.active .num{background:#dbeafe;color:#1d4ed8}
+  main{padding:20px 1cm 12px}
+  /* --- การ์ดตัวเลข (หน้า 1-4) --- */
+  .summary{gap:12px;grid-template-columns:repeat(auto-fit,minmax(126px,1fr))}
+  .stat{background:rgba(255,255,255,.9);border:1px solid #fff;border-radius:20px;padding:15px 18px;box-shadow:var(--shadow)}
+  .stat .lab{font-size:13px;color:var(--muted);font-weight:500;margin-bottom:6px}
+  .stat .val{font-family:var(--fd);font-size:28px;font-weight:600;letter-spacing:-.5px;line-height:1.1}
+  .stat .val small{font-family:var(--f);font-size:14px}
+  .stat.hero{background:var(--grad-btn);border-color:transparent;box-shadow:0 12px 26px rgba(29,78,216,.28)}
+  .stat.hero .lab{color:#dbeafe}
+  .stat .bar{height:4px;background:linear-gradient(90deg,#22d3ee,#34d399);border-radius:0 4px 4px 0}
+  /* --- แถบเครื่องมือ ปุ่ม ชิป --- */
+  .toolbar input[type=search]{border-radius:999px;padding:10px 17px;font-size:14.5px;background:rgba(255,255,255,.95);border-color:var(--line)}
+  .btn{border-radius:12px;padding:9px 15px;font-size:14.5px;font-weight:500;background:rgba(255,255,255,.95);border-color:#dce6f5}
+  .btn:hover{border-color:#b6c6e3;background:#fff}
+  .btn.solid,.btn.primary,.btn.on{background:var(--grad-btn);color:#fff;border-color:transparent;box-shadow:0 8px 18px rgba(29,78,216,.22)}
+  .btn.mini{padding:5px 11px;font-size:13px}
+  .pill{border-radius:999px;padding:7px 14px;font-size:13.5px;border-color:#dce6f5}
+  .pill.active{background:var(--grad-btn);color:#fff;border-color:transparent}
+  .rchip{font-size:13px;padding:6px 13px;background:rgba(255,255,255,.9);border-color:#dce6f5}
+  .rchip b{font-family:var(--fd)}
+  /* --- ตาราง --- */
+  .tablewrap{background:rgba(255,255,255,.94);border:1px solid #fff;border-radius:22px;box-shadow:var(--shadow)}
+  table{font-size:13px}
+  thead th{background:#eef4ff;color:#1d4ed8;font-size:12.5px;padding:10px 9px;border-bottom:2px solid #cfe0fb}
+  tbody td{padding:8px 9px;font-size:13px;border-bottom:1px solid #edf2f9}
+  tbody tr:hover{background:#f6f9ff}
+  th.th-sort:hover{background:#e2ecff;color:#1d4ed8}
+  .grouphdr td{top:40px;font-size:13px;padding:7px 12px}
+  .cno{font-size:12px}
+  .tag{font-size:11px;padding:1px 7px}
+  .drv{font-size:13px}.drv .tm{font-size:12px}
+  .st{font-size:13px;padding:4px 10px;border-radius:9px}
+  .badge{font-size:12.5px;padding:4px 11px;border-radius:999px}
+  .jtype{font-size:11px}
+  .tablewrap.sbox thead th{box-shadow:0 1px 0 #cfe0fb}
+  /* --- ช่องกรอก --- */
+  .arrivein,.jsel,.noteinp,.rin,.field input,.field select,.edrow input,.edrow select{border-radius:10px}
+  .arrivein{font-size:14px}.jsel,.noteinp{font-size:13px}
+  .field input,.field select{font-size:14.5px;border-color:#dce6f5}
+  .planlink{border-radius:10px}
+  /* --- การ์ด/แผง --- */
+  .card{background:rgba(255,255,255,.94);border:1px solid #fff;border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+  .card h2{font-family:var(--fd);font-size:17px;font-weight:600}
+  .hint{background:#eff6ff;border-color:#cfe0fb;color:#1e3a8a;border-radius:14px}
+  /* --- Dashboard (หน้า 6) --- */
+  .dbar,.dcard,.dpanel{background:rgba(255,255,255,.94);border:1px solid #fff;border-radius:20px;box-shadow:var(--shadow)}
+  .dcard .v{font-family:var(--fd)}
+  .dcard.hero{background:var(--grad-btn);border-color:transparent;box-shadow:0 12px 26px rgba(29,78,216,.28)}
+  .dpanel h3{font-family:var(--fd);font-size:15px}
+  .dseg{border-color:#cfe0fb;border-radius:12px}
+  .dseg button.on{background:var(--grad-btn);color:#fff}
+  .dsech{border-bottom:2px solid #cfe0fb}
+  .dsech h2{font-family:var(--fd)}
+  .dsecn{background:var(--grad-btn);border-radius:9px}
+  .dbar2 i{background:linear-gradient(90deg,#1d4ed8,#10b981)}
+  .dload i{background:var(--grad-btn)}
+  .dpick,.dchip{border-color:#dce6f5}
+  /* --- หน้าต่างป๊อปอัป / ล็อกอิน / กำลังโหลด --- */
+  .modal-overlay{background:rgba(11,27,51,.5)}
+  .modal-card{border-radius:22px}
+  .modal-head h2{font-family:var(--fd)}
+  #gate{background:linear-gradient(135deg,#1e40af,#0f766e)}
+  .gate-card{border-radius:24px}
+  .gate-card h2{color:#1d4ed8;font-family:var(--fd)}
+  .busy-card{border-radius:22px}
+  #alarmBox,#alertBox{border-radius:18px}
+  /* --- หน้า "มอนิเตอร์ พจส." ให้กลมกลืนกับธีมใหม่ (ไม่ต้องมีกรอบขาวครอบอีกชั้น) --- */
+  .mon{background:transparent;border:0;padding:0}
+  .mon .m-title h2,.mon .m-kpi .v,.mon .m-ph h3{font-family:var(--fd)}
+  .mon .m-kpi,.mon .m-filters{border-radius:20px;border-color:#fff;box-shadow:var(--shadow)}
+  .mon .m-panel{border-radius:22px;border-color:#fff;box-shadow:var(--shadow)}
+  @media(max-width:900px){
+    header{padding:9px 12px}
+    nav.tabs{padding:2px 8px 8px}
+    main{padding:14px 10px 10px}
+  }
+  @media print{body{background:#fff!important}.stat,.card,.dcard,.dpanel,.tablewrap{box-shadow:none!important}}
+  /* ===== จบบล็อกธีมใหม่ v61 ===== */
 </style>
 </head>
 <body>
