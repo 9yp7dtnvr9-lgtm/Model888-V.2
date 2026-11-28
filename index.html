@@ -6087,7 +6087,7 @@ function monKpis(T){
    +k('g','อัตรามาทำงาน',monPct(T.came,T.came+T.absent+T.leave),'%','สาย <b>'+T.late+'</b> · ขาด <b>'+T.absent+'</b> · ลา <b>'+T.leave+'</b> (คน-วัน)');
 }
 function monChart(T){
-  const per=T.daily, W=640,H=210,pl=34,pb=26,pt=10;
+  const per=T.daily, W=640,H=210,pl=34,pb=26,pt=24;   /* pt=24 เผื่อที่ให้ตัวเลขยอดรวมเหนือแท่งที่สูงสุด (2026-11-28) */
   const mx=Math.max(5,...per.map(p=>p.tot)), bw=(W-pl)/Math.max(1,per.length);
   let g='';
   for(let i=0;i<=4;i++){const v=Math.round(mx*i/4),y=pt+(H-pt-pb)*(1-i/4);
@@ -6097,6 +6097,8 @@ function monChart(T){
     if(p.noData){g+=`<text x="${x+w/2}" y="${H-pb-6}" text-anchor="middle" font-size="9" fill="#94a3b8">–</text>`;}
     JOBTYPES.forEach(t=>{const n=p.type[t.k]||0,h=(H-pt-pb)*n/mx; if(h>0){y-=h;
       g+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${MON_TC[t.k]}" rx="2"><title>${esc(p.ds)} · ${esc(t.s)} ${n} เที่ยว</title></rect>`;}});
+    /* ยอดรวมเที่ยวของวัน เหนือแท่ง — ถ้ามากกว่า 31 วัน แท่งแคบเกินไปจะไม่แสดง (ยังเห็นตัวเลขตอนเอาเมาส์ชี้) */
+    if(!p.noData&&p.tot>0&&per.length<=31)g+=`<text x="${x+w/2}" y="${H-pb-(H-pt-pb)*p.tot/mx-5}" text-anchor="middle" font-size="${per.length<=16?12:10}" font-weight="700" fill="#0f2a4a" style="font-variant-numeric:tabular-nums">${p.tot}<title>${esc(p.ds)} · รวม ${p.tot} เที่ยว</title></text>`;
     if(per.length<=16||i%Math.ceil(per.length/12)===0)g+=`<text x="${x+w/2}" y="${H-8}" text-anchor="middle" font-size="10" fill="#64748b">${esc(monShort(p.ds))}</text>`;
   });
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="จำนวนเที่ยวรายวัน">${g}</svg>`;
